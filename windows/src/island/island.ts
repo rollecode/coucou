@@ -427,6 +427,13 @@ export class Island {
     this.fsm.pinned = State.isPinned;
     this.fsm.forceHome();
     this.expand(view);
+    // forceHome cancels the collapse timer, and one only starts again on a state
+    // change: an alert on an island that is already open, with the mouse
+    // elsewhere, would otherwise stay open for good.
+    if (!this.wasInIsland) {
+      this.fsm.mouseLeft();
+      if (!State.isPinned) this.homeCollapseAt = performance.now() + State.settings.autoCloseInterval * 1000;
+    }
   }
 
   reveal() {
@@ -534,10 +541,11 @@ export class Island {
         if (State.fileDragOver) return;
         State.fileDragOver = true;
         this.engine.animateMorph(1);
-        // enterZone must run before the island expands, so the sequence is
-        // already active by the time the view becomes `upload`.
-        UploadSeq.enterZone(State.mouseInIsland.x, State.mouseInIsland.y);
+        // Open first, then start the sequence: waking a closed island passes
+        // through its default view, and leaving the drop views stops the sequence
+        // — started earlier, it would be dead before the drop (stuck "uploading").
         this.alert("upload");
+        UploadSeq.enterZone(State.mouseInIsland.x, State.mouseInIsland.y);
         break;
       }
       case "leave": {
@@ -983,6 +991,7 @@ export class Island {
     if (uploadActive) this.uploadCanvas.draw(UploadSeq.frame(), nowMs / 1000);
     this.uploadCanvas.el.classList.toggle("on", uploadActive);
     this.viewsEl.classList.toggle("hidden-by-upload", uploadActive);
+    this.contentEl.classList.toggle("upload-on", uploadActive);
 
     tickMiniBots(dt);
     // A ticker scroll that loses its frames freezes mid-way, rows overlapping.
