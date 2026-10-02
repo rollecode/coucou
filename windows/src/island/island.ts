@@ -35,6 +35,9 @@ const BOT_SIDE = 24;
 /** Same margin as the Rust hit test (src-tauri/src/island.rs). */
 const HIT_MARGIN = 14;
 
+/** Time constant of the halo's colour and opacity easing, in seconds (~0.5 s to settle). */
+const GLOW_EASE_S = 0.16;
+
 /** The three views the drop sequence owns; leaving them stops the engine. */
 const UPLOAD_VIEWS: ReadonlySet<IslandViewName> = new Set(["upload", "uploading", "choose"]);
 
@@ -55,6 +58,10 @@ export class Island {
   private viewsEl!: HTMLElement;
   private botCanvas!: HTMLCanvasElement;
   private botGlow!: HTMLElement;
+  /** The halo's colour (0–1 per channel) and opacity, eased toward the state's. */
+  private glowRGB: [number, number, number] = [1, 1, 1];
+  private glowAlpha = 0;
+  private glowSettled = true;
   private greetingCanvas!: HTMLCanvasElement;
   private miniGrid!: HTMLElement;
   private countdown!: HTMLElement;
@@ -968,7 +975,7 @@ export class Island {
       this.syncDom();
     }
 
-    this.updateBotTargets();
+    this.updateBotTargets(dt);
     this.botCx.step(dt);
     this.botCy.step(dt);
     this.botSize.step(dt);
@@ -1010,7 +1017,7 @@ export class Island {
     const busy = State.mode === "hidden"
       ? settling
       : settling ||
-        !this.botCx.settled || !this.botCy.settled || !this.botSize.settled ||
+        !this.botCx.settled || !this.botCy.settled || !this.botSize.settled || !this.glowSettled ||
         greetingActive || this.engine.busy || UploadSeq.isActive || viewAnimating;
 
     if (busy) {
@@ -1021,7 +1028,7 @@ export class Island {
     }
   };
 
-  private updateBotTargets() {
+  private updateBotTargets(dt: number) {
     const p = botPosition(State.mode, State.view, this.height.value, State.uploadProgress);
     this.botCx.target = p.cx;
     this.botCy.target = p.cy;
@@ -1036,17 +1043,40 @@ export class Island {
 
     if (State.mode === "expanded" && State.view !== "uploading" && !greetingActive && !this.uploadActive && !away) {
       const d = p.diameter;
-      const color = botGlowColor(State.effectiveState);
       this.botGlow.style.display = "block";
       this.botGlow.style.width = `${d * 2.2}px`;
       this.botGlow.style.height = `${d * 2.2}px`;
       this.botGlow.style.left = `${this.botCx.value - d * 1.1}px`;
       this.botGlow.style.top = `${this.botCy.value - d * 1.1}px`;
-      this.botGlow.style.background = `radial-gradient(circle, ${color} 0%, transparent 62%)`;
-      this.botGlow.style.opacity = String(botGlowOpacity(State.effectiveState));
+      this.paintGlow(dt);
     } else {
       this.botGlow.style.display = "none";
+      // Fades in again from nothing the next time it shows.
+      this.glowAlpha = 0;
+      this.glowSettled = true;
     }
+  }
+
+  /**
+   * Eases the halo toward the colour and opacity of Mochi's state, and paints it.
+   * CSS cannot transition between two gradients (the colour would flip in one
+   * step), so this happens here, every frame, like Mochi's position does.
+   */
+  private paintGlow(dt: number) {
+    const target = hexToRGB(botGlowColor(State.effectiveState));
+    const alpha = botGlowOpacity(State.effectiveState);
+    const k = 1 - Math.exp(-dt / GLOW_EASE_S);
+    // How far from the target; colour channels count for less than opacity.
+    let off = Math.abs(alpha - this.glowAlpha);
+    this.glowAlpha += (alpha - this.glowAlpha) * k;
+    for (let i = 0; i < 3; i++) {
+      off = Math.max(off, Math.abs(target[i] - this.glowRGB[i]) * 0.4);
+      this.glowRGB[i] += (target[i] - this.glowRGB[i]) * k;
+    }
+    this.glowSettled = off < 0.004;
+    const [r, g, b] = this.glowRGB.map((c) => Math.round(c * 255));
+    this.botGlow.style.background = `radial-gradient(circle, rgb(${r},${g},${b}) 0%, transparent 62%)`;
+    this.botGlow.style.opacity = this.glowAlpha.toFixed(3);
   }
 
   private drawBot(dt: number) {

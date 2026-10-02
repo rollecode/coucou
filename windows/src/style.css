@@ -161,7 +161,7 @@ body {
   pointer-events: none;
   border-radius: 50%;
   filter: blur(6px);
-  transition: opacity 0.4s ease-in-out, background 0.4s ease-in-out;
+  /* No CSS transition: the island eases the colour and the opacity itself. */
 }
 
 #countdown {
