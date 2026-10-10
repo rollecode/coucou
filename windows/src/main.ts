@@ -84,6 +84,9 @@ async function main() {
   await onEvent<null>("sounds-changed", () => {
     void Sound.reload().then(() => Sound.play("pop"));
   });
+  // Clicking anywhere else on the desktop closes the island, the same way
+  // Escape already does.
+  await onEvent<null>("blur", () => island.onBlur());
 
   // The settings window writes preferences; apply them here without a restart.
   await onEvent<Settings>("settings-changed", (s) => {

@@ -427,6 +427,12 @@ export class Island {
     this.fsm.forcePetit();
   }
 
+  /** The OS window lost focus — e.g. the user clicked elsewhere on the
+   * desktop. Same guard as Escape: a pinned alert stays open either way. */
+  onBlur() {
+    if (State.mode === "expanded" && !State.isPinned) this.collapse();
+  }
+
   /** Alert from the hook server: open on this view. Pinned alerts never auto-close. */
   alert(view: IslandViewName) {
     this.fsm.pinned = State.isPinned;
@@ -739,6 +745,9 @@ export class Island {
       State.lastActivity = performance.now();
       // A click makes a hover-opened island an ordinary open one.
       this.fsm.userInteracted();
+      // Escape and a click outside need the keyboard; an alert that opens on its
+      // own never takes it, so no keystroke meant for the terminal lands here.
+      this.takeKeyboard();
       // A press on Mochi may become a drag out to the desktop.
       if (e.button === 0 && this.isBotHit(e.clientX, e.clientY)) {
         this.botPress = { x: e.clientX, y: e.clientY };
@@ -1167,16 +1176,12 @@ export class Island {
       if (on) view.sync();
     }
 
-    // The chat is the only view with a text field, so it is the only time the
-    // island is allowed to take keyboard focus.
+    // The chat takes the keyboard for its text field (a click already has).
     if (this.lastSyncedView !== State.view) {
-      const wasChat = this.lastSyncedView === "prompt";
       this.lastSyncedView = State.view;
       if (State.view === "prompt") {
-        void Bridge.focusWindow(true);
+        this.takeKeyboard();
         window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
-      } else if (wasChat) {
-        void Bridge.focusWindow(false);
       }
     }
 
