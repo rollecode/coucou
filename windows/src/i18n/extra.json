@@ -3294,6 +3294,28 @@
    "pt-BR": "Só um arquivo solto na ilha pode ser enviado com uma pergunta.",
    "ru": "С вопросом можно отправить только файл, перетащенный на остров.",
    "id": "Hanya file yang dijatuhkan ke pulau yang bisa dikirim bersama pertanyaan."
+  },
+  "Search models": {
+   "zh-Hans": "搜索模型",
+   "hi": "मॉडल खोजें",
+   "es": "Buscar modelos",
+   "ar": "ابحث عن النماذج",
+   "fr": "Rechercher un modèle",
+   "bn": "মডেল খুঁজুন",
+   "pt-BR": "Buscar modelos",
+   "ru": "Поиск моделей",
+   "id": "Cari model"
+  },
+  "No model matches.": {
+   "zh-Hans": "没有匹配的模型。",
+   "hi": "कोई मॉडल मेल नहीं खाता।",
+   "es": "Ningún modelo coincide.",
+   "ar": "لا يوجد نموذج مطابق.",
+   "fr": "Aucun modèle ne correspond.",
+   "bn": "কোনো মডেল মেলেনি।",
+   "pt-BR": "Nenhum modelo corresponde.",
+   "ru": "Нет подходящих моделей.",
+   "id": "Tidak ada model yang cocok."
   }
  }
 }
