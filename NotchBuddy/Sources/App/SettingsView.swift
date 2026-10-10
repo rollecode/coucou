@@ -1982,6 +1982,8 @@ struct SettingsView: View {
             TextField("", value: value, format: .number)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 44)
+            Stepper("", value: value, in: 0...IslandConst.compactPaddingMax, step: 1)
+                .labelsHidden()
         }
     }
 
