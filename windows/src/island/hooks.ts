@@ -17,6 +17,7 @@ import { parseClaudePlan, restorePlanUsage } from "../core/plan";
 import { setClaudePlanUsage, storedClaudePlanUsage } from "../views/usage";
 import { N_, t } from "../i18n/i18n";
 import { sshLabel } from "../core/ssh";
+import { beginTurn, dropCode, endTurn, toolFinished, toolStarted, type CodeSource } from "../views/session";
 
 const CLAUDE_ID = "integration_claude";
 const WORKSPACE_CLAUDE = "workspace_claude";
@@ -272,6 +273,10 @@ interface HookPayload {
   rate_limits?: unknown;
   /** The session's own `claude` process, set by Rust (pipe.rs). */
   coucou_claude_pid?: number;
+  /** PostToolUse of Bash / PowerShell: the last lines it printed (the relay keeps nothing else of its output). */
+  tool_tail?: unknown;
+  /** PostToolUseFailure: why the tool failed. */
+  error?: string;
 }
 
 const PROJECT_ALIASES: Record<string, string> = {
@@ -563,6 +568,14 @@ function handleHook(island: Island, payload: HookPayload) {
     return;
   }
   if (!fromSubagent && name !== "Notification") backgroundWaits.delete(sessionId);
+  // The code view's data: Claude Code's own pills only. Opening it is the user's click.
+  const code: CodeSource | null = isExternalAgent
+    ? null
+    : { sessionId, cwd, project: projectName, remote: !!payload.coucou_remote };
+  /** Leaves the code view when what it shows of this pill is gone. */
+  const leaveCode = () => {
+    if (focused && State.view === "code") island.setView(State.defaultView());
+  };
 
   switch (name) {
     case "SessionStart":
@@ -586,6 +599,10 @@ function handleHook(island: Island, payload: HookPayload) {
       // The field is `prompt`; reading `message` meant this step was always blank.
       const asked = payload.prompt ?? payload.message;
       if (asked) State.appendStep(agentId, asked.slice(0, 60));
+      if (code) {
+        beginTurn(agentId, code);
+        leaveCode();
+      }
       surface("overview", false);
       break;
     }
@@ -597,6 +614,7 @@ function handleHook(island: Island, payload: HookPayload) {
       State.updateTask(agentId, "working");
       const tool = payload.tool_name ?? "Tool";
       State.appendStep(agentId, stepLabel(tool, payload.tool_input ?? {}));
+      if (code) toolStarted(agentId, code, tool, payload.tool_input ?? {});
       surface("overview", false);
       break;
     }
@@ -610,6 +628,11 @@ function handleHook(island: Island, payload: HookPayload) {
         if (State.pendingApproval && answered(State.pendingApproval)) dropPendingCard(island);
       }
       State.updateTask(agentId, "working");
+      // The code view's data first, so following can open it on this very edit.
+      if (code) {
+        const tail = Array.isArray(payload.tool_tail) ? payload.tool_tail : undefined;
+        toolFinished(agentId, cwd, payload.tool_name ?? "", payload.tool_input ?? {}, { tail });
+      }
       {
         const diffId = recordDiff(agentId, payload);
         if (diffId != null) followEdit(island, agentId, diffId);
@@ -620,6 +643,12 @@ function handleHook(island: Island, payload: HookPayload) {
       supersedeStop();
       State.updateTask(agentId, "working");
       State.appendStep(agentId, t("⚠ failed"));
+      if (code) {
+        toolFinished(agentId, cwd, payload.tool_name ?? "", payload.tool_input ?? {}, {
+          failed: true,
+          error: payload.error,
+        });
+      }
       break;
 
     case "Notification": {
@@ -646,6 +675,7 @@ function handleHook(island: Island, payload: HookPayload) {
 
     case "Stop": {
       if (State.liveDiff?.pillId === agentId) State.liveDiff = null;
+      if (code) endTurn(agentId);
       // Claude Code puts the turn's answer in the Stop payload itself, so there is
       // no transcript to read (the relay does not even forward its path). Other
       // agents report their last words the same way (Hermes, Codex) or as
@@ -711,6 +741,10 @@ function handleHook(island: Island, payload: HookPayload) {
       State.clearSessionDiffs(agentId);
       if (sessionId) endSession(sessionId);
       if (!isExternalAgent) void discoverSessions();
+      if (code) {
+        dropCode(agentId);
+        leaveCode();
+      }
       if (isExternalAgent || ownSession) {
         State.removeTask(agentId);
       } else {

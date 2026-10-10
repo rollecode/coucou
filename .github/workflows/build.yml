@@ -70,6 +70,8 @@ jobs:
 
       - name: Test SSH destinations
         run: bash scripts/test-ssh-destination.sh
+      - name: Test code view
+        run: bash scripts/test-code-view.sh
 
       - name: Test link filter
         run: bash scripts/test-safe-links.sh
