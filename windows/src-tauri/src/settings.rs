@@ -22,6 +22,9 @@ pub struct Settings {
     /// Space between the folded island's edges and Mochi or the pills, in
     /// logical px.
     pub compact_padding: CompactPadding,
+    /// The compact island hides a minute after the last activity (the shipped
+    /// behaviour). Off: it stays on screen.
+    pub auto_hide: bool,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
     /// The always-on workspace pill (src/core/pills.ts checks it is one).
@@ -119,6 +122,7 @@ impl Default for Settings {
             auto_close_interval: 15.0,
             open_on_hover: false,
             compact_padding: CompactPadding::default(),
+            auto_hide: true,
             absence_interval: 180.0,
             active_integrations: vec![
                 "integration_resend".into(),
@@ -402,6 +406,7 @@ mod tests {
   "autoCloseInterval": 30.0,
   "openOnHover": true,
   "compactPadding": { "top": 2.0, "right": 6.0, "bottom": 4.0, "left": 6.0 },
+  "autoHide": false,
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
   "mainPill": "agent_cursor",
@@ -806,6 +811,7 @@ mod tests {
                 "autoCloseInterval",
                 "openOnHover",
                 "compactPadding",
+                "autoHide",
                 "absenceInterval",
                 "activeIntegrations",
                 "mainPill",

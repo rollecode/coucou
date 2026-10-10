@@ -296,6 +296,10 @@ final class AppState: ObservableObject {
         UserDefaults.standard.set(v, forKey: key)
         return v
     }
+    // The compact island hides a minute after the last activity — persisted, on by default
+    @Published var autoHide: Bool = true {
+        didSet { UserDefaults.standard.set(autoHide, forKey: "autoHide") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -522,6 +526,7 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "compactPaddingRight") as? Double { compactPaddingRight = v }
         if let v = ud.object(forKey: "compactPaddingBottom") as? Double { compactPaddingBottom = v }
         if let v = ud.object(forKey: "compactPaddingLeft") as? Double { compactPaddingLeft = v }
+        if let v = ud.object(forKey: "autoHide") as? Bool { autoHide = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }
