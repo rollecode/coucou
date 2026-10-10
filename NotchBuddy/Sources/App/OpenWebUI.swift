@@ -56,8 +56,7 @@ enum OpenWebUI {
     static func mayCarryKey(_ url: String) -> Bool {
         guard let u = URL(string: url), let host = u.host?.lowercased() else { return false }
         if u.scheme == "https" { return true }
-        let loopback = host == "localhost" || host.hasPrefix("127.") || host == "::1" || host == "[::1]"
-        return u.scheme == "http" && loopback
+        return u.scheme == "http" && LoopbackHost.matches(host)
     }
 
     /// What the keychain holds: the key and the address it was entered for.
