@@ -31,8 +31,8 @@ pub const EFFORTS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
 static CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
 
 pub fn models() -> Vec<ModelInfo> {
-    let mut out = vec![ModelInfo { id: DEFAULT_MODEL.into(), label: t("Claude Code's default") }];
-    out.extend(MODELS.iter().map(|m| ModelInfo { id: m.to_string(), label: capitalised(m) }));
+    let mut out = vec![ModelInfo { id: DEFAULT_MODEL.into(), label: t("Claude Code's default"), group: None }];
+    out.extend(MODELS.iter().map(|m| ModelInfo { id: m.to_string(), label: capitalised(m), group: None }));
     out
 }
 
@@ -166,9 +166,9 @@ pub async fn send(
 ) -> Result<ChatReply, String> {
     let exe = binary().ok_or_else(|| t("Claude Code isn't installed (no `claude` command found)."))?;
     let dir = work_dir(settings)?;
-    let turn = chat.begin(ID);
+    let turn = chat.begin(ID, context.as_ref());
     let resume = session_of(&turn.history);
-    let inbox = matches!(context, Some(ChatContext::File { .. }) if turn.first)
+    let inbox = matches!(context, Some(ChatContext::File { .. }) if turn.attach)
         .then(|| crate::files::inbox_dir().display().to_string());
     let prompt = question(turn.first, &turn.history, context.as_ref(), &query);
 
@@ -236,7 +236,7 @@ pub async fn send(
     if answer.is_empty() {
         return Err(t("No response text."));
     }
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(
         &turn,
         json!({ "role": "user", "content": plain }),

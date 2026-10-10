@@ -153,16 +153,18 @@ test("each pill keeps its own code, and a new prompt in one leaves the other", (
 test("another session in the same pill starts afresh, and SessionEnd forgets it", () => {
   pre("Edit", EDIT);
   pre("Read", { file_path: `/home/alice/api/main.rs` }, { session_id: "s9", cwd: "/home/alice/api" });
-  const d = codeFor(CLAUDE);
+  // Session pills: the second session has its own pill, with its own code view.
+  const pill = State.tasks.find((t) => t.sessionId === "s9")?.id ?? CLAUDE;
+  const d = codeFor(pill);
   assert.equal(d.sessionId, "s9");
   assert.equal(d.root, "/home/alice/api");
   assert.equal(d.edit, undefined);
 
-  State.focusId = CLAUDE;
+  State.focusId = pill;
   pre("Edit", { ...EDIT, file_path: "/home/alice/api/main.rs" }, { session_id: "s9", cwd: "/home/alice/api" });
   State.view = "code";
   hook({ hook_event_name: "SessionEnd", session_id: "s9", cwd: "/home/alice/api" });
-  assert.equal(codeFor(CLAUDE), null);
+  assert.equal(codeFor(pill), null);
   assert.deepEqual(asked, ["setView:overview"]);
 });
 

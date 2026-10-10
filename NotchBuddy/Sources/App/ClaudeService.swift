@@ -588,7 +588,7 @@ final class ClaudeService {
     /// The question, with the window or file it is about on the first turn.
     /// A text file's content goes along for the model servers, which cannot read files.
     private func firstTurnText(_ query: String, context: PromptContext?, inlineFiles: Bool) -> String {
-        guard conversationMessages.isEmpty, let ctx = context else { return query }
+        guard let ctx = context else { return query }
         switch ctx {
         case .window(let app, let title, let url):
             var prefix = "Context — App: \(app), Window: \(title)"
@@ -635,7 +635,9 @@ final class ClaudeService {
             guard let text = blocks.first(where: { ($0["type"] as? String) == "text" })?["text"] as? String else { return nil }
             return (role: role, content: text)
         }
-        let userText = firstTurnText(query, context: context, inlineFiles: true)
+        let attached = pendingContext(context)
+        let userText = firstTurnText(query, context: attached, inlineFiles: true)
+        if let attached { sentContextKey = Self.contextKey(attached) }
         conversationMessages.append(["role": "user", "content": userText])
 
         let placeholder = ChatMessage(role: .assistant, content: "")

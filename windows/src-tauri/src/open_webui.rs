@@ -349,7 +349,7 @@ pub async fn send(
     if model.is_empty() {
         return Err(t("Pick a model above the chat box first."));
     }
-    let turn = chat.begin(ID);
+    let turn = chat.begin(ID, context.as_ref());
     let at = now_secs();
 
     let thread = match turn.thread.clone() {
@@ -365,7 +365,7 @@ pub async fn send(
         }
     };
 
-    let text = local_chat::user_text(turn.first, context.as_ref(), &query);
+    let text = local_chat::user_text(turn.attach, context.as_ref(), &query);
     let (user_id, answer_id) = (new_id(), new_id());
     let system = chat::system_prompt(web_search);
     let mut body = completion(model, &system, &thread, &user_id, &answer_id, &text, at, web_search);
@@ -394,7 +394,7 @@ pub async fn send(
         return Err(t("No response text."));
     }
 
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, json!({ "role": "user", "content": text }), json!({ "role": "assistant", "content": answer }), &plain, &answer);
     chat.set_thread(&turn, Some(Thread { id: thread.id, last: Some(answer_id) }));
     Ok(ChatReply { text: answer })

@@ -386,20 +386,20 @@ mod tests {
     #[test]
     fn a_thread_belongs_to_one_provider_and_one_conversation() {
         let chat = Chat::default();
-        let t = chat.begin("openwebui");
+        let t = chat.begin("openwebui", None);
         let thread = Thread { id: "c1".into(), last: Some("m2".into()) };
         chat.set_thread(&t, Some(thread.clone()));
-        assert_eq!(chat.begin("openwebui").thread, Some(thread));
+        assert_eq!(chat.begin("openwebui", None).thread, Some(thread));
         // Another provider answering drops it; so does a reset.
-        let _ = chat.begin("openai");
-        assert_eq!(chat.begin("openwebui").thread, None);
-        let t = chat.begin("openwebui");
+        let _ = chat.begin("openai", None);
+        assert_eq!(chat.begin("openwebui", None).thread, None);
+        let t = chat.begin("openwebui", None);
         chat.set_thread(&t, Some(Thread { id: "c2".into(), last: None }));
         chat.reset();
-        assert_eq!(chat.begin("openwebui").thread, None);
+        assert_eq!(chat.begin("openwebui", None).thread, None);
         // A turn from before the reset cannot bring it back.
         chat.set_thread(&t, Some(Thread { id: "c2".into(), last: None }));
-        assert_eq!(chat.begin("openwebui").thread, None);
+        assert_eq!(chat.begin("openwebui", None).thread, None);
     }
 
     #[test]

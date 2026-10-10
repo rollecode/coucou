@@ -46,6 +46,28 @@
    "ru": "5 часов",
    "id": "5 jam"
   },
+  "A key is only sent over https, or to a server on this computer.": {
+   "zh-Hans": "密钥只会通过 https 发送，或发送到本机上的服务器。",
+   "hi": "कुंजी केवल https पर, या इसी कंप्यूटर के सर्वर को भेजी जाती है।",
+   "es": "La clave solo se envía por https o a un servidor de este ordenador.",
+   "ar": "لا يُرسَل المفتاح إلا عبر https، أو إلى خادم على هذا الحاسوب.",
+   "fr": "La clé n'est envoyée qu'en https, ou à un serveur sur cet ordinateur.",
+   "bn": "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।",
+   "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
+   "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
+   "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini."
+  },
+  "API key": {
+   "zh-Hans": "API 密钥",
+   "hi": "API कुंजी",
+   "es": "Clave de API",
+   "ar": "مفتاح API",
+   "fr": "Clé d'API",
+   "bn": "API কী",
+   "pt-BR": "Chave de API",
+   "ru": "API-ключ",
+   "id": "Kunci API"
+  },
   "API key (AI Studio)": {
    "zh-Hans": "API 密钥 (AI Studio)",
    "hi": "API कुंजी (AI Studio)",
@@ -112,6 +134,39 @@
    "ru": "Активность",
    "id": "Aktivitas"
   },
+  "Add": {
+   "zh-Hans": "添加",
+   "hi": "जोड़ें",
+   "es": "Añadir",
+   "ar": "إضافة",
+   "fr": "Ajouter",
+   "bn": "যোগ করুন",
+   "pt-BR": "Adicionar",
+   "ru": "Добавить",
+   "id": "Tambah"
+  },
+  "Add an Open WebUI API key in Settings → Local models first.": {
+   "zh-Hans": "请先在 设置 → 本地模型 中添加 Open WebUI API 密钥。",
+   "hi": "पहले सेटिंग्स → स्थानीय मॉडल में Open WebUI API कुंजी जोड़ें।",
+   "es": "Añade primero una clave API de Open WebUI en Configuración → Modelos locales.",
+   "ar": "أضف أولًا مفتاح Open WebUI API في الإعدادات ← النماذج المحلية.",
+   "fr": "Ajoute d'abord une clé API Open WebUI dans Réglages → Modèles locaux.",
+   "bn": "আগে সেটিংস → স্থানীয় মডেলে একটি Open WebUI API কী যোগ করুন।",
+   "pt-BR": "Adicione primeiro uma chave de API do Open WebUI em Configurações → Modelos locais.",
+   "ru": "Сначала добавьте API-ключ Open WebUI в Настройки → Локальные модели.",
+   "id": "Tambahkan kunci API Open WebUI di Pengaturan → Model lokal terlebih dahulu."
+  },
+  "Add your Anthropic API key in Settings → Chat first.": {
+   "zh-Hans": "请先在设置 → 聊天中添加你的 Anthropic API 密钥。",
+   "hi": "पहले सेटिंग्स → चैट में अपनी Anthropic API कुंजी जोड़ो।",
+   "es": "Primero añade tu clave de API de Anthropic en Ajustes → Chat.",
+   "ar": "أضف أولًا مفتاح Anthropic API في الإعدادات ← الدردشة.",
+   "fr": "Ajoute d'abord ta clé API Anthropic dans Réglages → Chat.",
+   "bn": "আগে সেটিংস → চ্যাটে তোমার Anthropic API কী যোগ করো।",
+   "pt-BR": "Primeiro adicione sua chave de API da Anthropic em Ajustes → Chat.",
+   "ru": "Сначала добавь ключ Anthropic API в Настройки → Чат.",
+   "id": "Tambahkan dulu kunci API Anthropic-mu di Pengaturan → Chat."
+  },
   "Advertisement": {
    "zh-Hans": "广告",
    "hi": "विज्ञापन",
@@ -144,6 +199,17 @@
    "pt-BR": "Agentes",
    "ru": "Агенты",
    "id": "Agen"
+  },
+  "All models": {
+   "zh-Hans": "所有模型",
+   "hi": "सभी मॉडल",
+   "es": "Todos los modelos",
+   "ar": "كل النماذج",
+   "fr": "Tous les modèles",
+   "bn": "সব মডেল",
+   "pt-BR": "Todos os modelos",
+   "ru": "Все модели",
+   "id": "Semua model"
   },
   "Allow": {
    "zh-Hans": "允许",
@@ -221,6 +287,17 @@
    "pt-BR": "Uma instrução enviada pelo iPhone usa o modelo aberto no momento no chat. O prompt de sistema e o histórico de conversa se aplicam. Instruções enviadas enquanto o Coucou não está em execução ficam na fila e são executadas no próximo início.",
    "ru": "Инструкция, отправленная с iPhone, использует модель, открытую в чате. Системный промпт и история разговора применяются. Инструкции, отправленные пока Coucou не запущен, ставятся в очередь и выполняются при следующем запуске.",
    "id": "Instruksi yang dikirim dari iPhone menggunakan model yang sedang terbuka di chat. Prompt sistem dan riwayat percakapan berlaku. Instruksi yang dikirim saat Coucou tidak berjalan dimasukkan ke antrean dan dijalankan saat peluncuran berikutnya."
+  },
+  "Answer questions with a web search": {
+   "zh-Hans": "用网页搜索回答问题",
+   "hi": "वेब खोज से सवालों के जवाब",
+   "es": "Responder preguntas buscando en la web",
+   "ar": "الإجابة عن الأسئلة ببحث على الويب",
+   "fr": "Répondre aux questions avec une recherche web",
+   "bn": "ওয়েবে খুঁজে প্রশ্নের উত্তর দাও",
+   "pt-BR": "Responder perguntas com uma busca na web",
+   "ru": "Отвечать на вопросы с поиском в интернете",
+   "id": "Jawab pertanyaan dengan pencarian web"
   },
   "Anthropic API": {
    "zh-Hans": "Anthropic API",
@@ -354,6 +431,17 @@
    "ru": "Автозакрытие · {seconds} с",
    "id": "Tutup otomatis · {seconds}dt"
   },
+  "Auto-hide": {
+   "zh-Hans": "自动隐藏",
+   "hi": "अपने-आप छिपाएँ",
+   "es": "Ocultar automáticamente",
+   "ar": "إخفاء تلقائي",
+   "fr": "Masquer automatiquement",
+   "bn": "স্বয়ংক্রিয়ভাবে লুকান",
+   "pt-BR": "Ocultar automaticamente",
+   "ru": "Автоскрытие",
+   "id": "Sembunyikan otomatis"
+  },
   "Automatic (your Mac’s dictation language)": {
    "zh-Hans": "自动（Mac 听写语言）",
    "hi": "स्वचालित (Mac की डिक्टेशन भाषा)",
@@ -397,6 +485,17 @@
    "pt-BR": "Comportamento",
    "ru": "Поведение",
    "id": "Perilaku"
+  },
+  "Bottom": {
+   "zh-Hans": "下",
+   "hi": "नीचे",
+   "es": "Abajo",
+   "ar": "أسفل",
+   "fr": "Bas",
+   "bn": "নিচে",
+   "pt-BR": "Base",
+   "ru": "Снизу",
+   "id": "Bawah"
   },
   "Busiest day": {
    "zh-Hans": "最忙的一天",
@@ -475,6 +574,17 @@
    "ru": "Чат — другие провайдеры",
    "id": "Chat — penyedia lain"
   },
+  "Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one.": {
+   "zh-Hans": "你在这里的对话也会出现在 Open WebUI 中。获取密钥：管理员先打开 Admin Panel → Settings → Authentication → API Keys，然后在 Settings → Account → API keys → Secrets → Show 中创建。",
+   "hi": "यहाँ की आपकी चैट Open WebUI में भी दिखती हैं। कुंजी के लिए, एक एडमिन Admin Panel → Settings → Authentication → API Keys चालू करता है; फिर Settings → Account → API keys → Secrets → Show से एक बनती है।",
+   "es": "Los chats que tengas aquí también aparecen en Open WebUI. Para la clave, un administrador activa Admin Panel → Settings → Authentication → API Keys; después Settings → Account → API keys → Secrets → Show crea una.",
+   "ar": "تظهر دردشاتك هنا في Open WebUI أيضًا. للحصول على المفتاح، يفعّل المسؤول Admin Panel → Settings → Authentication → API Keys؛ ثم تنشئه من Settings → Account → API keys → Secrets → Show.",
+   "fr": "Les chats que tu as ici apparaissent aussi dans Open WebUI. Pour la clé, un administrateur active Admin Panel → Settings → Authentication → API Keys ; ensuite Settings → Account → API keys → Secrets → Show en crée une.",
+   "bn": "এখানকার আপনার চ্যাটগুলো Open WebUI-তেও দেখা যায়। কী পেতে, একজন অ্যাডমিন Admin Panel → Settings → Authentication → API Keys চালু করেন; তারপর Settings → Account → API keys → Secrets → Show থেকে একটি তৈরি হয়।",
+   "pt-BR": "Os chats que você tem aqui também aparecem no Open WebUI. Para a chave, um administrador ativa Admin Panel → Settings → Authentication → API Keys; depois Settings → Account → API keys → Secrets → Show cria uma.",
+   "ru": "Ваши чаты здесь также появляются в Open WebUI. Для ключа администратор включает Admin Panel → Settings → Authentication → API Keys; затем Settings → Account → API keys → Secrets → Show создаёт его.",
+   "id": "Obrolan Anda di sini juga muncul di Open WebUI. Untuk kunci, admin menyalakan Admin Panel → Settings → Authentication → API Keys; lalu Settings → Account → API keys → Secrets → Show membuatnya."
+  },
   "Choose the tools you use. Coucou only shows what you declare here.": {
    "zh-Hans": "选择你使用的工具。Coucou 只显示你在这里声明的内容。",
    "hi": "वे टूल चुनें जो आप उपयोग करते हैं। Coucou केवल वही दिखाता है जो आप यहाँ घोषित करते हैं।",
@@ -540,6 +650,39 @@
    "pt-BR": "Claude Code está perguntando",
    "ru": "Claude Code спрашивает",
    "id": "Claude Code bertanya"
+  },
+  "Claude Code isn't installed (no `claude` command found).": {
+   "zh-Hans": "未安装 Claude Code（找不到 `claude` 命令）。",
+   "hi": "Claude Code इंस्टॉल नहीं है (`claude` कमांड नहीं मिला)।",
+   "es": "Claude Code no está instalado (no se encontró el comando `claude`).",
+   "ar": "Claude Code غير مثبّت (لم يُعثر على الأمر `claude`).",
+   "fr": "Claude Code n'est pas installé (commande `claude` introuvable).",
+   "bn": "Claude Code ইনস্টল করা নেই (`claude` কমান্ড পাওয়া যায়নি)।",
+   "pt-BR": "O Claude Code não está instalado (comando `claude` não encontrado).",
+   "ru": "Claude Code не установлен (команда `claude` не найдена).",
+   "id": "Claude Code belum terpasang (perintah `claude` tidak ditemukan)."
+  },
+  "Claude Code sessions on other machines, over your own SSH: Coucou runs ssh with your keys and ~/.ssh/config, and nothing listens on the network. Connect to a host once in a terminal first, so its key is known.": {
+   "zh-Hans": "通过你自己的 SSH 查看其他机器上的 Claude Code 会话：Coucou 使用你的密钥和 ~/.ssh/config 运行 ssh，不会在网络上监听任何端口。请先在终端中连接一次该主机，以便记录其密钥。",
+   "hi": "दूसरी मशीनों पर चल रहे Claude Code सत्र, आपके अपने SSH से: Coucou आपकी कुंजियों और ~/.ssh/config के साथ ssh चलाता है, और नेटवर्क पर कुछ भी नहीं सुनता। पहले टर्मिनल में होस्ट से एक बार कनेक्ट करें, ताकि उसकी कुंजी पहचानी जाए।",
+   "es": "Sesiones de Claude Code en otras máquinas, por tu propio SSH: Coucou ejecuta ssh con tus claves y tu ~/.ssh/config, y nada escucha en la red. Conéctate una vez al host desde un terminal para que su clave quede registrada.",
+   "ar": "جلسات Claude Code على أجهزة أخرى عبر SSH الخاص بك: يشغّل Coucou الأمر ssh بمفاتيحك و‎~/.ssh/config، ولا شيء يستمع على الشبكة. اتصل بالجهاز مرة واحدة من الطرفية أولًا حتى يُعرف مفتاحه.",
+   "fr": "Les sessions Claude Code d'autres machines, par ton propre SSH : Coucou lance ssh avec tes clés et ton ~/.ssh/config, et rien n'écoute sur le réseau. Connecte-toi d'abord une fois à l'hôte dans un terminal pour que sa clé soit connue.",
+   "bn": "অন্য মেশিনের Claude Code সেশন, আপনার নিজের SSH দিয়ে: Coucou আপনার কী ও ~/.ssh/config দিয়ে ssh চালায়, নেটওয়ার্কে কিছুই শোনে না। আগে টার্মিনালে হোস্টে একবার যুক্ত হন, যাতে তার কী জানা থাকে।",
+   "pt-BR": "Sessões do Claude Code em outras máquinas, pelo seu próprio SSH: o Coucou roda o ssh com suas chaves e seu ~/.ssh/config, e nada fica escutando na rede. Conecte-se uma vez ao host pelo terminal antes, para que a chave dele fique conhecida.",
+   "ru": "Сеансы Claude Code на других машинах через ваш собственный SSH: Coucou запускает ssh с вашими ключами и ~/.ssh/config, и ничего не слушает в сети. Сначала один раз подключитесь к хосту в терминале, чтобы его ключ был известен.",
+   "id": "Sesi Claude Code di mesin lain, lewat SSH Anda sendiri: Coucou menjalankan ssh dengan kunci dan ~/.ssh/config Anda, dan tidak ada yang mendengarkan di jaringan. Sambungkan ke host sekali dulu di terminal agar kuncinya dikenal."
+  },
+  "Claude Code's default": {
+   "zh-Hans": "Claude Code 的默认设置",
+   "hi": "Claude Code का डिफ़ॉल्ट",
+   "es": "Lo predeterminado de Claude Code",
+   "ar": "الافتراضي في Claude Code",
+   "fr": "Par défaut de Claude Code",
+   "bn": "Claude Code-এর ডিফল্ট",
+   "pt-BR": "Padrão do Claude Code",
+   "ru": "По умолчанию в Claude Code",
+   "id": "Bawaan Claude Code"
   },
   "Claude is reading {name}…": {
    "zh-Hans": "Claude 正在读取 {name}…",
@@ -827,6 +970,17 @@
    "ru": "Coucou отвечает вслух",
    "id": "Coucou merespons dengan suara"
   },
+  "Coucou's own folder": {
+   "zh-Hans": "Coucou 自己的文件夹",
+   "hi": "Coucou का अपना फ़ोल्डर",
+   "es": "La carpeta propia de Coucou",
+   "ar": "مجلد Coucou الخاص",
+   "fr": "Le dossier de Coucou",
+   "bn": "Coucou-এর নিজস্ব ফোল্ডার",
+   "pt-BR": "A pasta do próprio Coucou",
+   "ru": "Собственная папка Coucou",
+   "id": "Folder milik Coucou"
+  },
   "Custom…": {
    "zh-Hans": "自定义…",
    "hi": "कस्टम…",
@@ -981,6 +1135,17 @@
    "ru": "Дублирующийся",
    "id": "Duplikat"
   },
+  "Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.": {
+   "zh-Hans": "Claude Code 编辑的每个文件都会在岛中实时打开，下一次编辑会替换它。关闭它即可停止跟随，直到下一条提示。",
+   "hi": "Claude Code जो भी फ़ाइल बदलता है, वह उसी समय आइलैंड में खुलती है, और अगला बदलाव उसकी जगह ले लेता है। अगले प्रॉम्प्ट तक फ़ॉलो करना रोकने के लिए इसे बंद करें।",
+   "es": "Cada archivo que Claude Code edita se abre en la isla en el momento, y la siguiente edición lo reemplaza. Ciérralo para dejar de seguirlo hasta el próximo mensaje.",
+   "ar": "كل ملف يعدّله Claude Code يُفتح في الجزيرة لحظة تعديله، ويحل التعديل التالي محله. أغلقه لإيقاف المتابعة حتى الطلب التالي.",
+   "fr": "Chaque fichier que Claude Code modifie s'ouvre dans l'île au moment même, et la modification suivante le remplace. Ferme-le pour arrêter de suivre jusqu'au prochain message.",
+   "bn": "Claude Code যে ফাইলই সম্পাদনা করে, তা সঙ্গে সঙ্গে আইল্যান্ডে খোলে, আর পরের সম্পাদনা সেটির জায়গা নেয়। পরের প্রম্পট পর্যন্ত অনুসরণ বন্ধ রাখতে এটি বন্ধ করুন।",
+   "pt-BR": "Cada arquivo que o Claude Code edita abre na ilha na hora, e a próxima edição o substitui. Feche-o para parar de acompanhar até o próximo prompt.",
+   "ru": "Каждый файл, который правит Claude Code, сразу открывается в острове, а следующая правка его заменяет. Закройте его, чтобы не следить до следующего запроса.",
+   "id": "Setiap file yang disunting Claude Code terbuka di pulau saat itu juga, dan suntingan berikutnya menggantikannya. Tutup untuk berhenti mengikuti sampai prompt berikutnya."
+  },
   "Edits": {
    "zh-Hans": "编辑",
    "hi": "संपादित करता है",
@@ -991,6 +1156,17 @@
    "pt-BR": "Edita",
    "ru": "Редактирует",
    "id": "Mengedit"
+  },
+  "Effort": {
+   "zh-Hans": "思考强度",
+   "hi": "प्रयास",
+   "es": "Esfuerzo",
+   "ar": "الجهد",
+   "fr": "Effort",
+   "bn": "প্রচেষ্টা",
+   "pt-BR": "Esforço",
+   "ru": "Усилие",
+   "id": "Upaya"
   },
   "ElevenLabs API key": {
    "zh-Hans": "ElevenLabs API 密钥",
@@ -1090,6 +1266,28 @@
    "pt-BR": "Busca",
    "ru": "Получает",
    "id": "Mengambil"
+  },
+  "Follow edits live": {
+   "zh-Hans": "实时跟随编辑",
+   "hi": "बदलाव लाइव देखें",
+   "es": "Seguir los cambios en vivo",
+   "ar": "متابعة التعديلات مباشرة",
+   "fr": "Suivre les modifications en direct",
+   "bn": "সম্পাদনা লাইভ অনুসরণ করুন",
+   "pt-BR": "Acompanhar as edições ao vivo",
+   "ru": "Следить за правками вживую",
+   "id": "Ikuti suntingan secara langsung"
+  },
+  "For a more natural voice, download a Premium voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices. In English: Ava for a woman, Jamie for a man (British).": {
+   "zh-Hans": "想要更自然的声音，请下载 Premium 语音：系统设置 → 辅助功能 → 朗读内容 → 系统语音 → 管理语音。英语：女声选 Ava，男声选 Jamie（英式）。",
+   "hi": "ज़्यादा स्वाभाविक आवाज़ के लिए Premium आवाज़ डाउनलोड करें: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices। अंग्रेज़ी में: महिला के लिए Ava, पुरुष के लिए Jamie (ब्रिटिश)।",
+   "es": "Para una voz más natural, descarga una voz Premium: Ajustes del Sistema → Accesibilidad → Contenido leído → Voz del sistema → Gestionar voces. En inglés: Ava para mujer, Jamie para hombre (británico).",
+   "ar": "لصوت أكثر طبيعية، نزّل صوتًا Premium: إعدادات النظام ← تسهيلات الاستخدام ← المحتوى المنطوق ← صوت النظام ← إدارة الأصوات. بالإنجليزية: Ava لامرأة، Jamie لرجل (بريطاني).",
+   "fr": "Pour une voix plus naturelle, télécharge une voix Premium : Réglages Système → Accessibilité → Contenu énoncé → Voix du système → Gérer les voix. En anglais : Ava pour une femme, Jamie pour un homme (britannique).",
+   "bn": "আরও স্বাভাবিক কণ্ঠের জন্য একটি Premium কণ্ঠ ডাউনলোড করো: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices। ইংরেজিতে: নারী হলে Ava, পুরুষ হলে Jamie (ব্রিটিশ)।",
+   "pt-BR": "Para uma voz mais natural, baixe uma voz Premium: Ajustes do Sistema → Acessibilidade → Conteúdo Falado → Voz do Sistema → Gerenciar Vozes. Em inglês: Ava para mulher, Jamie para homem (britânico).",
+   "ru": "Для более естественного голоса скачай голос Premium: Системные настройки → Универсальный доступ → Устная речь → Системный голос → Управлять голосами. По-английски: Ava — женский, Jamie — мужской (британский).",
+   "id": "Untuk suara yang lebih alami, unduh suara Premium: Pengaturan Sistem → Aksesibilitas → Konten Lisan → Suara Sistem → Kelola Suara. Bahasa Inggris: Ava untuk wanita, Jamie untuk pria (Inggris)."
   },
   "From Open-Meteo for this city, only when you ask.": {
    "zh-Hans": "仅在你询问时，从 Open-Meteo 获取该城市的天气。",
@@ -1553,6 +1751,28 @@
    "ru": "Запускать при старте Mac",
    "id": "Jalankan saat Mac startup"
   },
+  "Leave it empty and Claude Code works in a folder of Coucou's own, not in your home folder. Pick a project folder to let it work on that project. Tool approvals show in the island like any other session's.": {
+   "zh-Hans": "留空时，Claude Code 在 Coucou 自己的文件夹中工作，而不是你的主文件夹。选择一个项目文件夹，即可让它处理该项目。工具审批会像其他会话一样显示在岛上。",
+   "hi": "खाली छोड़ें तो Claude Code Coucou के अपने फ़ोल्डर में काम करता है, आपके होम फ़ोल्डर में नहीं। किसी प्रोजेक्ट पर काम कराने के लिए उसका फ़ोल्डर चुनें। टूल की अनुमतियाँ किसी भी दूसरे सत्र की तरह आइलैंड में दिखती हैं।",
+   "es": "Si lo dejas vacío, Claude Code trabaja en una carpeta propia de Coucou, no en tu carpeta personal. Elige la carpeta de un proyecto para que trabaje en él. Las aprobaciones de herramientas aparecen en la isla como las de cualquier otra sesión.",
+   "ar": "اتركه فارغًا ليعمل Claude Code في مجلد خاص بـ Coucou، لا في مجلدك الرئيسي. اختر مجلد مشروع ليعمل على ذلك المشروع. تظهر موافقات الأدوات في الجزيرة مثل أي جلسة أخرى.",
+   "fr": "Laisse vide et Claude Code travaille dans un dossier de Coucou, pas dans ton dossier personnel. Choisis le dossier d'un projet pour qu'il travaille sur ce projet. Les autorisations d'outils s'affichent dans l'île comme pour toute autre session.",
+   "bn": "খালি রাখলে Claude Code আপনার হোম ফোল্ডারে নয়, Coucou-এর নিজস্ব ফোল্ডারে কাজ করে। কোনো প্রজেক্টে কাজ করাতে তার ফোল্ডার বেছে নিন। টুলের অনুমোদন অন্য যেকোনো সেশনের মতোই আইল্যান্ডে দেখা যায়।",
+   "pt-BR": "Deixe vazio e o Claude Code trabalha numa pasta do próprio Coucou, não na sua pasta pessoal. Escolha a pasta de um projeto para ele trabalhar nesse projeto. As aprovações de ferramentas aparecem na ilha como as de qualquer outra sessão.",
+   "ru": "Если оставить пустым, Claude Code работает в собственной папке Coucou, а не в вашей домашней. Выберите папку проекта, чтобы он работал над этим проектом. Разрешения для инструментов появляются на острове, как у любого другого сеанса.",
+   "id": "Biarkan kosong dan Claude Code bekerja di folder milik Coucou, bukan di folder rumah Anda. Pilih folder proyek agar ia mengerjakan proyek itu. Persetujuan alat muncul di pulau seperti sesi lainnya."
+  },
+  "Left": {
+   "zh-Hans": "左",
+   "hi": "बाएँ",
+   "es": "Izquierda",
+   "ar": "يسار",
+   "fr": "Gauche",
+   "bn": "বামে",
+   "pt-BR": "Esquerda",
+   "ru": "Слева",
+   "id": "Kiri"
+  },
   "Let my iPhone send instructions to Claude Code": {
    "zh-Hans": "允许我的 iPhone 向 Claude Code 发送指令",
    "hi": "मेरे iPhone को Claude Code को निर्देश भेजने दें",
@@ -1585,6 +1805,17 @@
    "pt-BR": "Lista",
    "ru": "Перечисляет",
    "id": "Daftar"
+  },
+  "Live": {
+   "zh-Hans": "实时",
+   "hi": "लाइव",
+   "es": "En vivo",
+   "ar": "مباشر",
+   "fr": "En direct",
+   "bn": "লাইভ",
+   "pt-BR": "Ao vivo",
+   "ru": "Вживую",
+   "id": "Langsung"
   },
   "Loading models…": {
    "zh-Hans": "正在加载模型…",
@@ -1794,6 +2025,17 @@
    "pt-BR": "ID do modelo (ex.: claude-sonnet-4-6)",
    "ru": "ID модели (напр. claude-sonnet-4-6)",
    "id": "ID model (mis. claude-sonnet-4-6)"
+  },
+  "Most used": {
+   "zh-Hans": "最常用",
+   "hi": "सबसे ज़्यादा इस्तेमाल",
+   "es": "Más usados",
+   "ar": "الأكثر استخدامًا",
+   "fr": "Les plus utilisés",
+   "bn": "সবচেয়ে বেশি ব্যবহৃত",
+   "pt-BR": "Mais usados",
+   "ru": "Часто используемые",
+   "id": "Paling sering dipakai"
   },
   "Move Mochi to my iPhone's Dynamic Island when my Mac is locked": {
    "zh-Hans": "Mac 锁定时将 Mochi 移至我 iPhone 的灵动岛",
@@ -2026,6 +2268,17 @@
    "ru": "Нет музыкального приложения",
    "id": "Tidak ada app musik"
   },
+  "No response text.": {
+   "zh-Hans": "没有回复内容。",
+   "hi": "जवाब में कोई टेक्स्ट नहीं।",
+   "es": "La respuesta no tiene texto.",
+   "ar": "لا يوجد نص في الرد.",
+   "fr": "La réponse ne contient pas de texte.",
+   "bn": "উত্তরে কোনো লেখা নেই।",
+   "pt-BR": "A resposta não tem texto.",
+   "ru": "В ответе нет текста.",
+   "id": "Tidak ada teks balasan."
+  },
   "No speech recognition model available on this device. Install one in System Settings → Keyboard → Dictation.": {
    "zh-Hans": "此设备上没有可用的语音识别模型。在系统设置 → 键盘 → 听写中安装一个。",
    "hi": "इस डिवाइस पर कोई वाक् पहचान मॉडल उपलब्ध नहीं है। सिस्टम सेटिंग्स → कीबोर्ड → डिक्टेशन में एक इंस्टॉल करें।",
@@ -2036,6 +2289,17 @@
    "pt-BR": "Nenhum modelo de reconhecimento de fala disponível neste dispositivo. Instale um em Ajustes do Sistema → Teclado → Ditado.",
    "ru": "На этом устройстве нет доступной модели распознавания речи. Установите её в Системных настройках → Клавиатура → Диктовка.",
    "id": "Tidak ada model pengenalan ucapan yang tersedia di perangkat ini. Instal satu di Pengaturan Sistem → Keyboard → Dikte."
+  },
+  "Not a host name": {
+   "zh-Hans": "不是有效的主机名",
+   "hi": "यह होस्ट नाम नहीं है",
+   "es": "No es un nombre de host",
+   "ar": "ليس اسم جهاز صالحًا",
+   "fr": "Ce n'est pas un nom d'hôte",
+   "bn": "এটি হোস্টের নাম নয়",
+   "pt-BR": "Não é um nome de host",
+   "ru": "Это не имя хоста",
+   "id": "Bukan nama host"
   },
   "Not active": {
    "zh-Hans": "未激活",
@@ -2268,6 +2532,17 @@
    "ru": "Открыть / закрыть гардероб",
    "id": "Buka / tutup lemari"
   },
+  "Open Accessibility settings": {
+   "zh-Hans": "打开辅助功能",
+   "hi": "Accessibility खोलें",
+   "es": "Abrir Accesibilidad",
+   "ar": "افتح تسهيلات الاستخدام",
+   "fr": "Ouvrir Accessibilité",
+   "bn": "Accessibility খোলো",
+   "pt-BR": "Abrir Acessibilidade",
+   "ru": "Открыть Универсальный доступ",
+   "id": "Buka Aksesibilitas"
+  },
   "Open Codex": {
    "zh-Hans": "打开 Codex",
    "hi": "Codex खोलें",
@@ -2344,6 +2619,28 @@
    "pt-BR": "Abrir Visual Studio Code",
    "ru": "Открыть Visual Studio Code",
    "id": "Buka Visual Studio Code"
+  },
+  "Open WebUI has no models for this account.": {
+   "zh-Hans": "Open WebUI 没有可供此账户使用的模型。",
+   "hi": "Open WebUI में इस खाते के लिए कोई मॉडल नहीं है।",
+   "es": "Open WebUI no tiene modelos para esta cuenta.",
+   "ar": "لا توجد في Open WebUI نماذج لهذا الحساب.",
+   "fr": "Open WebUI n'a aucun modèle pour ce compte.",
+   "bn": "Open WebUI-তে এই অ্যাকাউন্টের জন্য কোনো মডেল নেই।",
+   "pt-BR": "O Open WebUI não tem modelos para esta conta.",
+   "ru": "В Open WebUI нет моделей для этой учётной записи.",
+   "id": "Open WebUI tidak punya model untuk akun ini."
+  },
+  "Open WebUI searches the web before answering, where its admin has turned web search on.": {
+   "zh-Hans": "在管理员已开启网页搜索的情况下，Open WebUI 会先搜索网页再回答。",
+   "hi": "जहाँ एडमिन ने वेब खोज चालू की है, वहाँ Open WebUI जवाब देने से पहले वेब खोजता है।",
+   "es": "Open WebUI busca en la web antes de responder, donde su administrador haya activado la búsqueda web.",
+   "ar": "يبحث Open WebUI في الويب قبل الإجابة حيث فعّل المسؤول البحث في الويب.",
+   "fr": "Open WebUI cherche sur le web avant de répondre, là où son administrateur a activé la recherche web.",
+   "bn": "অ্যাডমিন ওয়েব অনুসন্ধান চালু করে থাকলে Open WebUI উত্তর দেওয়ার আগে ওয়েবে খোঁজে।",
+   "pt-BR": "O Open WebUI pesquisa na web antes de responder, onde o administrador ativou a busca na web.",
+   "ru": "Open WebUI ищет в интернете перед ответом там, где администратор включил поиск.",
+   "id": "Open WebUI mencari di web sebelum menjawab, jika admin telah mengaktifkan pencarian web."
   },
   "Open chat": {
    "zh-Hans": "打开聊天",
@@ -2488,6 +2785,17 @@
    "ru": "Обзор",
    "id": "Ikhtisar"
   },
+  "Padding": {
+   "zh-Hans": "边距",
+   "hi": "पैडिंग",
+   "es": "Margen",
+   "ar": "الهامش",
+   "fr": "Marges",
+   "bn": "প্যাডিং",
+   "pt-BR": "Margem",
+   "ru": "Отступы",
+   "id": "Jarak"
+  },
   "Pause": {
    "zh-Hans": "暂停",
    "hi": "रोकें",
@@ -2532,6 +2840,17 @@
    "ru": "Разрешения",
    "id": "Izin"
   },
+  "Pick a model above the chat box first.": {
+   "zh-Hans": "请先在聊天框上方选择一个模型。",
+   "hi": "पहले चैट बॉक्स के ऊपर एक मॉडल चुनें।",
+   "es": "Elige primero un modelo encima del cuadro de chat.",
+   "ar": "اختر نموذجًا فوق مربع الدردشة أولًا.",
+   "fr": "Choisis d'abord un modèle au-dessus de la zone de chat.",
+   "bn": "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।",
+   "pt-BR": "Escolha primeiro um modelo acima da caixa de chat.",
+   "ru": "Сначала выберите модель над полем чата.",
+   "id": "Pilih model di atas kotak obrolan terlebih dahulu."
+  },
   "Pin / unpin notch": {
    "zh-Hans": "固定/取消固定岛",
    "hi": "आइलैंड पिन / अनपिन",
@@ -2542,6 +2861,17 @@
    "pt-BR": "Fixar / soltar island",
    "ru": "Закрепить / открепить нотч",
    "id": "Sematkan / lepas island"
+  },
+  "Pitch": {
+   "zh-Hans": "音调",
+   "hi": "आवाज़ की पिच",
+   "es": "Tono",
+   "ar": "حدّة الصوت",
+   "fr": "Hauteur",
+   "bn": "কণ্ঠের তীক্ষ্ণতা",
+   "pt-BR": "Tom",
+   "ru": "Высота голоса",
+   "id": "Nada suara"
   },
   "Plan usage": {
    "zh-Hans": "计划用量",
@@ -2664,6 +2994,17 @@
    "ru": "Проекты",
    "id": "Proyek"
   },
+  "Questions your pills can't answer go to Claude with a web search, using your Anthropic API key. Only the question is sent.": {
+   "zh-Hans": "药丸无法回答的问题会用你的 Anthropic API 密钥发送给 Claude 并进行网页搜索。只发送问题本身。",
+   "hi": "जिन सवालों का जवाब तुम्हारी पिल्स नहीं दे सकतीं, वे तुम्हारी Anthropic API कुंजी से वेब खोज के साथ Claude को जाते हैं। सिर्फ़ सवाल भेजा जाता है।",
+   "es": "Las preguntas que tus píldoras no responden van a Claude con una búsqueda web, con tu clave de API de Anthropic. Solo se envía la pregunta.",
+   "ar": "الأسئلة التي لا تجيب عنها حبوبك تُرسل إلى Claude مع بحث على الويب، بمفتاح Anthropic API الخاص بك. يُرسل السؤال فقط.",
+   "fr": "Les questions auxquelles tes pilules ne répondent pas partent chez Claude avec une recherche web, avec ta clé API Anthropic. Seule la question est envoyée.",
+   "bn": "যে প্রশ্নের উত্তর তোমার পিলগুলো দিতে পারে না, সেগুলো তোমার Anthropic API কী দিয়ে ওয়েব সার্চসহ Claude-এর কাছে যায়। শুধু প্রশ্নটাই পাঠানো হয়।",
+   "pt-BR": "Perguntas que suas pílulas não respondem vão para o Claude com uma busca na web, usando sua chave de API da Anthropic. Só a pergunta é enviada.",
+   "ru": "Вопросы, на которые не отвечают твои пилюли, уходят в Claude с поиском в интернете, по твоему ключу Anthropic API. Отправляется только вопрос.",
+   "id": "Pertanyaan yang tidak bisa dijawab pil-mu dikirim ke Claude dengan pencarian web, memakai kunci API Anthropic-mu. Hanya pertanyaannya yang dikirim."
+  },
   "Quit": {
    "zh-Hans": "退出",
    "hi": "छोड़ें",
@@ -2751,6 +3092,28 @@
    "pt-BR": "Recarregar sons",
    "ru": "Перезагрузить звуки",
    "id": "Muat ulang suara"
+  },
+  "Remote hosts": {
+   "zh-Hans": "远程主机",
+   "hi": "रिमोट होस्ट",
+   "es": "Hosts remotos",
+   "ar": "الأجهزة البعيدة",
+   "fr": "Hôtes distants",
+   "bn": "রিমোট হোস্ট",
+   "pt-BR": "Hosts remotos",
+   "ru": "Удалённые хосты",
+   "id": "Host jarak jauh"
+  },
+  "Remove": {
+   "zh-Hans": "移除",
+   "hi": "हटाएँ",
+   "es": "Quitar",
+   "ar": "إزالة",
+   "fr": "Retirer",
+   "bn": "সরান",
+   "pt-BR": "Remover",
+   "ru": "Удалить",
+   "id": "Hapus"
   },
   "Remove from favorites": {
    "zh-Hans": "取消收藏",
@@ -2906,6 +3269,17 @@
    "ru": "Просмотри содержимое ниже перед подтверждением.",
    "id": "Tinjau konten di bawah sebelum mengonfirmasi."
   },
+  "Right": {
+   "zh-Hans": "右",
+   "hi": "दाएँ",
+   "es": "Derecha",
+   "ar": "يمين",
+   "fr": "Droite",
+   "bn": "ডানে",
+   "pt-BR": "Direita",
+   "ru": "Справа",
+   "id": "Kanan"
+  },
   "Runs": {
    "zh-Hans": "执行",
    "hi": "चलाता है",
@@ -2916,6 +3290,17 @@
    "pt-BR": "Executa",
    "ru": "Запускает",
    "id": "Menjalankan"
+  },
+  "Runs your own Claude Code, with its sign-in, MCP servers, skills and hooks. No key here.": {
+   "zh-Hans": "运行你自己的 Claude Code，使用它的登录、MCP 服务器、技能和 hooks。这里不需要密钥。",
+   "hi": "आपका अपना Claude Code चलाता है, उसके साइन-इन, MCP सर्वर, स्किल्स और hooks के साथ। यहाँ कोई कुंजी नहीं।",
+   "es": "Ejecuta tu propio Claude Code, con su inicio de sesión, servidores MCP, skills y hooks. Aquí no hace falta clave.",
+   "ar": "يشغّل Claude Code الخاص بك، بتسجيل دخوله وخوادم MCP والمهارات و‎hooks. لا حاجة إلى مفتاح هنا.",
+   "fr": "Lance ton propre Claude Code, avec sa connexion, ses serveurs MCP, ses skills et ses hooks. Aucune clé ici.",
+   "bn": "আপনার নিজের Claude Code চালায়, তার সাইন-ইন, MCP সার্ভার, skills ও hooks সহ। এখানে কোনো কী লাগে না।",
+   "pt-BR": "Roda o seu próprio Claude Code, com o login, os servidores MCP, as skills e os hooks dele. Nenhuma chave aqui.",
+   "ru": "Запускает ваш собственный Claude Code с его входом, серверами MCP, навыками и hooks. Ключ здесь не нужен.",
+   "id": "Menjalankan Claude Code Anda sendiri, dengan login, server MCP, skill, dan hooks-nya. Tanpa kunci di sini."
   },
   "SESSIONS": {
    "zh-Hans": "会话",
@@ -3390,6 +3775,17 @@
    "ru": "Задачи",
    "id": "Tugas"
   },
+  "Terminal": {
+   "zh-Hans": "终端",
+   "hi": "टर्मिनल",
+   "es": "Terminal",
+   "ar": "الطرفية",
+   "fr": "Terminal",
+   "bn": "টার্মিনাল",
+   "pt-BR": "Terminal",
+   "ru": "Терминал",
+   "id": "Terminal"
+  },
   "Test the voice": {
    "zh-Hans": "试听声音",
    "hi": "आवाज़ आज़माएँ",
@@ -3411,6 +3807,50 @@
    "pt-BR": "Testa",
    "ru": "Тестирует",
    "id": "Menguji"
+  },
+  "The server refused the key. Check it, then connect again.": {
+   "zh-Hans": "服务器拒绝了该密钥。请检查后重新连接。",
+   "hi": "सर्वर ने कुंजी अस्वीकार कर दी। उसे जाँचें, फिर दोबारा कनेक्ट करें।",
+   "es": "El servidor rechazó la clave. Revísala y vuelve a conectar.",
+   "ar": "رفض الخادم المفتاح. تحقّق منه ثم اتصل مجددًا.",
+   "fr": "Le serveur a refusé la clé. Vérifie-la, puis reconnecte-toi.",
+   "bn": "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।",
+   "pt-BR": "O servidor recusou a chave. Verifique-a e conecte de novo.",
+   "ru": "Сервер отклонил ключ. Проверьте его и подключитесь снова.",
+   "id": "Server menolak kunci. Periksa, lalu hubungkan lagi."
+  },
+  "The small island hides a minute after the last activity. Off: it stays at the top of the screen.": {
+   "zh-Hans": "最后一次活动一分钟后，小岛会隐藏。关闭后，它会留在屏幕顶部。",
+   "hi": "आख़िरी गतिविधि के एक मिनट बाद छोटा आइलैंड छिप जाता है। बंद होने पर यह स्क्रीन के ऊपर बना रहता है।",
+   "es": "La isla pequeña se oculta un minuto después de la última actividad. Desactivado: se queda en la parte superior de la pantalla.",
+   "ar": "يختفي الشريط الصغير بعد دقيقة من آخر نشاط. عند الإيقاف: يبقى أعلى الشاشة.",
+   "fr": "La petite île se cache une minute après la dernière activité. Désactivé : elle reste en haut de l'écran.",
+   "bn": "শেষ কাজের এক মিনিট পরে ছোট আইল্যান্ড লুকিয়ে যায়। বন্ধ থাকলে এটি স্ক্রিনের উপরে থাকে।",
+   "pt-BR": "A ilha pequena se esconde um minuto após a última atividade. Desligado: ela fica no topo da tela.",
+   "ru": "Маленький остров прячется через минуту после последней активности. Выключено: он остаётся вверху экрана.",
+   "id": "Pulau kecil bersembunyi satu menit setelah aktivitas terakhir. Mati: tetap di bagian atas layar."
+  },
+  "This chat was deleted in Open WebUI. Send again to start a new one.": {
+   "zh-Hans": "此对话已在 Open WebUI 中删除。再次发送即可开始新对话。",
+   "hi": "यह चैट Open WebUI में हटा दी गई है। नई शुरू करने के लिए फिर से भेजें।",
+   "es": "Este chat se eliminó en Open WebUI. Envía de nuevo para empezar uno nuevo.",
+   "ar": "حُذفت هذه الدردشة في Open WebUI. أرسل مجددًا لبدء دردشة جديدة.",
+   "fr": "Ce chat a été supprimé dans Open WebUI. Renvoie pour en commencer un nouveau.",
+   "bn": "এই চ্যাটটি Open WebUI-তে মুছে ফেলা হয়েছে। নতুন শুরু করতে আবার পাঠান।",
+   "pt-BR": "Este chat foi excluído no Open WebUI. Envie de novo para começar outro.",
+   "ru": "Этот чат удалён в Open WebUI. Отправьте снова, чтобы начать новый.",
+   "id": "Obrolan ini dihapus di Open WebUI. Kirim lagi untuk memulai yang baru."
+  },
+  "This is exactly what will change in settings.json on {host}. Coucou also copies its relay to ~/.local/share/coucou/bin there. Your own hooks are left untouched.": {
+   "zh-Hans": "这正是 {host} 上 settings.json 将发生的更改。Coucou 还会把它的中继复制到该主机的 ~/.local/share/coucou/bin。你自己的 hooks 保持不变。",
+   "hi": "{host} पर settings.json में ठीक यही बदलेगा। Coucou अपना रिले भी वहाँ ~/.local/share/coucou/bin में कॉपी करता है। आपके अपने hooks जैसे हैं वैसे ही रहते हैं।",
+   "es": "Esto es exactamente lo que cambiará en settings.json en {host}. Coucou también copia allí su relé en ~/.local/share/coucou/bin. Tus propios hooks no se tocan.",
+   "ar": "هذا بالضبط ما سيتغير في settings.json على {host}. ينسخ Coucou أيضًا المرحّل الخاص به إلى ‎~/.local/share/coucou/bin هناك. تبقى hooks الخاصة بك كما هي.",
+   "fr": "Voici exactement ce qui changera dans settings.json sur {host}. Coucou y copie aussi son relais dans ~/.local/share/coucou/bin. Tes propres hooks ne sont pas touchés.",
+   "bn": "{host}-এ settings.json-এ ঠিক এটুকুই বদলাবে। Coucou তার রিলে সেখানে ~/.local/share/coucou/bin-এ কপি করে। আপনার নিজের hooks যেমন আছে তেমনই থাকে।",
+   "pt-BR": "Isto é exatamente o que vai mudar no settings.json em {host}. O Coucou também copia o relay dele para ~/.local/share/coucou/bin lá. Seus próprios hooks não são alterados.",
+   "ru": "Вот что именно изменится в settings.json на {host}. Coucou также копирует туда свой ретранслятор в ~/.local/share/coucou/bin. Ваши собственные hooks не затрагиваются.",
+   "id": "Inilah persis yang akan berubah di settings.json pada {host}. Coucou juga menyalin relay-nya ke ~/.local/share/coucou/bin di sana. Hooks Anda sendiri tidak disentuh."
   },
   "To": {
    "zh-Hans": "收件人",
@@ -3455,6 +3895,17 @@
    "pt-BR": "Muitas batidas de uma vez.",
    "ru": "Слишком много нажатий подряд.",
    "id": "Terlalu banyak ketukan sekaligus."
+  },
+  "Top": {
+   "zh-Hans": "上",
+   "hi": "ऊपर",
+   "es": "Arriba",
+   "ar": "أعلى",
+   "fr": "Haut",
+   "bn": "উপরে",
+   "pt-BR": "Topo",
+   "ru": "Сверху",
+   "id": "Atas"
   },
   "Top agent": {
    "zh-Hans": "最活跃 Agent",
@@ -3566,6 +4017,17 @@
    "ru": "Голос",
    "id": "Suara"
   },
+  "Voice in use: {0}": {
+   "zh-Hans": "当前声音：{0}",
+   "hi": "उपयोग में आवाज़: {0}",
+   "es": "Voz en uso: {0}",
+   "ar": "الصوت المستخدم: {0}",
+   "fr": "Voix utilisée : {0}",
+   "bn": "ব্যবহৃত কণ্ঠ: {0}",
+   "pt-BR": "Voz em uso: {0}",
+   "ru": "Используется голос: {0}",
+   "id": "Suara yang dipakai: {0}"
+  },
   "Voice type": {
    "zh-Hans": "声音类型",
    "hi": "आवाज़ का प्रकार",
@@ -3675,6 +4137,17 @@
    "pt-BR": "Clima por voz",
    "ru": "Погода голосом",
    "id": "Cuaca lewat suara"
+  },
+  "Web search": {
+   "zh-Hans": "网页搜索",
+   "hi": "वेब खोज",
+   "es": "Búsqueda web",
+   "ar": "البحث في الويب",
+   "fr": "Recherche web",
+   "bn": "ওয়েব অনুসন্ধান",
+   "pt-BR": "Busca na web",
+   "ru": "Поиск в интернете",
+   "id": "Pencarian web"
   },
   "Week": {
    "zh-Hans": "一周",
@@ -3797,6 +4270,28 @@
    "ru": "Рабочие процессы",
    "id": "Alur kerja"
   },
+  "Working folder": {
+   "zh-Hans": "工作文件夹",
+   "hi": "कार्य फ़ोल्डर",
+   "es": "Carpeta de trabajo",
+   "ar": "مجلد العمل",
+   "fr": "Dossier de travail",
+   "bn": "কাজের ফোল্ডার",
+   "pt-BR": "Pasta de trabalho",
+   "ru": "Рабочая папка",
+   "id": "Folder kerja"
+  },
+  "Workspace models": {
+   "zh-Hans": "工作区模型",
+   "hi": "वर्कस्पेस मॉडल",
+   "es": "Modelos del espacio de trabajo",
+   "ar": "نماذج مساحة العمل",
+   "fr": "Modèles de l'espace de travail",
+   "bn": "ওয়ার্কস্পেস মডেল",
+   "pt-BR": "Modelos do espaço de trabalho",
+   "ru": "Модели рабочего пространства",
+   "id": "Model ruang kerja"
+  },
   "Writes": {
    "zh-Hans": "写入",
    "hi": "लिखता है",
@@ -3862,6 +4357,17 @@
    "pt-BR": "comandos",
    "ru": "команды",
    "id": "perintah"
+  },
+  "devbox or user@host, as you type it after ssh": {
+   "zh-Hans": "devbox 或 user@host，与你在 ssh 后输入的一样",
+   "hi": "devbox या user@host, जैसा आप ssh के बाद लिखते हैं",
+   "es": "devbox o usuario@host, como lo escribes después de ssh",
+   "ar": "devbox أو user@host، كما تكتبه بعد ssh",
+   "fr": "devbox ou utilisateur@hôte, comme tu l'écris après ssh",
+   "bn": "devbox বা user@host, ssh-এর পরে যেভাবে লেখেন",
+   "pt-BR": "devbox ou usuario@host, como você digita depois de ssh",
+   "ru": "devbox или user@host, как вы пишете после ssh",
+   "id": "devbox atau user@host, seperti yang Anda ketik setelah ssh"
   },
   "file": {
    "zh-Hans": "个文件",
@@ -3939,6 +4445,17 @@
    "pt-BR": "precisa de permissão",
    "ru": "требует разрешения",
    "id": "butuh izin"
+  },
+  "pixels between the folded island's edges and Mochi or the pills": {
+   "zh-Hans": "收起的岛边缘与 Mochi 或标签页之间的像素",
+   "hi": "मुड़े हुए आइलैंड के किनारों और Mochi या टैब के बीच पिक्सेल",
+   "es": "píxeles entre los bordes de la isla plegada y Mochi o las pestañas",
+   "ar": "بكسلات بين حواف الشريط المطوي وMochi أو التبويبات",
+   "fr": "pixels entre les bords de l'île repliée et Mochi ou les onglets",
+   "bn": "ভাঁজ করা আইল্যান্ডের কিনারা আর Mochi বা ট্যাবের মধ্যে পিক্সেল",
+   "pt-BR": "pixels entre as bordas da ilha recolhida e o Mochi ou as abas",
+   "ru": "пикселей между краями свёрнутого острова и Mochi или вкладками",
+   "id": "piksel antara tepi pulau yang terlipat dan Mochi atau tab"
   },
   "presses this → island opens": {
    "zh-Hans": "按此键 → 岛打开",
@@ -4038,6 +4555,17 @@
    "pt-BR": "{0} personalizados",
    "ru": "своих: {0}",
    "id": "{0} kustom"
+  },
+  "{0} is not a folder.": {
+   "zh-Hans": "{0} 不是文件夹。",
+   "hi": "{0} फ़ोल्डर नहीं है।",
+   "es": "{0} no es una carpeta.",
+   "ar": "{0} ليس مجلدًا.",
+   "fr": "{0} n'est pas un dossier.",
+   "bn": "{0} কোনো ফোল্ডার নয়।",
+   "pt-BR": "{0} não é uma pasta.",
+   "ru": "{0} не является папкой.",
+   "id": "{0} bukan folder."
   },
   "{0} removed": {
    "zh-Hans": "已移除 {0}",
