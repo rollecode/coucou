@@ -35,7 +35,7 @@ final class DemoEngine: ObservableObject {
     private let rotatingIntegrationIds = [
         "integration_stripe", "integration_calcom",
         "integration_n8n", "integration_notion", "integration_vercel",
-        "integration_linear", "integration_slack"
+        "integration_linear", "integration_slack", "integration_timely"
     ]
     private var demoDiffIds: [String: [Int]] = [:]   // [pillId: [diffId]]
     private var lastApprovalDecision: String = "allow"
@@ -68,6 +68,9 @@ final class DemoEngine: ObservableObject {
         var n8nRuns: [N8nRun]
         var notionPages: [NotionPage]
         var notionLoaded: Bool
+        var timelyDay: TimelyDay?
+        var timelyLoaded: Bool
+        var timelyError: String?
         var slackMessages: [SlackMessage]
         var slackUnreadDMs: Int
         var slackMentionCount: Int
@@ -124,6 +127,9 @@ final class DemoEngine: ObservableObject {
             n8nRuns:             s.n8nRuns,
             notionPages:         s.notionPages,
             notionLoaded:        s.notionLoaded,
+            timelyDay:           s.timelyDay,
+            timelyLoaded:        s.timelyLoaded,
+            timelyError:         s.timelyError,
             slackMessages:       s.slackMessages,
             slackUnreadDMs:      s.slackUnreadDMs,
             slackMentionCount:   s.slackMentionCount,
@@ -243,6 +249,9 @@ final class DemoEngine: ObservableObject {
         s.n8nRuns              = snap.n8nRuns
         s.notionPages          = snap.notionPages
         s.notionLoaded         = snap.notionLoaded
+        s.timelyDay            = snap.timelyDay
+        s.timelyLoaded         = snap.timelyLoaded
+        s.timelyError          = snap.timelyError
         s.slackMessages        = snap.slackMessages
         s.slackUnreadDMs       = snap.slackUnreadDMs
         s.slackMentionCount    = snap.slackMentionCount
@@ -413,6 +422,17 @@ final class DemoEngine: ObservableObject {
                        url: "https://notion.so/demo/auth-notes"),
         ]
         s.notionLoaded = true
+
+        // Timely
+        s.timelyDay = TimelyDay(entries: [
+            TimelyEntry(id: 2001, project: "my-app", client: "Acme", color: "#7C5CFF",
+                        note: "Weekly sync", loggedSeconds: 2700, timerStartedAt: nil),
+            TimelyEntry(id: 2002, project: "my-app", client: "Acme", color: "#7C5CFF",
+                        note: "Auth refactor", loggedSeconds: 3600,
+                        timerStartedAt: now.addingTimeInterval(-1500)),
+        ], capacityHours: 7.5)
+        s.timelyLoaded = true
+        s.timelyError = nil
 
         // Slack
         let ts = { (ago: TimeInterval) in String(format: "%.6f", now.addingTimeInterval(-ago).timeIntervalSince1970) }

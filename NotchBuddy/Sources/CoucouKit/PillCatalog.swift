@@ -126,6 +126,8 @@ enum PillCatalog {
               category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_stripe",  name: "Stripe",      color: "#0570DE",
               category: .service,   subtitle: "Integration",  source: .n8n),
+        .init(id: "integration_timely",  name: "Timely",      color: "#F5A524",
+              category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_slack",   name: "Slack",       color: "#E01E5A",
               category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF",

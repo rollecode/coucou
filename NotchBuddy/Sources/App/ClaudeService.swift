@@ -72,6 +72,7 @@ final class KeychainStore: @unchecked Sendable {
         "stripe-api-key",
         "calcom-api-key",
         "notion-api-key",
+        "timely-client-id", "timely-client-secret", "timely-access-token", "timely-refresh-token",
         "slack-token",
         "betterstack-token",
         "linear-api-key",

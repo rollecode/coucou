@@ -485,6 +485,11 @@ final class AppState: ObservableObject {
     @Published var calcomLoaded: Bool = false
     @Published var calcomError: String? = nil
 
+    // Timely (populated by TimelyPoller)
+    @Published var timelyDay: TimelyDay? = nil
+    @Published var timelyLoaded: Bool = false
+    @Published var timelyError: String? = nil
+
     // Better Stack (populated by BetterStackPoller)
     @Published var betterstackIncidents: [BetterStackIncident] = []
     @Published var betterstackDownMonitors: [BetterStackMonitor] = []

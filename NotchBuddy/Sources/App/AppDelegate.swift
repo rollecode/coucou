@@ -200,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         StripePoller.shared.start()
         CalcomPoller.shared.start()
         NotionPoller.shared.start()
+        TimelyPoller.shared.start()
         SlackPoller.shared.start()
         BetterStackPoller.shared.start()
         LinearPoller.shared.start()

@@ -131,6 +131,9 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calcom-api-key") },
   { id: "integration_stripe", name: "Stripe", color: "#0570DE", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("stripe-api-key") },
+  // Connected once Settings has traded Timely's code for a token.
+  { id: "integration_timely", name: "Timely", color: "#F5A524", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("timely-access-token") },
   { id: "integration_slack", name: "Slack", color: "#E01E5A", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("slack-token") },
   { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF", category: "service",
