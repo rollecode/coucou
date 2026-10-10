@@ -189,6 +189,35 @@ function cancelStopTimer(id: string): boolean {
   return true;
 }
 
+/**
+ * Turns that ended (Stop) with background work still running, by session: the
+ * pill stays working, and events from inside its subagents (they carry
+ * agent_id) leave it alone until the main agent speaks again.
+ */
+const backgroundWaits = new Map<string, { pillId: string; subagents: number; others: number }>();
+/** How long a pill whose background work all ended waits for the main agent. */
+const BACKGROUND_DONE_GRACE_MS = 60_000;
+
+/** "⏳ In background: 3", the ticker line while a turn waits on background work. */
+const backgroundStep = (count: number) => `⏳ ${t("In background: {count}", { count: String(count) })}`;
+
+/** A subagent of a waiting turn finished; with none left, the pill idles if the main agent never resumes. */
+function subagentDone(sessionId: string) {
+  const wait = backgroundWaits.get(sessionId);
+  if (!wait || wait.subagents === 0) return;
+  wait.subagents -= 1;
+  const left = wait.subagents + wait.others;
+  if (left > 0) {
+    State.appendStep(wait.pillId, backgroundStep(left));
+    return;
+  }
+  window.setTimeout(() => {
+    if (backgroundWaits.get(sessionId) !== wait) return;
+    backgroundWaits.delete(sessionId);
+    State.updateTask(wait.pillId, "idle");
+  }, BACKGROUND_DONE_GRACE_MS);
+}
+
 /** Events after which a pending permission request of the same session is moot. */
 const TURN_OVER = new Set(["Stop", "StopFailure", "UserPromptSubmit", "SessionEnd", "Interrupt"]);
 
@@ -214,6 +243,14 @@ interface HookPayload {
   coucou_remote?: string;
   /** Set by the relay for Coucou's own chat (Claude Code as chat provider). */
   coucou_chat?: boolean;
+  /** Set on every event fired inside a subagent. */
+  agent_id?: string;
+  /** The subagent's type; empty for Claude Code's internal agents (prompt suggestions, /btw). */
+  agent_type?: string;
+  /** Stop: the subagents, shells and monitors still running when the turn ended. */
+  background_tasks?: { type?: string }[];
+  /** Notification: permission_prompt, elicitation_dialog, idle_prompt… */
+  notification_type?: string;
   /** "cursor" when Claude Code runs in Cursor's terminal (set by the relay). */
   term_editor?: string;
   /** StatusLine (the plan usage relay): Claude Code's 5-hour and weekly limits. */
@@ -480,6 +517,15 @@ function handleHook(island: Island, payload: HookPayload) {
   // back to the pill you were on.
   const focused = State.focusId === agentId;
 
+  // A turn waiting on background work: its subagents' events must not replace its
+  // state or final line. Their permission requests still get a card.
+  const fromSubagent = Boolean(payload.agent_id);
+  if (fromSubagent && backgroundWaits.has(sessionId) && name !== "Notification" && name !== "PermissionRequest") {
+    if (name === "SubagentStop" && payload.agent_type) subagentDone(sessionId);
+    return;
+  }
+  if (!fromSubagent && name !== "Notification") backgroundWaits.delete(sessionId);
+
   switch (name) {
     case "SessionStart":
       ensurePill();
@@ -545,7 +591,14 @@ function handleHook(island: Island, payload: HookPayload) {
         supersedeStop();
         State.updateTask(agentId, "ratelimit");
         Sound.play("rate");
-      } else if (message.endsWith("?")) {
+      } else if (payload.notification_type === "permission_prompt") {
+        // No card for this request (another agent, or one the island declined):
+        // the session is blocked on the user, not working.
+        supersedeStop();
+        State.updateTask(agentId, "approval");
+        State.appendStep(agentId, message);
+        Sound.play("approval");
+      } else if (payload.notification_type === "elicitation_dialog" || message.endsWith("?")) {
         supersedeStop();
         State.updateTask(agentId, "question");
         State.appendStep(agentId, message);
@@ -554,7 +607,6 @@ function handleHook(island: Island, payload: HookPayload) {
     }
 
     case "Stop": {
-      State.updateTask(agentId, "finished");
       // Claude Code puts the turn's answer in the Stop payload itself, so there is
       // no transcript to read (the relay does not even forward its path). Other
       // agents report their last words the same way (Hermes, Codex) or as
@@ -565,6 +617,18 @@ function handleHook(island: Island, payload: HookPayload) {
         const t = State.tasks.find((x) => x.id === agentId);
         if (t) t.finalLine = finalText;
       }
+      // Background work still running: the session is paused, not done. Claude Code
+      // wakes the main agent when it ends, and that turn's Stop finishes the pill.
+      const inFlight = payload.background_tasks ?? [];
+      if (inFlight.length > 0) {
+        const subagents = inFlight.filter((task) => task?.type === "subagent").length;
+        backgroundWaits.set(sessionId, { pillId: agentId, subagents, others: inFlight.length - subagents });
+        supersedeStop();
+        State.updateTask(agentId, "working");
+        State.appendStep(agentId, backgroundStep(inFlight.length));
+        break;
+      }
+      State.updateTask(agentId, "finished");
       Sound.play("finish");
       // A card waiting for an answer is never covered by another alert.
       if (focused && !State.pendingApproval) surface("finished", true);
