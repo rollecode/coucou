@@ -170,10 +170,16 @@ fn set_island_rect(app: AppHandle, shared: State<Shared>, x: f64, y: f64, width:
 #[tauri::command]
 fn focus_window(app: AppHandle, focused: bool) {
     let Some(win) = island::window(&app) else { return };
-    platform::set_activating(&win, focused);
-    if focused {
-        let _ = win.set_focus();
-    }
+    // `set_activating` touches raw GTK FFI, which Tauri documents as
+    // main-thread-only; this command runs on a Tokio worker thread, so the
+    // GTK call (and the `set_focus` that follows it) must be dispatched back
+    // to the main thread rather than made directly here.
+    let _ = app.run_on_main_thread(move || {
+        platform::set_activating(&win, focused);
+        if focused {
+            let _ = win.set_focus();
+        }
+    });
 }
 
 #[tauri::command]
@@ -841,6 +847,15 @@ pub fn run() {
                 platform::make_non_activating(&win);
                 #[cfg(windows)]
                 webview_drop::install(&handle);
+                // Once a click or a shortcut gave the island the keyboard
+                // (takeKeyboard, island.ts), losing it means a click elsewhere:
+                // the island closes, as on Escape.
+                let blur_handle = handle.clone();
+                win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let _ = blur_handle.emit_to(island::WINDOW_LABEL, "blur", ());
+                    }
+                });
                 island::apply_geometry(&handle, &loaded.screen, false);
                 let _ = win.show();
             }
