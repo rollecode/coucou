@@ -3305,6 +3305,17 @@
    "pt-BR": "Interrompido.",
    "ru": "Остановлено.",
    "id": "Dihentikan."
+  },
+  "{index} of {total}": {
+   "zh-Hans": "第 {index} 个，共 {total} 个",
+   "hi": "{total} में से {index}",
+   "es": "{index} de {total}",
+   "ar": "{index} من {total}",
+   "fr": "{index} sur {total}",
+   "bn": "{total}টির মধ্যে {index}",
+   "pt-BR": "{index} de {total}",
+   "ru": "{index} из {total}",
+   "id": "{index} dari {total}"
   }
  }
 }

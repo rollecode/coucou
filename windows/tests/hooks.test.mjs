@@ -35,6 +35,7 @@ beforeEach(() => {
   State.paused = false;
   State.isPinned = false;
   State.pendingApproval = null;
+  State.approvalQueue = [];
   State.settings = { ...DEFAULT_SETTINGS };
   State.loadIntegrationTasks();
   forgetSessions();
@@ -568,13 +569,60 @@ test("a request from Claude Code in Cursor's terminal goes on the Cursor pill", 
   assert.equal(task().state, "idle");
 });
 
-test("a second request never replaces the card: it goes back to the terminal", () => {
+test("a second request never replaces the card: it waits behind it, acknowledged", () => {
   ask("r1");
   ask("r2", { tool_name: "Bash", tool_input: { command: "ls" } });
   assert.equal(State.pendingApproval.requestId, "r1");
   assert.equal(State.pendingApproval.tool, "Write");
-  assert.deepEqual(sent("approval_decline"), [{ requestId: "r2" }]);
-  assert.deepEqual(sent("approval_ack"), [{ requestId: "r1" }]);
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r2"]);
+  assert.equal(State.approvalCount, 2);
+  assert.deepEqual(sent("approval_decline"), []);
+  assert.deepEqual(sent("approval_ack"), [{ requestId: "r1" }, { requestId: "r2" }]);
+});
+
+test("waiting requests come up in the order they arrived once the card goes", () => {
+  ask("r1");
+  ask("r2", { session_id: "s2", tool_name: "Bash", tool_input: { command: "ls" } });
+  ask("r3", { session_id: "s3" });
+  asked = [];
+  hook({ hook_event_name: "Stop", session_id: "s1", cwd: "C:\\Users\\me\\proj" });
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }]);
+  assert.equal(State.pendingApproval.requestId, "r2");
+  assert.equal(State.pendingApproval.command, "Bash · ls");
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r3"]);
+  assert.ok(asked.includes("alert:approval"));
+});
+
+test("past five waiting, the newest goes back to its terminal", () => {
+  for (const id of ["r1", "r2", "r3", "r4", "r5"]) ask(id);
+  ask("r6");
+  assert.equal(State.approvalCount, 5);
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r6" }]);
+});
+
+test("the end of a turn takes only that session's waiting requests out", () => {
+  ask("r1", { session_id: "s2" });
+  ask("r2");
+  ask("r3", { session_id: "s2" });
+  ask("r4");
+  hook({ hook_event_name: "Stop", session_id: "s1", cwd: "C:\\Users\\me\\proj" });
+  assert.equal(State.pendingApproval.requestId, "r1");
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r3"]);
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r2" }, { requestId: "r4" }]);
+});
+
+test("a waiting request the relay gave up on leaves the queue, the card stays", () => {
+  ask("r1");
+  seconds(50);
+  ask("r2");
+  ask("r3");
+  // The card's own 110 s run out first: the next one comes up, and keeps its own clock.
+  seconds(60);
+  assert.equal(State.pendingApproval.requestId, "r2");
+  State.unqueueApprovals((a) => a.requestId === "r3");
+  seconds(110);
+  assert.equal(State.pendingApproval, null);
+  assert.equal(State.approvalCount, 0);
 });
 
 test("the same request arriving twice is acknowledged again, not declined", () => {
@@ -756,10 +804,10 @@ test("a declined permission request leaves the stop timer running", () => {
     { coucou_agent: "gemini" },
   );
   assert.equal(task("agent_gemini"), undefined);
-  // So is a second request while a card is already up.
-  ask("r1");
-  afterStop(() => ask("r2"));
-  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }, { requestId: "r2" }]);
+  // So is a request past the five that can wait.
+  for (const id of ["r1", "r2", "r3", "r4", "r5"]) ask(id);
+  afterStop(() => ask("r6"));
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }, { requestId: "r6" }]);
   assert.equal(task().state, "idle");
 });
 

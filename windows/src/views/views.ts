@@ -89,6 +89,20 @@ function btn(
 }
 
 /** AgentWho — coloured dot + task name + grey label. */
+/**
+ * "needs permission", with "1 of N" while others wait behind the card, and the
+ * agent when they come from different sessions or agents (Mac #157).
+ */
+function approvalLabel(): string {
+  const shown = State.pendingApproval;
+  const total = State.approvalCount;
+  if (!shown || total < 2) return t("needs permission");
+  const parts = [t("needs permission"), t("{index} of {total}", { index: 1, total })];
+  const mixed = State.approvalQueue.some((a) => a.sessionId !== shown.sessionId || a.pillId !== shown.pillId);
+  if (mixed) parts.push(pillDefinition(shown.pillId)?.name ?? shown.pillId);
+  return parts.join(" · ");
+}
+
 function agentWho(task: AgentTask | null, label: string): HTMLElement {
   const row = h("div", { class: "who-row" });
   if (task) {
@@ -529,7 +543,7 @@ function buildApproval(actions: ViewActions): ViewHost {
         shownAt = performance.now();
       }
       clear(who);
-      who.append(agentWho(State.focusTask, t("needs permission")));
+      who.append(agentWho(State.focusTask, approvalLabel()));
       // The whole point of approving here rather than in the terminal: this line
       // is the command, the file path or the URL being authorised, not just the
       // name of the tool asking.

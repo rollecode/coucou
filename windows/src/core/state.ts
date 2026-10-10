@@ -41,6 +41,9 @@ export interface AgentTask {
   finalLine?: string | null;
 }
 
+/** Requests that can wait for the island at once, the card on screen included (Mac ApprovalQueue.maxPending). */
+export const MAX_PENDING_APPROVALS = 5;
+
 export interface ApprovalInfo {
   requestId: string;
   sessionId: string;
@@ -237,6 +240,8 @@ class AppState {
   /** The chat's model picker is open: the chat view takes its full height. */
   modelPickerOpen = false;
   pendingApproval: ApprovalInfo | null = null;
+  /** Requests waiting behind the card on screen, oldest first (Mac ApprovalQueue). */
+  approvalQueue: ApprovalInfo[] = [];
   /** The pill that was in front when the card came up; it comes back after. */
   focusBeforeApproval: string | null = null;
 
@@ -317,6 +322,28 @@ class AppState {
    * A permission card or a question comes up: its pill comes to the front, and
    * the pill that was there is remembered (HookServer.focusBeforeApproval).
    */
+  /** The card on screen and the requests waiting behind it. */
+  get approvalCount(): number {
+    return (this.pendingApproval ? 1 : 0) + this.approvalQueue.length;
+  }
+
+  /** Puts a request behind the card on screen; false when MAX_PENDING_APPROVALS are already waiting. */
+  queueApproval(info: ApprovalInfo): boolean {
+    if (this.approvalCount >= MAX_PENDING_APPROVALS) return false;
+    this.approvalQueue.push(info);
+    this.notify();
+    return true;
+  }
+
+  /** Takes waiting requests out of the queue (never the card on screen) and returns them. */
+  unqueueApprovals(match: (info: ApprovalInfo) => boolean): ApprovalInfo[] {
+    const gone = this.approvalQueue.filter(match);
+    if (gone.length === 0) return gone;
+    this.approvalQueue = this.approvalQueue.filter((a) => !match(a));
+    this.notify();
+    return gone;
+  }
+
   beginApproval(info: ApprovalInfo) {
     this.pendingApproval = info;
     this.isPinned = true;
@@ -332,9 +359,17 @@ class AppState {
     const req = this.pendingApproval;
     if (!req) return;
     this.pendingApproval = null;
-    this.isPinned = false;
     this.updateTask(req.pillId, "working");
     this.setPillBadge(req.pillId, null);
+    // The next waiting request takes the card; the pill you were on comes back
+    // only once the queue is empty.
+    const next = this.approvalQueue.shift();
+    if (next) {
+      this.beginApproval(next);
+      this.updateTask(next.pillId, next.questions ? "question" : "approval");
+      return;
+    }
+    this.isPinned = false;
     const previous = this.focusBeforeApproval;
     this.focusBeforeApproval = null;
     if (previous && this.focusId === req.pillId && this.tasks.some((t) => t.id === previous)) {

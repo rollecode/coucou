@@ -140,7 +140,8 @@ export class Island {
   /** The request has its answer: the card goes and the session carries on. */
   private closeApproval() {
     State.endApproval();
-    this.fsm.pinned = false;
+    // The next waiting request, if any, is on the card now and keeps the island open.
+    this.fsm.pinned = State.pendingApproval != null;
     this.setView(State.defaultView());
   }
 
