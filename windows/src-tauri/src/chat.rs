@@ -71,6 +71,9 @@ struct Conversation {
     plain: Vec<Value>,
     /// The record `owner` keeps of this conversation on its side, if any.
     thread: Option<Thread>,
+    /// The dropped file the model already has (`context_key`), so a file dropped
+    /// mid-conversation goes with the next turn and is not sent twice.
+    sent: Option<String>,
 }
 
 /// A conversation as a provider stores it (Open WebUI's chat and its latest message).
@@ -84,8 +87,12 @@ pub struct Thread {
 pub struct Turn {
     epoch: u64,
     provider: String,
-    /// No earlier turn: the file or window context rides along with this one.
+    /// No earlier turn in this conversation.
     pub first: bool,
+    /// The context rides along with this turn: a file the model doesn't have
+    /// yet, or the window context on the first turn.
+    pub attach: bool,
+    context_key: Option<String>,
     /// The earlier turns, in this provider's format.
     pub history: Vec<Value>,
     pub thread: Option<Thread>,
@@ -103,20 +110,21 @@ impl Chat {
 
     /// Starts a turn with `provider`, converting the history if another
     /// provider answered the previous turns.
-    pub fn begin(&self, provider: &str) -> Turn {
+    pub fn begin(&self, provider: &str, context: Option<&ChatContext>) -> Turn {
         let mut c = self.inner.lock().unwrap();
         if c.owner.as_deref() != Some(provider) {
             c.native = c.plain.clone();
             c.owner = Some(provider.to_string());
             c.thread = None;
         }
-        Turn {
-            epoch: c.epoch,
-            provider: provider.to_string(),
-            first: c.plain.is_empty(),
-            history: c.native.clone(),
-            thread: c.thread.clone(),
-        }
+        let first = c.plain.is_empty();
+        let context_key = context_key(context);
+        let attach = match context {
+            None => false,
+            Some(ChatContext::Window { .. }) => first,
+            Some(ChatContext::File { .. }) => context_key != c.sent,
+        };
+        Turn { epoch: c.epoch, provider: provider.to_string(), first, attach, context_key, history: c.native.clone(), thread: c.thread.clone() }
     }
 
     /// Records where the provider keeps this conversation, unless it was reset
@@ -136,6 +144,9 @@ impl Chat {
         if c.epoch != turn.epoch || c.owner.as_deref() != Some(turn.provider.as_str()) {
             return;
         }
+        if turn.attach && turn.context_key.is_some() {
+            c.sent = turn.context_key.clone();
+        }
         c.native.push(user);
         c.native.push(assistant);
         c.plain.push(json!({ "role": "user", "content": user_text }));
@@ -148,6 +159,15 @@ impl Chat {
             c.plain.drain(..drop);
             c.native.drain(..drop);
         }
+    }
+}
+
+/// Identifies a dropped file by its inbox copy: every drop gets its own copy, so
+/// dropping the same file again sends it again.
+fn context_key(context: Option<&ChatContext>) -> Option<String> {
+    match context {
+        Some(ChatContext::File { path, .. }) => Some(path.clone()),
+        _ => None,
     }
 }
 
@@ -187,8 +207,8 @@ pub fn window_line(app_name: &str, title: &str, url: Option<&str>) -> String {
 }
 
 /// The plain-text record of what the user asked, context included.
-pub fn plain_question(first: bool, context: Option<&ChatContext>, query: &str) -> String {
-    match context.filter(|_| first) {
+pub fn plain_question(attach: bool, context: Option<&ChatContext>, query: &str) -> String {
+    match context.filter(|_| attach) {
         Some(ChatContext::File { name, .. }) => format!("File: {name}\n\n{query}"),
         Some(ChatContext::Window { app_name, title, url }) => {
             format!("{}\n\n{query}", window_line(app_name, title, url.as_deref()))
@@ -308,14 +328,14 @@ mod tests {
     #[test]
     fn a_turn_is_recorded_only_once_it_succeeds() {
         let chat = Chat::default();
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(t.first);
         assert!(t.history.is_empty());
         // A failed turn records nothing: the next one is still the first.
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(t.first);
         chat.commit(&t, json!({"role":"user","content":[{"type":"text","text":"hi"}]}), json!({"role":"assistant","content":[{"type":"text","text":"hello"}]}), "hi", "hello");
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(!t.first);
         assert_eq!(t.history.len(), 2);
         assert!(t.history[0]["content"].is_array());
@@ -324,7 +344,7 @@ mod tests {
     #[test]
     fn switching_provider_never_sends_claude_blocks_to_another_one() {
         let chat = Chat::default();
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         let blocks = json!([
             {"type":"server_tool_use","id":"srvtoolu_1","name":"web_search","input":{"query":"x"}},
             {"type":"web_search_tool_result","tool_use_id":"srvtoolu_1","content":[]},
@@ -332,7 +352,7 @@ mod tests {
         ]);
         chat.commit(&t, json!({"role":"user","content":[{"type":"text","text":"look"}]}), json!({"role":"assistant","content":blocks}), "look", "Found it.");
 
-        let t = chat.begin("openai");
+        let t = chat.begin("openai", None);
         assert!(!t.first);
         assert_eq!(
             turn_texts(&t.history),
@@ -343,7 +363,7 @@ mod tests {
 
         // And back: Claude gets the plain turns too, including OpenAI's answer.
         chat.commit(&t, json!({"role":"user","content":"more"}), json!({"role":"assistant","content":"Sure."}), "more", "Sure.");
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert_eq!(t.history.len(), 4);
         assert_eq!(t.history[3], json!({"role":"assistant","content":"Sure."}));
         assert!(!serde_json::to_string(&t.history).unwrap().contains("web_search"));
@@ -352,15 +372,15 @@ mod tests {
     #[test]
     fn an_answer_that_lands_after_a_reset_or_a_switch_is_dropped() {
         let chat = Chat::default();
-        let t = chat.begin("openai");
+        let t = chat.begin("openai", None);
         chat.reset();
         chat.commit(&t, json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a"}), "q", "a");
-        assert!(chat.begin("openai").first);
+        assert!(chat.begin("openai", None).first);
 
-        let t = chat.begin("openai");
-        let _other = chat.begin("google");
+        let t = chat.begin("openai", None);
+        let _other = chat.begin("google", None);
         chat.commit(&t, json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a"}), "q", "a");
-        assert!(chat.begin("google").first);
+        assert!(chat.begin("google", None).first);
     }
 
     #[test]
@@ -392,6 +412,32 @@ mod tests {
         assert!(p.starts_with("You are Mochi, a personal AI assistant living at the top of the user's screen."));
         assert!(!p.contains("web search"));
         assert!(p.contains("no web access"));
+    }
+
+    #[test]
+    fn a_file_goes_with_the_next_turn_once_and_the_window_with_the_first_only() {
+        let chat = Chat::default();
+        let ok = |t: &Turn| chat.commit(t, json!({}), json!({}), "q", "a");
+        let win = ChatContext::Window { app_name: "Code".into(), title: "x".into(), url: None };
+        let t = chat.begin("anthropic", Some(&win));
+        assert!(t.attach);
+        ok(&t);
+        assert!(!chat.begin("anthropic", Some(&win)).attach);
+
+        // Dropped mid-conversation: attached, and kept for a retry until a turn succeeds.
+        let file = ChatContext::File { name: "a.pdf".into(), path: "/inbox/a.pdf".into() };
+        assert!(chat.begin("anthropic", Some(&file)).attach);
+        let t = chat.begin("openai", Some(&file));
+        assert!(t.attach);
+        ok(&t);
+        assert!(!chat.begin("openai", Some(&file)).attach);
+
+        // The same file dropped again is a new inbox copy: sent again.
+        let again = ChatContext::File { name: "a.pdf".into(), path: "/inbox/a (2).pdf".into() };
+        assert!(chat.begin("openai", Some(&again)).attach);
+
+        chat.reset();
+        assert!(chat.begin("openai", Some(&file)).attach);
     }
 
     #[test]

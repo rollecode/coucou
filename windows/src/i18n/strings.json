@@ -1828,6 +1828,17 @@
    "ru": "Навигация по элементам списка",
    "id": "Navigasi item daftar"
   },
+  "New chat": {
+   "zh-Hans": "新聊天",
+   "hi": "नई चैट",
+   "es": "Nuevo chat",
+   "ar": "دردشة جديدة",
+   "fr": "Nouveau chat",
+   "bn": "নতুন চ্যাট",
+   "pt-BR": "Novo chat",
+   "ru": "Новый чат",
+   "id": "Chat baru"
+  },
   "New conversation": {
    "zh-Hans": "新建对话",
    "hi": "नई बातचीत",
@@ -1838,6 +1849,17 @@
    "pt-BR": "Nova conversa",
    "ru": "Новый разговор",
    "id": "Percakapan baru"
+  },
+  "New conversation (⌘K)": {
+   "zh-Hans": "新建对话 (⌘K)",
+   "hi": "नई बातचीत (⌘K)",
+   "es": "Nueva conversación (⌘K)",
+   "ar": "محادثة جديدة (⌘K)",
+   "fr": "Nouvelle conversation (⌘K)",
+   "bn": "নতুন কথোপকথন (⌘K)",
+   "pt-BR": "Nova conversa (⌘K)",
+   "ru": "Новый разговор (⌘K)",
+   "id": "Percakapan baru (⌘K)"
   },
   "New email": {
    "zh-Hans": "新邮件",
