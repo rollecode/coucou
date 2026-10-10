@@ -27,11 +27,12 @@ jobs:
       - name: Test display choice
         run: bash scripts/test-display-choice.sh
 
-      - name: Test loopback hosts
-        run: bash scripts/test-loopback-host.sh
+      - name: Test session pill IDs
+        run: bash scripts/test-session-pill-id.sh
 
       - name: Test loopback hosts
         run: bash scripts/test-loopback-host.sh
+
 
       - name: Test relay wire
         run: bash scripts/test-relay-wire.sh
