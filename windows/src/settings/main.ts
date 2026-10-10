@@ -968,7 +968,7 @@ const INTEGRATIONS: IntegrationDef[] = [
     hint: N_("In Timely, open Settings → Devs and register an app with the redirect URI urn:ietf:wg:oauth:2.0:oob. Enter its client ID and secret, connect, then paste the code Timely shows.") },
   { id: "integration_slack", name: "Slack", color: "#E01E5A",
     fields: [{ key: "slack-token", label: N_("Token"), placeholder: "xoxp-…", secret: true }],
-    hint: N_("From your own Slack app, with the user scopes im:read, users:read and search:read.") },
+    hint: N_("A user token from a Slack app with the scopes im:read, users:read and search:read.") },
   { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF",
     fields: [
       { key: "betterstack-token", label: N_("Token"), placeholder: "…", secret: true },

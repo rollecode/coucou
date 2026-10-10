@@ -57,6 +57,17 @@
    "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
    "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini."
   },
+  "A user token from a Slack app with the scopes im:read, users:read and search:read.": {
+   "zh-Hans": "来自 Slack 应用的用户令牌，需具备 im:read、users:read 和 search:read 权限范围。",
+   "hi": "im:read, users:read और search:read स्कोप वाले Slack ऐप का यूज़र टोकन।",
+   "es": "Un token de usuario de una app de Slack con los permisos im:read, users:read y search:read.",
+   "ar": "رمز مستخدم من تطبيق Slack بالنطاقات im:read وusers:read وsearch:read.",
+   "fr": "Un jeton utilisateur d'une app Slack avec les portées im:read, users:read et search:read.",
+   "bn": "im:read, users:read ও search:read স্কোপসহ একটি Slack অ্যাপের ইউজার টোকেন।",
+   "pt-BR": "Um token de usuário de um app do Slack com os escopos im:read, users:read e search:read.",
+   "ru": "Токен пользователя из приложения Slack с правами im:read, users:read и search:read.",
+   "id": "Token pengguna dari aplikasi Slack dengan scope im:read, users:read, dan search:read."
+  },
   "API key": {
    "zh-Hans": "API 密钥",
    "hi": "API कुंजी",
@@ -1431,17 +1442,6 @@
    "pt-BR": "Do Open-Meteo para esta cidade, só quando você pergunta.",
    "ru": "Из Open-Meteo для этого города, только когда спрашиваешь.",
    "id": "Dari Open-Meteo untuk kota ini, hanya saat kamu bertanya."
-  },
-  "From your own Slack app, with the user scopes im:read, users:read and search:read.": {
-   "zh-Hans": "来自你自己的 Slack 应用，需要用户权限范围 im:read、users:read 和 search:read。",
-   "hi": "आपके अपने Slack ऐप से, उपयोगकर्ता स्कोप im:read, users:read और search:read के साथ।",
-   "es": "De tu propia app de Slack, con los permisos de usuario im:read, users:read y search:read.",
-   "ar": "من تطبيق Slack الخاص بك، مع نطاقات المستخدم im:read و users:read و search:read.",
-   "fr": "Depuis ta propre app Slack, avec les scopes utilisateur im:read, users:read et search:read.",
-   "bn": "আপনার নিজের Slack অ্যাপ থেকে, ইউজার স্কোপ im:read, users:read এবং search:read সহ।",
-   "pt-BR": "Do seu próprio app do Slack, com os escopos de usuário im:read, users:read e search:read.",
-   "ru": "Из твоего собственного приложения Slack, с пользовательскими правами im:read, users:read и search:read.",
-   "id": "Dari aplikasi Slack milik Anda sendiri, dengan cakupan pengguna im:read, users:read, dan search:read."
   },
   "Gemini CLI hooks": {
    "zh-Hans": "Gemini CLI 钩子",
