@@ -3098,6 +3098,22 @@ private let nbHookPythonGitHub = """
 # Reads JSON from stdin, forwards to Coucou via Unix socket, translates response.
 import sys, json, os, socket
 
+# The app reads at most 1 MiB per event and drops a bigger one whole, a
+# permission request included: past that, keep only what the card needs.
+MAX_LINE = 1048576
+
+def wire(p):
+    line = (json.dumps(p) + '\\n').encode()
+    if len(line) <= MAX_LINE or not isinstance(p, dict):
+        return line
+    small = {k: v for k, v in p.items()
+             if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
+    tool_input = p.get('tool_input')
+    if isinstance(tool_input, dict):
+        small['tool_input'] = {k: v[:2000] if isinstance(v, str) else v
+                               for k, v in tool_input.items() if not isinstance(v, (dict, list))}
+    return (json.dumps(small) + '\\n').encode()
+
 def normalize_event(name):
     mapping = {
         'BeforeTool': 'PreToolUse', 'BeforeToolSelection': 'PreToolUse',
@@ -3225,7 +3241,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
+            s.sendall(wire(payload))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3307,7 +3323,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
+            s.sendall(wire(payload))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3376,7 +3392,7 @@ def main():
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(0.3)
         s.connect(socket_path)
-        s.sendall((json.dumps(payload) + '\\n').encode())
+        s.sendall(wire(payload))
         s.close()
     except Exception:
         pass  # Always exit cleanly — never block the agent
@@ -3404,6 +3420,22 @@ private let nbHookPythonAppStore = """
 # nb-hook.py — Coucou (App Store) hook relay for Claude Code and third-party agents
 # Socket lives inside the sandboxed container; script runs outside the sandbox.
 import sys, json, os, socket
+
+# The app reads at most 1 MiB per event and drops a bigger one whole, a
+# permission request included: past that, keep only what the card needs.
+MAX_LINE = 1048576
+
+def wire(p):
+    line = (json.dumps(p) + '\\n').encode()
+    if len(line) <= MAX_LINE or not isinstance(p, dict):
+        return line
+    small = {k: v for k, v in p.items()
+             if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
+    tool_input = p.get('tool_input')
+    if isinstance(tool_input, dict):
+        small['tool_input'] = {k: v[:2000] if isinstance(v, str) else v
+                               for k, v in tool_input.items() if not isinstance(v, (dict, list))}
+    return (json.dumps(small) + '\\n').encode()
 
 def normalize_event(name):
     mapping = {
@@ -3532,7 +3564,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
+            s.sendall(wire(payload))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3613,7 +3645,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
+            s.sendall(wire(payload))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3681,7 +3713,7 @@ def main():
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(0.3)
         s.connect(socket_path)
-        s.sendall((json.dumps(payload) + '\\n').encode())
+        s.sendall(wire(payload))
         s.close()
     except Exception:
         pass  # Always exit cleanly — never block the agent
