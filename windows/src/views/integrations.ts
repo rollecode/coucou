@@ -56,6 +56,7 @@ const OPEN_URLS: Record<string, string> = {
   integration_stripe: "https://dashboard.stripe.com/payments",
   integration_notion: "https://notion.so",
   integration_calcom: "https://app.cal.com/bookings",
+  integration_betterstack: "https://uptime.betterstack.com/incidents",
 };
 
 /** IntegrationCardView.statusLabel on macOS. */
@@ -421,6 +422,50 @@ function calcomCard(): HTMLElement {
   return h("div", { class: "int-card" }, header("#C9956A", "Cal.com", t("Schedule")), rows);
 }
 
+// ── Better Stack ──────────────────────────────────────────────────────────────
+
+/** Incidents first; then down monitors that no open incident already names. */
+function betterstackCard(): HTMLElement {
+  const incidents = arr("integration_betterstack", "incidents");
+  const named = new Set(incidents.map((i) => String(i.name ?? "")));
+  const items = [
+    ...incidents.map((i) => ({
+      accent: i.acknowledged ? "#F29B38" : "#F4505E",
+      name: String(i.name ?? ""),
+      detail: i.acknowledged ? t("Acknowledged") : String(i.cause ?? ""),
+      ago: i.startedAt ? timeAgo(i.startedAt) : "",
+      url: `https://uptime.betterstack.com/incidents/${encodeURIComponent(String(i.id))}`,
+    })),
+    ...arr("integration_betterstack", "down")
+      .filter((m) => !named.has(String(m.name ?? "")))
+      .map((m) => ({
+        accent: "#F4505E",
+        name: String(m.name ?? ""),
+        detail: t("Down"),
+        ago: "",
+        url: `https://uptime.betterstack.com/monitors/${encodeURIComponent(String(m.id))}`,
+      })),
+  ];
+
+  const rows = h("div", { class: "int-rows tight" });
+  if (items.length === 0) {
+    rows.append(h("div", { class: "int-row" }, dot("#22C55E", 5), h("span", { class: "int-name", text: t("All monitors up") })));
+  }
+  for (const item of items.slice(0, 3)) {
+    rows.append(
+      h(
+        "button",
+        { class: "int-page", onclick: () => void Bridge.openUrl(item.url) },
+        dot(item.accent, 5),
+        h("span", { class: "int-name", text: item.name }),
+        h("span", { class: "int-sub", text: item.detail }),
+        h("span", { class: "int-ago", text: item.ago }),
+      ),
+    );
+  }
+  return h("div", { class: "int-card" }, header("#5B5FEF", "Better Stack", t("Incidents")), rows);
+}
+
 // ── n8n ───────────────────────────────────────────────────────────────────────
 
 function n8nCard(task: AgentTask, onDetail: () => void, openSettings: () => void): HTMLElement {
@@ -503,6 +548,7 @@ export function hasIntegrationData(id: string): boolean {
     case "integration_notion":
       return arr(id, "pages").length > 0;
     case "integration_calcom":
+    case "integration_betterstack":
       return info.loaded;
     case "integration_linear":
       return info.loaded;
@@ -545,6 +591,8 @@ export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHoo
       return notionCard();
     case "integration_calcom":
       return calcomCard();
+    case "integration_betterstack":
+      return betterstackCard();
     case "integration_linear":
       return linearCard();
     default:

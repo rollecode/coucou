@@ -2,6 +2,7 @@
 
 mod agent_hooks;
 mod agents;
+mod betterstack;
 mod chat;
 mod claude;
 mod claude_code;
@@ -597,11 +598,15 @@ fn secret_set(app: AppHandle, key: String, value: String) -> Result<(), String> 
     if key == "linear-api-key" {
         integrations::forget_linear();
     }
-    let before = (key == "github-token").then(|| secrets::get(&key));
+    let before = (key == "github-token" || key == "betterstack-token").then(|| secrets::get(&key));
     secrets::set(&key, &value)?;
     if let Some(before) = before {
         if secrets::get(&key) != before {
-            integrations::github_token_changed(&app);
+            if key == "github-token" {
+                integrations::github_token_changed(&app);
+            } else {
+                integrations::reset_betterstack();
+            }
         }
     }
     Ok(())

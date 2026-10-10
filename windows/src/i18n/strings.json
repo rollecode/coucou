@@ -112,6 +112,17 @@
    "ru": "АВТО",
    "id": "AUTO"
   },
+  "Acknowledged": {
+   "zh-Hans": "已确认",
+   "hi": "स्वीकार किया गया",
+   "es": "Reconocido",
+   "ar": "تم الإقرار",
+   "fr": "Pris en compte",
+   "bn": "স্বীকৃত",
+   "pt-BR": "Reconhecido",
+   "ru": "Подтверждён",
+   "id": "Diakui"
+  },
   "Active pills": {
    "zh-Hans": "活跃标签页",
    "hi": "सक्रिय टैब",
@@ -210,6 +221,17 @@
    "pt-BR": "Todos os modelos",
    "ru": "Все модели",
    "id": "Semua model"
+  },
+  "All monitors up": {
+   "zh-Hans": "所有监控均正常",
+   "hi": "सभी मॉनिटर चालू हैं",
+   "es": "Todos los monitores activos",
+   "ar": "جميع أدوات المراقبة تعمل",
+   "fr": "Tous les moniteurs sont en ligne",
+   "bn": "সব মনিটর চালু",
+   "pt-BR": "Todos os monitores no ar",
+   "ru": "Все мониторы работают",
+   "id": "Semua monitor aktif"
   },
   "Allow": {
    "zh-Hans": "允许",
@@ -496,6 +518,17 @@
    "pt-BR": "Comportamento",
    "ru": "Поведение",
    "id": "Perilaku"
+  },
+  "Better Stack → API tokens → Team-based tokens: an Uptime API token. Coucou only reads incidents and monitors.": {
+   "zh-Hans": "Better Stack → API tokens → Team-based tokens：一个 Uptime API 令牌。Coucou 只读取事件和监控。",
+   "hi": "Better Stack → API tokens → Team-based tokens: एक Uptime API टोकन। Coucou केवल घटनाएँ और मॉनिटर पढ़ता है।",
+   "es": "Better Stack → API tokens → Team-based tokens: un token de la API de Uptime. Coucou solo lee incidentes y monitores.",
+   "ar": "Better Stack → API tokens → Team-based tokens: رمز Uptime API. يقرأ Coucou الحوادث وأدوات المراقبة فقط.",
+   "fr": "Better Stack → API tokens → Team-based tokens : un jeton de l'API Uptime. Coucou lit seulement les incidents et les moniteurs.",
+   "bn": "Better Stack → API tokens → Team-based tokens: একটি Uptime API টোকেন। Coucou শুধু ঘটনা আর মনিটর পড়ে।",
+   "pt-BR": "Better Stack → API tokens → Team-based tokens: um token da API Uptime. O Coucou só lê incidentes e monitores.",
+   "ru": "Better Stack → API tokens → Team-based tokens: токен Uptime API. Coucou только читает инциденты и мониторы.",
+   "id": "Better Stack → API tokens → Team-based tokens: token API Uptime. Coucou hanya membaca insiden dan monitor."
   },
   "Bottom": {
    "zh-Hans": "下",
@@ -1091,6 +1124,17 @@
    "ru": "Отключить",
    "id": "Putuskan"
   },
+  "Down": {
+   "zh-Hans": "宕机",
+   "hi": "डाउन",
+   "es": "Caído",
+   "ar": "متوقف",
+   "fr": "En panne",
+   "bn": "ডাউন",
+   "pt-BR": "Fora do ar",
+   "ru": "Недоступен",
+   "id": "Mati"
+  },
   "Draft": {
    "zh-Hans": "草稿",
    "hi": "ड्राफ्ट",
@@ -1618,6 +1662,17 @@
    "pt-BR": "Caixa de entrada",
    "ru": "Входящие",
    "id": "Kotak masuk"
+  },
+  "Incidents": {
+   "zh-Hans": "事件",
+   "hi": "घटनाएँ",
+   "es": "Incidentes",
+   "ar": "الحوادث",
+   "fr": "Incidents",
+   "bn": "ঘটনা",
+   "pt-BR": "Incidentes",
+   "ru": "Инциденты",
+   "id": "Insiden"
   },
   "Install": {
    "zh-Hans": "安装",
@@ -3257,6 +3312,17 @@
    "pt-BR": "Reiniciando…",
    "ru": "Сброс…",
    "id": "Mereset…"
+  },
+  "Resolved": {
+   "zh-Hans": "已解决",
+   "hi": "हल हो गया",
+   "es": "Resuelto",
+   "ar": "تم الحل",
+   "fr": "Résolu",
+   "bn": "সমাধান হয়েছে",
+   "pt-BR": "Resolvido",
+   "ru": "Решён",
+   "id": "Teratasi"
   },
   "Restart Coucou": {
    "zh-Hans": "重启 Coucou",
