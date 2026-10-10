@@ -1366,6 +1366,17 @@
    "ru": "Наведение открывает остров; он сворачивается вскоре после того, как указатель уходит. Щёлкните внутри, чтобы он остался открытым.",
    "id": "Mengarahkan kursor ke pulau akan membukanya; pulau menutup lagi sesaat setelah kursor pergi. Klik di dalamnya agar tetap terbuka."
   },
+  "In background: {count}": {
+   "zh-Hans": "后台：{count}",
+   "hi": "बैकग्राउंड में: {count}",
+   "es": "En segundo plano: {count}",
+   "ar": "في الخلفية: {count}",
+   "fr": "En arrière-plan : {count}",
+   "bn": "ব্যাকগ্রাউন্ডে: {count}",
+   "pt-BR": "Em segundo plano: {count}",
+   "ru": "В фоне: {count}",
+   "id": "Di latar belakang: {count}"
+  },
   "Install": {
    "zh-Hans": "安装",
    "hi": "इंस्टॉल करें",

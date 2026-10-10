@@ -168,6 +168,66 @@ test("a finished session opens the finished view, then goes idle after 5.2 s", (
   assert.equal(task().state, "idle");
 });
 
+// ── Background work (#474) ────────────────────────────────────────────────────
+
+const bgStop = (session_id, types) =>
+  hook({ hook_event_name: "Stop", session_id, message: "kicked off", background_tasks: types.map((type) => ({ type })) });
+
+test("a turn that ends with background work running stays working, without the finished card", () => {
+  bgStop("bg1", ["subagent", "shell"]);
+  assert.equal(task().state, "working");
+  assert.equal(task().steps.at(-1), "⏳ In background: 2");
+  assert.deepEqual(asked, []);
+  seconds(6);
+  assert.equal(task().state, "working");
+  hook({ hook_event_name: "Stop", session_id: "bg1", message: "all done", background_tasks: [] });
+  assert.equal(task().state, "finished");
+  assert.equal(task().finalLine, "all done");
+});
+
+test("while a turn waits, its subagents' events leave the pill alone until the main agent speaks", () => {
+  bgStop("bg2", ["subagent"]);
+  const final = task().finalLine;
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", agent_id: "a1", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task().state, "working");
+  assert.equal(task().finalLine, final);
+  assert.equal(task().steps.at(-1), "⏳ In background: 1");
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", tool_name: "Bash", tool_input: { command: "npm test" } });
+  assert.equal(task().steps.at(-1), "Runs · npm test");
+  // The wait is over: a subagent event counts as usual again.
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", agent_id: "a1", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task().steps.at(-1), "Runs · ls");
+});
+
+test("SubagentStop counts the background subagents down, internal agents do not count", () => {
+  bgStop("bg3", ["subagent", "subagent"]);
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "x", agent_type: "" });
+  assert.equal(task().steps.at(-1), "⏳ In background: 2");
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "a1", agent_type: "Explore" });
+  assert.equal(task().steps.at(-1), "⏳ In background: 1");
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "a2", agent_type: "Explore" });
+  assert.equal(task().state, "working");
+  // The main agent's own Stop finishes the turn.
+  hook({ hook_event_name: "Stop", session_id: "bg3", message: "summary", background_tasks: [] });
+  assert.equal(task().state, "finished");
+});
+
+test("a pill whose background work all ended idles if the main agent never resumes", () => {
+  bgStop("bg4", ["subagent"]);
+  hook({ hook_event_name: "SubagentStop", session_id: "bg4", agent_id: "a1", agent_type: "Explore" });
+  seconds(59);
+  assert.equal(task().state, "working");
+  seconds(1);
+  assert.equal(task().state, "idle");
+});
+
+test("a notification says what it is: a permission prompt or a question", () => {
+  hook({ hook_event_name: "Notification", message: "Claude needs your permission to use Bash", notification_type: "permission_prompt" });
+  assert.equal(task().state, "approval");
+  hook({ hook_event_name: "Notification", message: "Pick one", notification_type: "elicitation_dialog" });
+  assert.equal(task().state, "question");
+});
+
 test("an alert on an island that is already open only switches its view", () => {
   State.mode = "expanded";
   hook({ hook_event_name: "Stop" });
