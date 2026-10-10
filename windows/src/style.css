@@ -1166,6 +1166,7 @@ input[type="range"]::-webkit-slider-thumb {
 .model-row {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
   padding: 0 10px;
 }
 
@@ -1189,6 +1190,11 @@ input[type="range"]::-webkit-slider-thumb {
 
 .model-btn:disabled {
   opacity: 0.6;
+}
+
+/* Left of the model button, as on the Mac. */
+.new-chat-btn {
+  order: -1;
 }
 
 .model-dot {

@@ -122,3 +122,30 @@ test("a local answer streams into one reply, then the finished text replaces it"
   assert.deepEqual(State.chatHistory.map((m) => m.role), ["user", "assistant"]);
   assert.ok(!$(".model-btn").disabled);
 });
+
+test("a file attached mid-conversation goes with the next question, New chat clears it", async () => {
+  answers.chat_send = { text: "ok" };
+  const ask = async (q) => {
+    $(".chat-input").value = q;
+    $(".send-btn").fire("click");
+    await flush();
+    view.sync();
+  };
+  const newChat = () => view.el.find(".new-chat-btn")[0];
+  assert.ok(newChat().hidden, "nothing to start over from yet");
+
+  await ask("hi");
+  assert.equal(sent("chat_send")[0].context, null);
+  assert.ok(!newChat().hidden);
+
+  State.droppedFile = { name: "a.pdf", path: "/inbox/a.pdf" };
+  await ask("and this?");
+  assert.deepEqual(sent("chat_send")[1].context, { kind: "file", name: "a.pdf", path: "/inbox/a.pdf" });
+
+  newChat().fire("click");
+  view.sync();
+  assert.deepEqual(State.chatHistory, []);
+  assert.equal(State.droppedFile, null);
+  assert.equal(sent("chat_reset").length, 1);
+  assert.ok(newChat().hidden);
+});

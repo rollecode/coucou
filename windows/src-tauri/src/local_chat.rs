@@ -285,8 +285,8 @@ pub async fn send(
     if model.is_empty() {
         return Err(t("Pick a model above the chat box first."));
     }
-    let turn = chat.begin(server.id);
-    let user = json!({ "role": "user", "content": user_text(turn.first, context.as_ref(), &query) });
+    let turn = chat.begin(server.id, context.as_ref());
+    let user = json!({ "role": "user", "content": user_text(turn.attach, context.as_ref(), &query) });
     let body = request_body(model, &chat::system_prompt(false), &turn.history, &user);
 
     let answer = stream(&base, server.key.as_deref(), model, &body, |visible| {
@@ -296,7 +296,7 @@ pub async fn send(
     if answer.is_empty() {
         return Err(t("No response text."));
     }
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, user, json!({ "role": "assistant", "content": answer }), &plain, &answer);
     Ok(ChatReply { text: answer })
 }

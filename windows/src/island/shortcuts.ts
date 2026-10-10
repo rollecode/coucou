@@ -12,6 +12,7 @@ import type { BotEmoteName, IslandViewName } from "../core/layout";
 import { cyclePill, islandKeyAction, navigate, pillByNumber, type IslandKeyAction } from "../core/shortcuts";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
+import { startNewChat } from "../views/chat";
 
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
 
@@ -163,13 +164,7 @@ export function runIslandKey(host: ShortcutHost, action: IslandKeyAction) {
       host.viewCommand("toggleDiff");
       break;
     case "newChat":
-      // Not while an answer is on its way: it would land in the new chat.
-      if (State.stateOverride === "thinking") return;
-      State.resetChat();
-      State.droppedFile = null;
-      State.promptContext = null;
-      void Bridge.chatReset();
-      Sound.play("blip");
+      if (!startNewChat()) return;
       host.setView("prompt");
       break;
     case "settings":
