@@ -7,8 +7,6 @@ import {
   EXPANDED_CORNER, EXPANDED_W, NOTCH_W, PANEL_H, PANEL_W,
   ROUNDED_CORNER, VIEW_LAYOUTS, botGlowColor, botGlowOpacity, botPosition, chatPromptHeight,
   COMPACT_BOT_HALF, MINI_GRID_HALF, islandSize,
-  QUESTION_PICKER_H,
-  islandSize,
   CHAT_MAX_H, QUESTION_PICKER_H,
   type BotEmoteName, type IslandMode, type IslandViewName,
 } from "../core/layout";

@@ -233,7 +233,7 @@ async fn handle(app: AppHandle, mut pipe: impl Relay, host: Option<String>) {
             }
             payload["coucou_remote"] = json!(host);
         }
-        None => note_session_window(&pipe, &payload, &event),
+        None => note_session_window(&pipe, &mut payload, &event),
     }
     // Counts for the weekly recap — never the command, path or prompt itself.
     crate::recap::observe(&app, &payload);

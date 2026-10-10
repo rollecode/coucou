@@ -31,8 +31,8 @@ pub const EFFORTS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
 static CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
 
 pub fn models() -> Vec<ModelInfo> {
-    let mut out = vec![ModelInfo { id: DEFAULT_MODEL.into(), label: t("Claude Code's default") }];
-    out.extend(MODELS.iter().map(|m| ModelInfo { id: m.to_string(), label: capitalised(m) }));
+    let mut out = vec![ModelInfo { id: DEFAULT_MODEL.into(), label: t("Claude Code's default"), group: None }];
+    out.extend(MODELS.iter().map(|m| ModelInfo { id: m.to_string(), label: capitalised(m), group: None }));
     out
 }
 

@@ -46,6 +46,28 @@
    "ru": "5 часов",
    "id": "5 jam"
   },
+  "A key is only sent over https, or to a server on this computer.": {
+   "zh-Hans": "密钥只会通过 https 发送，或发送到本机上的服务器。",
+   "hi": "कुंजी केवल https पर, या इसी कंप्यूटर के सर्वर को भेजी जाती है।",
+   "es": "La clave solo se envía por https o a un servidor de este ordenador.",
+   "ar": "لا يُرسَل المفتاح إلا عبر https، أو إلى خادم على هذا الحاسوب.",
+   "fr": "La clé n'est envoyée qu'en https, ou à un serveur sur cet ordinateur.",
+   "bn": "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।",
+   "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
+   "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
+   "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini."
+  },
+  "API key": {
+   "zh-Hans": "API 密钥",
+   "hi": "API कुंजी",
+   "es": "Clave de API",
+   "ar": "مفتاح API",
+   "fr": "Clé d'API",
+   "bn": "API কী",
+   "pt-BR": "Chave de API",
+   "ru": "API-ключ",
+   "id": "Kunci API"
+  },
   "API key (AI Studio)": {
    "zh-Hans": "API 密钥 (AI Studio)",
    "hi": "API कुंजी (AI Studio)",
@@ -112,6 +134,28 @@
    "ru": "Активность",
    "id": "Aktivitas"
   },
+  "Add an Open WebUI API key in Settings → Local models first.": {
+   "zh-Hans": "请先在 设置 → 本地模型 中添加 Open WebUI API 密钥。",
+   "hi": "पहले सेटिंग्स → स्थानीय मॉडल में Open WebUI API कुंजी जोड़ें।",
+   "es": "Añade primero una clave API de Open WebUI en Configuración → Modelos locales.",
+   "ar": "أضف أولًا مفتاح Open WebUI API في الإعدادات ← النماذج المحلية.",
+   "fr": "Ajoute d'abord une clé API Open WebUI dans Réglages → Modèles locaux.",
+   "bn": "আগে সেটিংস → স্থানীয় মডেলে একটি Open WebUI API কী যোগ করুন।",
+   "pt-BR": "Adicione primeiro uma chave de API do Open WebUI em Configurações → Modelos locais.",
+   "ru": "Сначала добавьте API-ключ Open WebUI в Настройки → Локальные модели.",
+   "id": "Tambahkan kunci API Open WebUI di Pengaturan → Model lokal terlebih dahulu."
+  },
+  "Add your Anthropic API key in Settings → Chat first.": {
+   "zh-Hans": "请先在设置 → 聊天中添加你的 Anthropic API 密钥。",
+   "hi": "पहले सेटिंग्स → चैट में अपनी Anthropic API कुंजी जोड़ो।",
+   "es": "Primero añade tu clave de API de Anthropic en Ajustes → Chat.",
+   "ar": "أضف أولًا مفتاح Anthropic API في الإعدادات ← الدردشة.",
+   "fr": "Ajoute d'abord ta clé API Anthropic dans Réglages → Chat.",
+   "bn": "আগে সেটিংস → চ্যাটে তোমার Anthropic API কী যোগ করো।",
+   "pt-BR": "Primeiro adicione sua chave de API da Anthropic em Ajustes → Chat.",
+   "ru": "Сначала добавь ключ Anthropic API в Настройки → Чат.",
+   "id": "Tambahkan dulu kunci API Anthropic-mu di Pengaturan → Chat."
+  },
   "Advertisement": {
    "zh-Hans": "广告",
    "hi": "विज्ञापन",
@@ -144,6 +188,17 @@
    "pt-BR": "Agentes",
    "ru": "Агенты",
    "id": "Agen"
+  },
+  "All models": {
+   "zh-Hans": "所有模型",
+   "hi": "सभी मॉडल",
+   "es": "Todos los modelos",
+   "ar": "كل النماذج",
+   "fr": "Tous les modèles",
+   "bn": "সব মডেল",
+   "pt-BR": "Todos os modelos",
+   "ru": "Все модели",
+   "id": "Semua model"
   },
   "Allow": {
    "zh-Hans": "允许",
@@ -221,6 +276,17 @@
    "pt-BR": "Uma instrução enviada pelo iPhone usa o modelo aberto no momento no chat. O prompt de sistema e o histórico de conversa se aplicam. Instruções enviadas enquanto o Coucou não está em execução ficam na fila e são executadas no próximo início.",
    "ru": "Инструкция, отправленная с iPhone, использует модель, открытую в чате. Системный промпт и история разговора применяются. Инструкции, отправленные пока Coucou не запущен, ставятся в очередь и выполняются при следующем запуске.",
    "id": "Instruksi yang dikirim dari iPhone menggunakan model yang sedang terbuka di chat. Prompt sistem dan riwayat percakapan berlaku. Instruksi yang dikirim saat Coucou tidak berjalan dimasukkan ke antrean dan dijalankan saat peluncuran berikutnya."
+  },
+  "Answer questions with a web search": {
+   "zh-Hans": "用网页搜索回答问题",
+   "hi": "वेब खोज से सवालों के जवाब",
+   "es": "Responder preguntas buscando en la web",
+   "ar": "الإجابة عن الأسئلة ببحث على الويب",
+   "fr": "Répondre aux questions avec une recherche web",
+   "bn": "ওয়েবে খুঁজে প্রশ্নের উত্তর দাও",
+   "pt-BR": "Responder perguntas com uma busca na web",
+   "ru": "Отвечать на вопросы с поиском в интернете",
+   "id": "Jawab pertanyaan dengan pencarian web"
   },
   "Anthropic API": {
    "zh-Hans": "Anthropic API",
@@ -354,6 +420,17 @@
    "ru": "Автозакрытие · {seconds} с",
    "id": "Tutup otomatis · {seconds}dt"
   },
+  "Auto-hide": {
+   "zh-Hans": "自动隐藏",
+   "hi": "अपने-आप छिपाएँ",
+   "es": "Ocultar automáticamente",
+   "ar": "إخفاء تلقائي",
+   "fr": "Masquer automatiquement",
+   "bn": "স্বয়ংক্রিয়ভাবে লুকান",
+   "pt-BR": "Ocultar automaticamente",
+   "ru": "Автоскрытие",
+   "id": "Sembunyikan otomatis"
+  },
   "Automatic (your Mac’s dictation language)": {
    "zh-Hans": "自动（Mac 听写语言）",
    "hi": "स्वचालित (Mac की डिक्टेशन भाषा)",
@@ -386,6 +463,17 @@
    "pt-BR": "Comportamento",
    "ru": "Поведение",
    "id": "Perilaku"
+  },
+  "Bottom": {
+   "zh-Hans": "下",
+   "hi": "नीचे",
+   "es": "Abajo",
+   "ar": "أسفل",
+   "fr": "Bas",
+   "bn": "নিচে",
+   "pt-BR": "Base",
+   "ru": "Снизу",
+   "id": "Bawah"
   },
   "Busiest day": {
    "zh-Hans": "最忙的一天",
@@ -463,6 +551,17 @@
    "pt-BR": "Chat — outros provedores",
    "ru": "Чат — другие провайдеры",
    "id": "Chat — penyedia lain"
+  },
+  "Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one.": {
+   "zh-Hans": "你在这里的对话也会出现在 Open WebUI 中。获取密钥：管理员先打开 Admin Panel → Settings → Authentication → API Keys，然后在 Settings → Account → API keys → Secrets → Show 中创建。",
+   "hi": "यहाँ की आपकी चैट Open WebUI में भी दिखती हैं। कुंजी के लिए, एक एडमिन Admin Panel → Settings → Authentication → API Keys चालू करता है; फिर Settings → Account → API keys → Secrets → Show से एक बनती है।",
+   "es": "Los chats que tengas aquí también aparecen en Open WebUI. Para la clave, un administrador activa Admin Panel → Settings → Authentication → API Keys; después Settings → Account → API keys → Secrets → Show crea una.",
+   "ar": "تظهر دردشاتك هنا في Open WebUI أيضًا. للحصول على المفتاح، يفعّل المسؤول Admin Panel → Settings → Authentication → API Keys؛ ثم تنشئه من Settings → Account → API keys → Secrets → Show.",
+   "fr": "Les chats que tu as ici apparaissent aussi dans Open WebUI. Pour la clé, un administrateur active Admin Panel → Settings → Authentication → API Keys ; ensuite Settings → Account → API keys → Secrets → Show en crée une.",
+   "bn": "এখানকার আপনার চ্যাটগুলো Open WebUI-তেও দেখা যায়। কী পেতে, একজন অ্যাডমিন Admin Panel → Settings → Authentication → API Keys চালু করেন; তারপর Settings → Account → API keys → Secrets → Show থেকে একটি তৈরি হয়।",
+   "pt-BR": "Os chats que você tem aqui também aparecem no Open WebUI. Para a chave, um administrador ativa Admin Panel → Settings → Authentication → API Keys; depois Settings → Account → API keys → Secrets → Show cria uma.",
+   "ru": "Ваши чаты здесь также появляются в Open WebUI. Для ключа администратор включает Admin Panel → Settings → Authentication → API Keys; затем Settings → Account → API keys → Secrets → Show создаёт его.",
+   "id": "Obrolan Anda di sini juga muncul di Open WebUI. Untuk kunci, admin menyalakan Admin Panel → Settings → Authentication → API Keys; lalu Settings → Account → API keys → Secrets → Show membuatnya."
   },
   "Choose the tools you use. Coucou only shows what you declare here.": {
    "zh-Hans": "选择你使用的工具。Coucou 只显示你在这里声明的内容。",
@@ -1069,6 +1168,17 @@
    "ru": "Получает",
    "id": "Mengambil"
   },
+  "For a more natural voice, download a Premium voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices. In English: Ava for a woman, Jamie for a man (British).": {
+   "zh-Hans": "想要更自然的声音，请下载 Premium 语音：系统设置 → 辅助功能 → 朗读内容 → 系统语音 → 管理语音。英语：女声选 Ava，男声选 Jamie（英式）。",
+   "hi": "ज़्यादा स्वाभाविक आवाज़ के लिए Premium आवाज़ डाउनलोड करें: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices। अंग्रेज़ी में: महिला के लिए Ava, पुरुष के लिए Jamie (ब्रिटिश)।",
+   "es": "Para una voz más natural, descarga una voz Premium: Ajustes del Sistema → Accesibilidad → Contenido leído → Voz del sistema → Gestionar voces. En inglés: Ava para mujer, Jamie para hombre (británico).",
+   "ar": "لصوت أكثر طبيعية، نزّل صوتًا Premium: إعدادات النظام ← تسهيلات الاستخدام ← المحتوى المنطوق ← صوت النظام ← إدارة الأصوات. بالإنجليزية: Ava لامرأة، Jamie لرجل (بريطاني).",
+   "fr": "Pour une voix plus naturelle, télécharge une voix Premium : Réglages Système → Accessibilité → Contenu énoncé → Voix du système → Gérer les voix. En anglais : Ava pour une femme, Jamie pour un homme (britannique).",
+   "bn": "আরও স্বাভাবিক কণ্ঠের জন্য একটি Premium কণ্ঠ ডাউনলোড করো: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices। ইংরেজিতে: নারী হলে Ava, পুরুষ হলে Jamie (ব্রিটিশ)।",
+   "pt-BR": "Para uma voz mais natural, baixe uma voz Premium: Ajustes do Sistema → Acessibilidade → Conteúdo Falado → Voz do Sistema → Gerenciar Vozes. Em inglês: Ava para mulher, Jamie para homem (britânico).",
+   "ru": "Для более естественного голоса скачай голос Premium: Системные настройки → Универсальный доступ → Устная речь → Системный голос → Управлять голосами. По-английски: Ava — женский, Jamie — мужской (британский).",
+   "id": "Untuk suara yang lebih alami, unduh suara Premium: Pengaturan Sistem → Aksesibilitas → Konten Lisan → Suara Sistem → Kelola Suara. Bahasa Inggris: Ava untuk wanita, Jamie untuk pria (Inggris)."
+  },
   "From Open-Meteo for this city, only when you ask.": {
    "zh-Hans": "仅在你询问时，从 Open-Meteo 获取该城市的天气。",
    "hi": "इस शहर के लिए Open-Meteo से, सिर्फ़ पूछने पर।",
@@ -1520,6 +1630,17 @@
    "ru": "Запускать при старте Mac",
    "id": "Jalankan saat Mac startup"
   },
+  "Left": {
+   "zh-Hans": "左",
+   "hi": "बाएँ",
+   "es": "Izquierda",
+   "ar": "يسار",
+   "fr": "Gauche",
+   "bn": "বামে",
+   "pt-BR": "Esquerda",
+   "ru": "Слева",
+   "id": "Kiri"
+  },
   "Let my iPhone send instructions to Claude Code": {
    "zh-Hans": "允许我的 iPhone 向 Claude Code 发送指令",
    "hi": "मेरे iPhone को Claude Code को निर्देश भेजने दें",
@@ -1762,6 +1883,17 @@
    "ru": "ID модели (напр. claude-sonnet-4-6)",
    "id": "ID model (mis. claude-sonnet-4-6)"
   },
+  "Most used": {
+   "zh-Hans": "最常用",
+   "hi": "सबसे ज़्यादा इस्तेमाल",
+   "es": "Más usados",
+   "ar": "الأكثر استخدامًا",
+   "fr": "Les plus utilisés",
+   "bn": "সবচেয়ে বেশি ব্যবহৃত",
+   "pt-BR": "Mais usados",
+   "ru": "Часто используемые",
+   "id": "Paling sering dipakai"
+  },
   "Move Mochi to my iPhone's Dynamic Island when my Mac is locked": {
    "zh-Hans": "Mac 锁定时将 Mochi 移至我 iPhone 的灵动岛",
    "hi": "Mac लॉक होने पर Mochi को मेरे iPhone की Dynamic Island पर ले जाएं",
@@ -1959,6 +2091,17 @@
    "pt-BR": "Nenhum app de música",
    "ru": "Нет музыкального приложения",
    "id": "Tidak ada app musik"
+  },
+  "No response text.": {
+   "zh-Hans": "没有回复内容。",
+   "hi": "जवाब में कोई टेक्स्ट नहीं।",
+   "es": "La respuesta no tiene texto.",
+   "ar": "لا يوجد نص في الرد.",
+   "fr": "La réponse ne contient pas de texte.",
+   "bn": "উত্তরে কোনো লেখা নেই।",
+   "pt-BR": "A resposta não tem texto.",
+   "ru": "В ответе нет текста.",
+   "id": "Tidak ada teks balasan."
   },
   "No speech recognition model available on this device. Install one in System Settings → Keyboard → Dictation.": {
    "zh-Hans": "此设备上没有可用的语音识别模型。在系统设置 → 键盘 → 听写中安装一个。",
@@ -2202,6 +2345,17 @@
    "ru": "Открыть / закрыть гардероб",
    "id": "Buka / tutup lemari"
   },
+  "Open Accessibility settings": {
+   "zh-Hans": "打开辅助功能",
+   "hi": "Accessibility खोलें",
+   "es": "Abrir Accesibilidad",
+   "ar": "افتح تسهيلات الاستخدام",
+   "fr": "Ouvrir Accessibilité",
+   "bn": "Accessibility খোলো",
+   "pt-BR": "Abrir Acessibilidade",
+   "ru": "Открыть Универсальный доступ",
+   "id": "Buka Aksesibilitas"
+  },
   "Open Codex": {
    "zh-Hans": "打开 Codex",
    "hi": "Codex खोलें",
@@ -2278,6 +2432,28 @@
    "pt-BR": "Abrir Visual Studio Code",
    "ru": "Открыть Visual Studio Code",
    "id": "Buka Visual Studio Code"
+  },
+  "Open WebUI has no models for this account.": {
+   "zh-Hans": "Open WebUI 没有可供此账户使用的模型。",
+   "hi": "Open WebUI में इस खाते के लिए कोई मॉडल नहीं है।",
+   "es": "Open WebUI no tiene modelos para esta cuenta.",
+   "ar": "لا توجد في Open WebUI نماذج لهذا الحساب.",
+   "fr": "Open WebUI n'a aucun modèle pour ce compte.",
+   "bn": "Open WebUI-তে এই অ্যাকাউন্টের জন্য কোনো মডেল নেই।",
+   "pt-BR": "O Open WebUI não tem modelos para esta conta.",
+   "ru": "В Open WebUI нет моделей для этой учётной записи.",
+   "id": "Open WebUI tidak punya model untuk akun ini."
+  },
+  "Open WebUI searches the web before answering, where its admin has turned web search on.": {
+   "zh-Hans": "在管理员已开启网页搜索的情况下，Open WebUI 会先搜索网页再回答。",
+   "hi": "जहाँ एडमिन ने वेब खोज चालू की है, वहाँ Open WebUI जवाब देने से पहले वेब खोजता है।",
+   "es": "Open WebUI busca en la web antes de responder, donde su administrador haya activado la búsqueda web.",
+   "ar": "يبحث Open WebUI في الويب قبل الإجابة حيث فعّل المسؤول البحث في الويب.",
+   "fr": "Open WebUI cherche sur le web avant de répondre, là où son administrateur a activé la recherche web.",
+   "bn": "অ্যাডমিন ওয়েব অনুসন্ধান চালু করে থাকলে Open WebUI উত্তর দেওয়ার আগে ওয়েবে খোঁজে।",
+   "pt-BR": "O Open WebUI pesquisa na web antes de responder, onde o administrador ativou a busca na web.",
+   "ru": "Open WebUI ищет в интернете перед ответом там, где администратор включил поиск.",
+   "id": "Open WebUI mencari di web sebelum menjawab, jika admin telah mengaktifkan pencarian web."
   },
   "Open chat": {
    "zh-Hans": "打开聊天",
@@ -2422,6 +2598,17 @@
    "ru": "Обзор",
    "id": "Ikhtisar"
   },
+  "Padding": {
+   "zh-Hans": "边距",
+   "hi": "पैडिंग",
+   "es": "Margen",
+   "ar": "الهامش",
+   "fr": "Marges",
+   "bn": "প্যাডিং",
+   "pt-BR": "Margem",
+   "ru": "Отступы",
+   "id": "Jarak"
+  },
   "Pause": {
    "zh-Hans": "暂停",
    "hi": "रोकें",
@@ -2466,6 +2653,17 @@
    "ru": "Разрешения",
    "id": "Izin"
   },
+  "Pick a model above the chat box first.": {
+   "zh-Hans": "请先在聊天框上方选择一个模型。",
+   "hi": "पहले चैट बॉक्स के ऊपर एक मॉडल चुनें।",
+   "es": "Elige primero un modelo encima del cuadro de chat.",
+   "ar": "اختر نموذجًا فوق مربع الدردشة أولًا.",
+   "fr": "Choisis d'abord un modèle au-dessus de la zone de chat.",
+   "bn": "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।",
+   "pt-BR": "Escolha primeiro um modelo acima da caixa de chat.",
+   "ru": "Сначала выберите модель над полем чата.",
+   "id": "Pilih model di atas kotak obrolan terlebih dahulu."
+  },
   "Pin / unpin notch": {
    "zh-Hans": "固定/取消固定岛",
    "hi": "आइलैंड पिन / अनपिन",
@@ -2476,6 +2674,17 @@
    "pt-BR": "Fixar / soltar island",
    "ru": "Закрепить / открепить нотч",
    "id": "Sematkan / lepas island"
+  },
+  "Pitch": {
+   "zh-Hans": "音调",
+   "hi": "आवाज़ की पिच",
+   "es": "Tono",
+   "ar": "حدّة الصوت",
+   "fr": "Hauteur",
+   "bn": "কণ্ঠের তীক্ষ্ণতা",
+   "pt-BR": "Tom",
+   "ru": "Высота голоса",
+   "id": "Nada suara"
   },
   "Plan usage": {
    "zh-Hans": "计划用量",
@@ -2597,6 +2806,17 @@
    "pt-BR": "Projetos",
    "ru": "Проекты",
    "id": "Proyek"
+  },
+  "Questions your pills can't answer go to Claude with a web search, using your Anthropic API key. Only the question is sent.": {
+   "zh-Hans": "药丸无法回答的问题会用你的 Anthropic API 密钥发送给 Claude 并进行网页搜索。只发送问题本身。",
+   "hi": "जिन सवालों का जवाब तुम्हारी पिल्स नहीं दे सकतीं, वे तुम्हारी Anthropic API कुंजी से वेब खोज के साथ Claude को जाते हैं। सिर्फ़ सवाल भेजा जाता है।",
+   "es": "Las preguntas que tus píldoras no responden van a Claude con una búsqueda web, con tu clave de API de Anthropic. Solo se envía la pregunta.",
+   "ar": "الأسئلة التي لا تجيب عنها حبوبك تُرسل إلى Claude مع بحث على الويب، بمفتاح Anthropic API الخاص بك. يُرسل السؤال فقط.",
+   "fr": "Les questions auxquelles tes pilules ne répondent pas partent chez Claude avec une recherche web, avec ta clé API Anthropic. Seule la question est envoyée.",
+   "bn": "যে প্রশ্নের উত্তর তোমার পিলগুলো দিতে পারে না, সেগুলো তোমার Anthropic API কী দিয়ে ওয়েব সার্চসহ Claude-এর কাছে যায়। শুধু প্রশ্নটাই পাঠানো হয়।",
+   "pt-BR": "Perguntas que suas pílulas não respondem vão para o Claude com uma busca na web, usando sua chave de API da Anthropic. Só a pergunta é enviada.",
+   "ru": "Вопросы, на которые не отвечают твои пилюли, уходят в Claude с поиском в интернете, по твоему ключу Anthropic API. Отправляется только вопрос.",
+   "id": "Pertanyaan yang tidak bisa dijawab pil-mu dikirim ke Claude dengan pencarian web, memakai kunci API Anthropic-mu. Hanya pertanyaannya yang dikirim."
   },
   "Quit": {
    "zh-Hans": "退出",
@@ -2839,6 +3059,17 @@
    "pt-BR": "Revise o conteúdo abaixo antes de confirmar.",
    "ru": "Просмотри содержимое ниже перед подтверждением.",
    "id": "Tinjau konten di bawah sebelum mengonfirmasi."
+  },
+  "Right": {
+   "zh-Hans": "右",
+   "hi": "दाएँ",
+   "es": "Derecha",
+   "ar": "يمين",
+   "fr": "Droite",
+   "bn": "ডানে",
+   "pt-BR": "Direita",
+   "ru": "Справа",
+   "id": "Kanan"
   },
   "Runs": {
    "zh-Hans": "执行",
@@ -3313,6 +3544,17 @@
    "ru": "Задачи",
    "id": "Tugas"
   },
+  "Terminal": {
+   "zh-Hans": "终端",
+   "hi": "टर्मिनल",
+   "es": "Terminal",
+   "ar": "الطرفية",
+   "fr": "Terminal",
+   "bn": "টার্মিনাল",
+   "pt-BR": "Terminal",
+   "ru": "Терминал",
+   "id": "Terminal"
+  },
   "Test the voice": {
    "zh-Hans": "试听声音",
    "hi": "आवाज़ आज़माएँ",
@@ -3334,6 +3576,39 @@
    "pt-BR": "Testa",
    "ru": "Тестирует",
    "id": "Menguji"
+  },
+  "The server refused the key. Check it, then connect again.": {
+   "zh-Hans": "服务器拒绝了该密钥。请检查后重新连接。",
+   "hi": "सर्वर ने कुंजी अस्वीकार कर दी। उसे जाँचें, फिर दोबारा कनेक्ट करें।",
+   "es": "El servidor rechazó la clave. Revísala y vuelve a conectar.",
+   "ar": "رفض الخادم المفتاح. تحقّق منه ثم اتصل مجددًا.",
+   "fr": "Le serveur a refusé la clé. Vérifie-la, puis reconnecte-toi.",
+   "bn": "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।",
+   "pt-BR": "O servidor recusou a chave. Verifique-a e conecte de novo.",
+   "ru": "Сервер отклонил ключ. Проверьте его и подключитесь снова.",
+   "id": "Server menolak kunci. Periksa, lalu hubungkan lagi."
+  },
+  "The small island hides a minute after the last activity. Off: it stays at the top of the screen.": {
+   "zh-Hans": "最后一次活动一分钟后，小岛会隐藏。关闭后，它会留在屏幕顶部。",
+   "hi": "आख़िरी गतिविधि के एक मिनट बाद छोटा आइलैंड छिप जाता है। बंद होने पर यह स्क्रीन के ऊपर बना रहता है।",
+   "es": "La isla pequeña se oculta un minuto después de la última actividad. Desactivado: se queda en la parte superior de la pantalla.",
+   "ar": "يختفي الشريط الصغير بعد دقيقة من آخر نشاط. عند الإيقاف: يبقى أعلى الشاشة.",
+   "fr": "La petite île se cache une minute après la dernière activité. Désactivé : elle reste en haut de l'écran.",
+   "bn": "শেষ কাজের এক মিনিট পরে ছোট আইল্যান্ড লুকিয়ে যায়। বন্ধ থাকলে এটি স্ক্রিনের উপরে থাকে।",
+   "pt-BR": "A ilha pequena se esconde um minuto após a última atividade. Desligado: ela fica no topo da tela.",
+   "ru": "Маленький остров прячется через минуту после последней активности. Выключено: он остаётся вверху экрана.",
+   "id": "Pulau kecil bersembunyi satu menit setelah aktivitas terakhir. Mati: tetap di bagian atas layar."
+  },
+  "This chat was deleted in Open WebUI. Send again to start a new one.": {
+   "zh-Hans": "此对话已在 Open WebUI 中删除。再次发送即可开始新对话。",
+   "hi": "यह चैट Open WebUI में हटा दी गई है। नई शुरू करने के लिए फिर से भेजें।",
+   "es": "Este chat se eliminó en Open WebUI. Envía de nuevo para empezar uno nuevo.",
+   "ar": "حُذفت هذه الدردشة في Open WebUI. أرسل مجددًا لبدء دردشة جديدة.",
+   "fr": "Ce chat a été supprimé dans Open WebUI. Renvoie pour en commencer un nouveau.",
+   "bn": "এই চ্যাটটি Open WebUI-তে মুছে ফেলা হয়েছে। নতুন শুরু করতে আবার পাঠান।",
+   "pt-BR": "Este chat foi excluído no Open WebUI. Envie de novo para começar outro.",
+   "ru": "Этот чат удалён в Open WebUI. Отправьте снова, чтобы начать новый.",
+   "id": "Obrolan ini dihapus di Open WebUI. Kirim lagi untuk memulai yang baru."
   },
   "To": {
    "zh-Hans": "收件人",
@@ -3378,6 +3653,17 @@
    "pt-BR": "Muitas batidas de uma vez.",
    "ru": "Слишком много нажатий подряд.",
    "id": "Terlalu banyak ketukan sekaligus."
+  },
+  "Top": {
+   "zh-Hans": "上",
+   "hi": "ऊपर",
+   "es": "Arriba",
+   "ar": "أعلى",
+   "fr": "Haut",
+   "bn": "উপরে",
+   "pt-BR": "Topo",
+   "ru": "Сверху",
+   "id": "Atas"
   },
   "Top agent": {
    "zh-Hans": "最活跃 Agent",
@@ -3489,6 +3775,17 @@
    "ru": "Голос",
    "id": "Suara"
   },
+  "Voice in use: {0}": {
+   "zh-Hans": "当前声音：{0}",
+   "hi": "उपयोग में आवाज़: {0}",
+   "es": "Voz en uso: {0}",
+   "ar": "الصوت المستخدم: {0}",
+   "fr": "Voix utilisée : {0}",
+   "bn": "ব্যবহৃত কণ্ঠ: {0}",
+   "pt-BR": "Voz em uso: {0}",
+   "ru": "Используется голос: {0}",
+   "id": "Suara yang dipakai: {0}"
+  },
   "Voice type": {
    "zh-Hans": "声音类型",
    "hi": "आवाज़ का प्रकार",
@@ -3598,6 +3895,17 @@
    "pt-BR": "Clima por voz",
    "ru": "Погода голосом",
    "id": "Cuaca lewat suara"
+  },
+  "Web search": {
+   "zh-Hans": "网页搜索",
+   "hi": "वेब खोज",
+   "es": "Búsqueda web",
+   "ar": "البحث في الويب",
+   "fr": "Recherche web",
+   "bn": "ওয়েব অনুসন্ধান",
+   "pt-BR": "Busca na web",
+   "ru": "Поиск в интернете",
+   "id": "Pencarian web"
   },
   "Week": {
    "zh-Hans": "一周",
@@ -3719,6 +4027,17 @@
    "pt-BR": "Workflows",
    "ru": "Рабочие процессы",
    "id": "Alur kerja"
+  },
+  "Workspace models": {
+   "zh-Hans": "工作区模型",
+   "hi": "वर्कस्पेस मॉडल",
+   "es": "Modelos del espacio de trabajo",
+   "ar": "نماذج مساحة العمل",
+   "fr": "Modèles de l'espace de travail",
+   "bn": "ওয়ার্কস্পেস মডেল",
+   "pt-BR": "Modelos do espaço de trabalho",
+   "ru": "Модели рабочего пространства",
+   "id": "Model ruang kerja"
   },
   "Writes": {
    "zh-Hans": "写入",
@@ -3862,6 +4181,17 @@
    "pt-BR": "precisa de permissão",
    "ru": "требует разрешения",
    "id": "butuh izin"
+  },
+  "pixels between the folded island's edges and Mochi or the pills": {
+   "zh-Hans": "收起的岛边缘与 Mochi 或标签页之间的像素",
+   "hi": "मुड़े हुए आइलैंड के किनारों और Mochi या टैब के बीच पिक्सेल",
+   "es": "píxeles entre los bordes de la isla plegada y Mochi o las pestañas",
+   "ar": "بكسلات بين حواف الشريط المطوي وMochi أو التبويبات",
+   "fr": "pixels entre les bords de l'île repliée et Mochi ou les onglets",
+   "bn": "ভাঁজ করা আইল্যান্ডের কিনারা আর Mochi বা ট্যাবের মধ্যে পিক্সেল",
+   "pt-BR": "pixels entre as bordas da ilha recolhida e o Mochi ou as abas",
+   "ru": "пикселей между краями свёрнутого острова и Mochi или вкладками",
+   "id": "piksel antara tepi pulau yang terlipat dan Mochi atau tab"
   },
   "presses this → island opens": {
    "zh-Hans": "按此键 → 岛打开",
