@@ -3666,10 +3666,13 @@ def session_tty():
 # permission request included: past that, keep only what the card needs.
 MAX_LINE = 1048576
 
-def wire(p):
+def wire(p, waits=False):
     line = (json.dumps(p) + '\\n').encode()
     if len(line) <= MAX_LINE or not isinstance(p, dict):
         return line
+    if waits:
+        # A card made from the cut copy would hide what Allow runs: the terminal asks.
+        raise ValueError('too long for a card')
     small = {k: v for k, v in p.items()
              if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
     tool_input = p.get('tool_input')
@@ -3811,7 +3814,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall(wire(payload))
+            s.sendall(wire(payload, waits=True))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3894,7 +3897,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall(wire(payload))
+            s.sendall(wire(payload, waits=True))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -3996,10 +3999,13 @@ import sys, json, os, socket
 # permission request included: past that, keep only what the card needs.
 MAX_LINE = 1048576
 
-def wire(p):
+def wire(p, waits=False):
     line = (json.dumps(p) + '\\n').encode()
     if len(line) <= MAX_LINE or not isinstance(p, dict):
         return line
+    if waits:
+        # A card made from the cut copy would hide what Allow runs: the terminal asks.
+        raise ValueError('too long for a card')
     small = {k: v for k, v in p.items()
              if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
     tool_input = p.get('tool_input')
@@ -4135,7 +4141,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall(wire(payload))
+            s.sendall(wire(payload, waits=True))
             chunks = []
             while True:
                 chunk = s.recv(4096)
@@ -4216,7 +4222,7 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall(wire(payload))
+            s.sendall(wire(payload, waits=True))
             chunks = []
             while True:
                 chunk = s.recv(4096)
