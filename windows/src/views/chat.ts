@@ -32,12 +32,15 @@ const STRINGS = {
   searchModels: N_("Search models"),
   noMatch: N_("No model matches."),
   noKey: N_("No API key — add it in Settings."),
+  noAnswer: N_("No answer came within two minutes — try again."),
   openSettings: N_("Open Settings"),
   effort: N_("Effort"),
   effortDefault: N_("Default"),
 };
 
 let nextId = 1;
+/** How long the island waits for an answer that does not move. */
+const NO_ANSWER_MS = 120_000;
 
 function bubble(message: ChatMessage): HTMLElement {
   if (message.role === "user") {
@@ -320,7 +323,13 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   (el.querySelector(".card") as HTMLElement).style.setProperty("--wash", "rgba(99,102,241,0.5)");
 
   let sending = false;
-  let renderedCount = -1;
+  /** When the answer last moved: a streaming model that is still talking is not stuck. */
+  let lastActivity = 0;
+  /** chatEpoch the log was last fully rendered for; -1 forces a rebuild. */
+  let renderedEpoch = -1;
+  /** Bubbles in the log (the typing dots do not count). */
+  let renderedCount = 0;
+  let dotsUp = false;
   // A local model answers token by token: where its text so far is shown.
   let live: HTMLElement | null = null;
 
@@ -341,6 +350,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
 
   void onEvent<string>("chat-delta", (text) => {
     if (!sending || !text) return; // nothing visible yet: the dots stay
+    lastActivity = performance.now();
     if (!live) {
       live = h("div", { class: "reply" });
       log.querySelector(".typing")?.parentElement?.remove();
@@ -349,6 +359,17 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     renderMarkdown(live, text);
     log.scrollTop = log.scrollHeight;
   });
+
+  /** Rejects once the answer has not moved for NO_ANSWER_MS; settles silently when the send ends. */
+  function stalled(): Promise<never> {
+    return new Promise((_, reject) => {
+      const timer = window.setInterval(() => {
+        if (sending && performance.now() - lastActivity < NO_ANSWER_MS) return;
+        window.clearInterval(timer);
+        if (sending) reject(new Error(t(STRINGS.noAnswer)));
+      }, 1000);
+    });
+  }
 
   async function submit() {
     const query = input.value.trim();
@@ -359,7 +380,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     drawModelButton();
     Sound.play("send");
 
-    State.chatHistory.push({ id: nextId++, role: "user", content: query });
+    State.addChat({ id: nextId++, role: "user", content: query });
     State.stateOverride = "thinking";
     State.notify();
     onHeightChange();
@@ -369,8 +390,15 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
-      const reply = await Bridge.chatSend(query, context, promptVariables());
-      State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text });
+      // A provider that never answers must not latch the input: the island
+      // cannot cancel the call, so it stops waiting instead. Claude Code works
+      // as long as its turn needs (tools run silently); New chat stops it.
+      lastActivity = performance.now();
+      const answer = Bridge.chatSend(query, context, promptVariables());
+      const reply = await (State.settings.chatProvider === "claudecode"
+        ? answer
+        : Promise.race([answer, stalled()]));
+      State.addChat({ id: nextId++, role: "assistant", content: reply.text });
       State.stateOverride = null;
       Sound.play("finish");
     } catch (err) {
@@ -381,7 +409,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     } finally {
       sending = false;
       live = null;
-      renderedCount = -1; // the finished answer replaces the streamed one
+      renderedEpoch = -1; // the finished answer replaces the streamed one
       drawModelButton();
       State.notify();
       onHeightChange();
@@ -414,13 +442,25 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       }
 
       const thinking = State.stateOverride === "thinking";
-      const count = State.chatHistory.length + (thinking ? 0.5 : 0);
-      if (count !== renderedCount && !live) {
-        renderedCount = count;
-        clear(log);
-        for (const m of State.chatHistory) log.append(bubble(m));
-        if (thinking) log.append(typingDots());
-        log.scrollTop = log.scrollHeight;
+      if (!live) {
+        // Append only the new bubbles: clearing and re-rendering the whole log
+        // on every send re-parsed each code block again and grew quadratically.
+        if (State.chatEpoch !== renderedEpoch || State.chatHistory.length < renderedCount) {
+          renderedEpoch = State.chatEpoch;
+          renderedCount = 0;
+          dotsUp = false;
+          clear(log);
+        }
+        while (renderedCount < State.chatHistory.length) {
+          log.append(bubble(State.chatHistory[renderedCount]));
+          renderedCount++;
+        }
+        if (thinking !== dotsUp) {
+          log.querySelector(".typing")?.parentElement?.remove();
+          if (thinking) log.append(typingDots());
+          dotsUp = thinking;
+        }
+        if (renderedCount > 0 || thinking) log.scrollTop = log.scrollHeight;
       }
 
       // Leaving the chat folds the picker away.
