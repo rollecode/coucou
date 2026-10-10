@@ -237,21 +237,20 @@ impl Relay for tokio::net::UnixStream {
     }
 }
 
-/// Reads up to the first newline (or MAX_PAYLOAD). None: the read failed.
+/// Reads the first line, without its newline (or up to MAX_PAYLOAD). None: the read failed.
 async fn read_request(pipe: &mut impl Relay) -> Option<Vec<u8>> {
     let mut buf = Vec::new();
     let mut chunk = [0u8; 4096];
-    // Only the freshly read bytes are scanned for the newline: rescanning the
-    // whole buffer per chunk is quadratic for a peer that dribbles bytes.
-    let mut end = None;
     loop {
         match pipe.read(&mut chunk).await {
             Ok(0) => return Some(buf),
             Ok(n) => {
                 buf.extend_from_slice(&chunk[..n]);
+                // Only the freshly read bytes are scanned for the newline: rescanning the
+                // whole buffer per chunk is quadratic for a peer that dribbles bytes.
                 if let Some(i) = chunk[..n].iter().position(|b| *b == b'\n') {
-                    end = Some(buf.len() - n + i);
-                    break;
+                    buf.truncate(buf.len() - n + i);
+                    return Some(buf);
                 }
                 if buf.len() > MAX_PAYLOAD {
                     return Some(buf);
@@ -264,12 +263,8 @@ async fn read_request(pipe: &mut impl Relay) -> Option<Vec<u8>> {
 
 async fn handle(app: AppHandle, mut pipe: impl Relay, host: Option<String>) {
     // A client that connects and says nothing does not hold the connection forever.
-    let Ok(Some(buf)) = tokio::time::timeout(READ_TIMEOUT, read_request(&mut pipe)).await else { return };
-    let line = match end {
-        Some(i) => &buf[..i],
-        None => &buf[..],
-    };
-    let Ok(mut payload) = serde_json::from_slice::<Value>(line) else { return };
+    let Ok(Some(line)) = tokio::time::timeout(READ_TIMEOUT, read_request(&mut pipe)).await else { return };
+    let Ok(mut payload) = serde_json::from_slice::<Value>(&line) else { return };
     if !payload.is_object() {
         return;
     }
