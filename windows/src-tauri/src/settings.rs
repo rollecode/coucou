@@ -83,6 +83,11 @@ pub struct Settings {
     /// SSH destinations whose Claude Code sessions show in the island, as typed
     /// for `ssh` (an alias from ~/.ssh/config or user@host). See remote.rs.
     pub remote_hosts: Vec<String>,
+    /// Claude Code in the chat (claude_code.rs): its effort level, "" for
+    /// Claude Code's own; its model is in `chat_models`.
+    pub claude_code_effort: String,
+    /// The folder it works in; "" is Coucou's own, so nothing lands in $HOME.
+    pub claude_code_dir: String,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -159,6 +164,8 @@ impl Default for Settings {
             language: String::new(),
             desktop_mochi: DesktopMochiPref::default(),
             remote_hosts: Vec::new(),
+            claude_code_effort: String::new(),
+            claude_code_dir: String::new(),
         }
     }
 }
@@ -440,7 +447,9 @@ mod tests {
   "pillColors": { "integration_claude": "#2DD4BF" },
   "language": "pt-BR",
   "desktopMochi": { "onDesktop": true, "spot": { "x": 1500.5, "y": -300.0, "space": "screen" } },
-  "remoteHosts": ["devbox", "me@build.example.org"]
+  "remoteHosts": ["devbox", "me@build.example.org"],
+  "claudeCodeEffort": "high",
+  "claudeCodeDir": "/home/me/projects/site"
 }"##;
 
     fn custom() -> Value {
@@ -849,6 +858,8 @@ mod tests {
                 "language",
                 "desktopMochi",
                 "remoteHosts",
+                "claudeCodeEffort",
+                "claudeCodeDir",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);

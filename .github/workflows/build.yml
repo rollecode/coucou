@@ -82,6 +82,8 @@ jobs:
 
       - name: Test Open WebUI
         run: bash scripts/test-open-webui.sh
+      - name: Test Claude Code chat
+        run: bash scripts/test-claude-code-chat.sh
 
       - name: Test plan gauge
         run: bash scripts/test-plan-gauge.sh
