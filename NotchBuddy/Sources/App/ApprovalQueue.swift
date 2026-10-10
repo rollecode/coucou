@@ -21,6 +21,9 @@ struct QueuedApproval: Equatable, Sendable {
     /// Host app / bundle id of the session, so the card's pill keeps showing where it runs.
     var hostApp: String? = nil
     var bundleId: String = ""
+    /// The session's terminal (Open terminal), and whether it is Coucou's own chat (no pill rename).
+    var tty: String = ""
+    var isChat: Bool = false
 }
 
 struct ApprovalQueue: Sendable {

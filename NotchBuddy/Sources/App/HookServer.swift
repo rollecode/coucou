@@ -174,8 +174,15 @@ final class HookServer: @unchecked Sendable {
     @MainActor
     private func showApproval(_ entry: QueuedApproval) {
         let state = AppState.shared
-        upsertWorkspaceTask(id: entry.pillId, projectName: entry.projectName, cwd: entry.cwd,
-                            hostApp: entry.hostApp, bundleId: entry.bundleId)
+        if !entry.isChat {
+            if entry.pillId.hasPrefix(PillCatalog.sessionPillPrefix) {
+                upsertSessionTask(id: entry.pillId, projectName: entry.projectName, cwd: entry.cwd,
+                                  bundleId: entry.bundleId, tty: entry.tty)
+            } else {
+                upsertWorkspaceTask(id: entry.pillId, projectName: entry.projectName, cwd: entry.cwd,
+                                    hostApp: entry.hostApp, bundleId: entry.bundleId, tty: entry.tty)
+            }
+        }
         state.updateTask(id: entry.pillId, state: .approval)
         state.pendingApproval = ApprovalInfo(
             sessionId: entry.sessionId, tool: entry.tool, command: entry.command,
@@ -416,7 +423,7 @@ final class HookServer: @unchecked Sendable {
         // Another machine's terminal says nothing about this Mac's windows, and
         // fields the app adds itself are never taken from it.
         if let host {
-            for key in ["term_program", "iterm_session_id", "term_session_id", "bundle_id", "coucou_remote"] {
+            for key in ["term_program", "iterm_session_id", "term_session_id", "bundle_id", "tty", "coucou_remote"] {
                 parsed.removeValue(forKey: key)
             }
             parsed["coucou_remote"] = host
@@ -455,9 +462,8 @@ final class HookServer: @unchecked Sendable {
             let sessionId = payload["session_id"] as? String ?? ""
             if ["Stop", "StopFailure", "UserPromptSubmit", "SessionEnd"].contains(eventName) {
                 Task { @MainActor in
-                    if AppState.shared.pendingApproval?.sessionId == sessionId {
-                        self.dismissApprovalCard(note: "Handled in the chat.")
-                    }
+                    let ids = self.approvalQueue.entries.filter { $0.sessionId == sessionId }.map(\.id)
+                    self.dismissApprovals(ids: ids, note: "Handled in the chat.")
                 }
             }
             sendLine(fd: fd, text: #"{"ok":true}"#)
@@ -528,7 +534,7 @@ final class HookServer: @unchecked Sendable {
             baseId = "agent_\(agent)"
             isExternalAgent = true
         } else if isRemote {
-            agentId = "integration_claude"
+            baseId = terminalWorkspace()
             isExternalAgent = false
         } else if isCursorEditor {
             baseId = "agent_cursor"
@@ -551,11 +557,11 @@ final class HookServer: @unchecked Sendable {
 
         func ensurePill() {
             if ownSession {
-                upsertSessionTask(id: agentId, projectName: projectName, cwd: cwd, bundleId: bundleId)
+                upsertSessionTask(id: agentId, projectName: projectName, cwd: cwd, bundleId: bundleId, tty: tty)
             } else if isExternalAgent {
                 upsertExternalAgent(id: agentId, name: validAgent!)
             } else {
-                upsertWorkspaceTask(id: agentId, projectName: projectName, cwd: cwd, hostApp: hostApp, bundleId: bundleId)
+                upsertWorkspaceTask(id: agentId, projectName: projectName, cwd: cwd, hostApp: hostApp, bundleId: bundleId, tty: tty)
             }
         }
 
@@ -976,12 +982,13 @@ final class HookServer: @unchecked Sendable {
     /// A session's own pill: named after its folder, in that folder's colour, with what
     /// Open terminal needs.
     @MainActor
-    private func upsertSessionTask(id: String, projectName: String, cwd: String, bundleId: String) {
+    private func upsertSessionTask(id: String, projectName: String, cwd: String, bundleId: String, tty: String = "") {
         upsertExternalAgent(id: id, name: projectName)
         let state = AppState.shared
         guard let idx = state.tasks.firstIndex(where: { $0.id == id }) else { return }
         if !cwd.isEmpty { state.tasks[idx].sessionCwd = cwd }
         if !bundleId.isEmpty { state.tasks[idx].sessionBundleId = bundleId }
+        if !tty.isEmpty { state.tasks[idx].sessionTTY = tty }
     }
 
     // MARK: - Agent validation + dynamic pill
@@ -1199,7 +1206,8 @@ final class HookServer: @unchecked Sendable {
         let entry = QueuedApproval(id: UUID(), fd: fd, sessionId: sessionId, pillId: pillId,
                                    projectName: projectName, cwd: cwd, tool: tool,
                                    command: command, inputKey: inputKey,
-                                   hostApp: terminalHost?.bundleId, bundleId: bundleId)
+                                   hostApp: terminalHost?.bundleId, bundleId: bundleId,
+                                   tty: tty, isChat: isChatRequest)
         guard approvalQueue.enqueue(entry) == .accepted else {
             // Queue full: the newest request falls back to its terminal ("ask"), as displacement did.
             nbLog("Approval queue full (\(ApprovalQueue.maxPending)): ask for \(tool) [\(pillId)]")

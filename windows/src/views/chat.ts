@@ -165,12 +165,11 @@ function buildPicker(onChange: () => void): Picker {
     const current = activeModel(State.settings);
     const grouped = models.some((m) => m.group);
     let section: string | undefined | null = null;
-    for (const m of models) {
+    for (const m of matching) {
       if (grouped && m.group !== section) {
         section = m.group;
         list.append(h("div", { class: "picker-section", text: t(sectionTitle(m.group)) }));
       }
-    for (const m of matching) {
       const on = m.id === current;
       const row = h(
         "button",
@@ -292,7 +291,7 @@ function buildPicker(onChange: () => void): Picker {
  */
 export function startNewChat(): boolean {
   if (State.stateOverride === "thinking") return false;
-  State.chatHistory = [];
+  State.resetChat();
   State.droppedFile = null;
   State.promptContext = null;
   void Bridge.chatReset();

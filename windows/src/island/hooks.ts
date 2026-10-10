@@ -575,7 +575,7 @@ function handleHook(island: Island, payload: HookPayload) {
   // The code view's data: Claude Code's own pills only. Opening it is the user's click.
   const code: CodeSource | null = isExternalAgent
     ? null
-    : { sessionId, cwd, project: projectName, remote: !!payload.coucou_remote };
+    : { sessionId, cwd: payload.cwd ?? "", project: projectName, remote: !!payload.coucou_remote };
   /** Leaves the code view when what it shows of this pill is gone. */
   const leaveCode = () => {
     if (focused && State.view === "code") island.setView(State.defaultView());
@@ -635,7 +635,7 @@ function handleHook(island: Island, payload: HookPayload) {
       // The code view's data first, so following can open it on this very edit.
       if (code) {
         const tail = Array.isArray(payload.tool_tail) ? payload.tool_tail : undefined;
-        toolFinished(agentId, cwd, payload.tool_name ?? "", payload.tool_input ?? {}, { tail });
+        toolFinished(agentId, payload.cwd ?? "", payload.tool_name ?? "", payload.tool_input ?? {}, { tail });
       }
       {
         const diffId = recordDiff(agentId, payload);
@@ -648,7 +648,7 @@ function handleHook(island: Island, payload: HookPayload) {
       State.updateTask(agentId, "working");
       State.appendStep(agentId, t("⚠ failed"));
       if (code) {
-        toolFinished(agentId, cwd, payload.tool_name ?? "", payload.tool_input ?? {}, {
+        toolFinished(agentId, payload.cwd ?? "", payload.tool_name ?? "", payload.tool_input ?? {}, {
           failed: true,
           error: payload.error,
         });
@@ -798,14 +798,15 @@ function handleHook(island: Island, payload: HookPayload) {
           if (requestId) void Bridge.approvalDecline(requestId);
           break;
         }
-        ensurePill();
+        if (!fromChat) ensurePill();
         supersedeStop();
         void Bridge.approvalAck(requestId);
         State.updateTask(agentId, view);
         expire();
         break;
       }
-      ensurePill();
+      // The chat's card goes on the Claude Code pill as it is, never renamed.
+      if (!fromChat) ensurePill();
       supersedeStop();
       // The card always comes up, even over another pill or an island that is
       // already open: its pill comes to the front, and the one you were on
