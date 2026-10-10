@@ -1324,7 +1324,7 @@ struct PromptView: View {
                             Circle()
                                 .fill(Color(hex: state.chatProvider.accentHex))
                                 .frame(width: 6, height: 6)
-                            Text(state.activeChatModel)
+                            Text(state.chatModelLabel)
                                 .font(.system(size: 10.5, weight: .medium))
                                 .foregroundColor(Color(hex: "#7B8089"))
                             Image(systemName: "chevron.up.chevron.down")
@@ -1487,6 +1487,9 @@ struct ModelPickerView: View {
                 if p == .ollama   { return !AppState.shared.ollamaServerURL.isEmpty   || state.chatProvider == .ollama }
                 if p == .lmstudio { return !AppState.shared.lmstudioServerURL.isEmpty || state.chatProvider == .lmstudio }
                 if p == .openwebui { return !AppState.shared.openWebUIServerURL.isEmpty || state.chatProvider == .openwebui }
+                #if APPSTORE
+                if p == .claudecode { return false }  // the sandbox cannot run the CLI
+                #endif
                 return true
             }
             ChipFlowLayout(spacing: 6) {
@@ -1527,6 +1530,10 @@ struct ModelPickerView: View {
             // Model list for current provider — fetched dynamically
             modelListView
                 .frame(height: 260, alignment: .top)
+
+            if state.chatProvider == .claudecode {
+                effortRow
+            }
         }
         .padding(14)
         .background(Color(hex: "#16171B"))
@@ -1545,6 +1552,34 @@ struct ModelPickerView: View {
                 state.providerModelFetchError[provider] = nil
             }
             state.fetchModelsIfNeeded(for: provider)
+        }
+    }
+
+    /// Claude Code's effort level, under its models; the same value Settings sets.
+    private var effortRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(String(localized: "Effort"))
+                .font(.system(size: 11))
+                .foregroundColor(Color(hex: "#8A8F98"))
+                .padding(.top, 5)
+            ChipFlowLayout(spacing: 6) {
+                ForEach([""] + ClaudeCodeChat.efforts, id: \.self) { level in
+                    let on = state.claudeCodeEffort == level
+                    Button {
+                        state.claudeCodeEffort = level
+                        SoundEngine.shared.play("blip")
+                    } label: {
+                        Text(level.isEmpty ? String(localized: "Default") : level)
+                            .font(.system(size: 11, weight: on ? .semibold : .regular))
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(on ? Color(hex: ChatProvider.claudecode.accentHex).opacity(0.18)
+                                           : Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
@@ -1653,6 +1688,7 @@ struct ModelPickerView: View {
         case .ollama:    state.ollamaChatModel = id
         case .lmstudio:  state.lmstudioChatModel = id
         case .openwebui: state.openWebUIChatModel = id
+        case .claudecode: state.claudeCodeChatModel = id
         }
         isPresented = false
         SoundEngine.shared.play("blip")

@@ -11,7 +11,8 @@ import { ICONS } from "./icons";
 import { renderMarkdown } from "./markdown";
 import { Bridge, onEvent, type ChatContext, type ModelInfo } from "../core/bridge";
 import { promptVariables,
-  activeModel, pickModel, providerDef, visibleProviders, withModel, type ProviderDef,
+  CLAUDE_CODE_EFFORTS, activeModel, claudeCodeLabel, pickModel, providerDef, visibleProviders, withModel,
+  type ProviderDef,
 } from "../core/providers";
 import { Sound } from "../core/sound";
 import { State, type ChatMessage } from "../core/state";
@@ -32,6 +33,8 @@ const STRINGS = {
   noMatch: N_("No model matches."),
   noKey: N_("No API key — add it in Settings."),
   openSettings: N_("Open Settings"),
+  effort: N_("Effort"),
+  effortDefault: N_("Default"),
 };
 
 let nextId = 1;
@@ -178,10 +181,37 @@ function buildPicker(onChange: () => void): Picker {
       });
       list.append(row);
     }
+    if (p.id === "claudecode") list.append(effortRow(p, models));
     // The chosen model in view, with its section's title when it leads one.
     const on = list.querySelector(".picker-model.on");
     const before = on?.previousElementSibling;
     (before?.classList.contains("picker-section") ? before : on)?.scrollIntoView({ block: "nearest" });
+  }
+
+  /** Claude Code's effort level, under its models. */
+  function effortRow(p: ProviderDef, models: ModelInfo[]): HTMLElement {
+    const row = h(
+      "div",
+      { class: "picker-chips", style: "margin-top:8px;align-items:center" },
+      h("span", { class: "picker-status", text: t(STRINGS.effort) }),
+    );
+    for (const effort of ["", ...CLAUDE_CODE_EFFORTS]) {
+      const on = effort === State.settings.claudeCodeEffort;
+      const chip = h(
+        "button",
+        { class: on ? "picker-chip on" : "picker-chip", style: `--accent:${p.accent}` },
+        h("span", { text: effort || t(STRINGS.effortDefault) }),
+      );
+      chip.addEventListener("click", () => {
+        State.settings = { ...State.settings, claudeCodeEffort: effort };
+        saveSettings();
+        Sound.play("blip");
+        drawModels(p, models);
+        onChange();
+      });
+      row.append(chip);
+    }
+    return row;
   }
 
   async function loadModels() {
@@ -297,7 +327,8 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   function drawModelButton() {
     const p = providerDef(State.settings.chatProvider);
     modelDot.style.background = p.accent;
-    modelName.textContent = activeModel(State.settings) || t(STRINGS.noModel);
+    modelName.textContent =
+      p.id === "claudecode" ? claudeCodeLabel(State.settings) : activeModel(State.settings) || t(STRINGS.noModel);
     modelBtn.classList.toggle("open", picker.isOpen);
     modelBtn.disabled = sending;
   }
