@@ -34,7 +34,7 @@ const STRINGS = {
   searchModels: N_("Search models"),
   noMatch: N_("No model matches."),
   noKey: N_("No API key — add it in Settings."),
-  noAnswer: N_("No answer came within two minutes — try again."),
+  noAnswer: N_("No answer came within two minutes. Try again."),
   openSettings: N_("Open Settings"),
   effort: N_("Effort"),
   effortDefault: N_("Default"),
