@@ -34,11 +34,13 @@ final class HookServer: @unchecked Sendable {
     private static let maxPayload = 1_048_576          // 1 MB — reject oversized messages
     private static let receiveTimeoutSeconds: Int = 5   // SO_RCVTIMEO on client sockets
     private static let maxConnections = 32              // concurrent connection ceiling
+    private static let maxRemoteConnections = 8         // all remote hosts together: never starve nb.sock
     private static let maxAgentPills = 12               // dynamic coucou_agent pills at once
 
     private var serverFD: Int32 = -1
     private let connectionLock = NSLock()
     private var connectionCount = 0
+    private var remoteConnectionCount = 0
     private var pendingQuestionFD: Int32 = -1         // held open while user answers AskUserQuestion
     private var questionFDSource: (any DispatchSourceRead)? = nil  // monitors pendingQuestionFD
 
@@ -382,10 +384,16 @@ final class HookServer: @unchecked Sendable {
             }
             // Enforce concurrent connection ceiling
             connectionLock.lock()
-            let count = connectionCount
-            if count < Self.maxConnections { connectionCount += 1 }
+            let admitted: Bool
+            if host == nil {
+                admitted = connectionCount < Self.maxConnections
+                if admitted { connectionCount += 1 }
+            } else {
+                admitted = remoteConnectionCount < Self.maxRemoteConnections
+                if admitted { remoteConnectionCount += 1 }
+            }
             connectionLock.unlock()
-            guard count < Self.maxConnections else {
+            guard admitted else {
                 close(clientFD)
                 continue
             }
@@ -397,7 +405,9 @@ final class HookServer: @unchecked Sendable {
 
     private func handleClient(fd: Int32, host: String? = nil) {
         defer {
-            connectionLock.lock(); connectionCount -= 1; connectionLock.unlock()
+            connectionLock.lock()
+            if host == nil { connectionCount -= 1 } else { remoteConnectionCount -= 1 }
+            connectionLock.unlock()
         }
         // 5-second receive timeout — unresponsive clients don't hold threads forever
         var tv = timeval(tv_sec: Self.receiveTimeoutSeconds, tv_usec: 0)
@@ -417,7 +427,8 @@ final class HookServer: @unchecked Sendable {
         }
 
         guard !raw.isEmpty,
-              var parsed = try? JSONSerialization.jsonObject(with: raw) as? [String: Any] else {
+              let parsed = try? JSONSerialization.jsonObject(with: raw) as? [String: Any],
+              let payload = host.map({ RemoteEvent.admit(parsed, host: $0) }) ?? parsed else {
             sendLine(fd: fd, text: #"{"ok":true}"#)
             close(fd)
             return
@@ -575,8 +586,9 @@ final class HookServer: @unchecked Sendable {
             : sessionId
 
         #if PHONE_LINK
-        // The iPhone's "last turn" (prompt, actions, diffs, answer).
-        if !isExternalAgent { TurnRecorder.shared.record(event: name, payload: payload, pillId: agentId) }
+        // The iPhone's "last turn" (prompt, actions, diffs, answer). Not a remote host's:
+        // an instruction sent back would run `claude` here, in the host's folder.
+        if !isExternalAgent && !isRemote { TurnRecorder.shared.record(event: name, payload: payload, pillId: agentId) }
         #endif
 
         // While permission requests are pending for this agent, dismiss the ones this event
@@ -668,7 +680,8 @@ final class HookServer: @unchecked Sendable {
             // Live diff for Edit / MultiEdit / Write
             let diffTool = payload["tool_name"] as? String ?? ""
             let diffInput = payload["tool_input"] as? [String: Any] ?? [:]
-            if let diff = buildFileDiff(tool: diffTool, input: diffInput, pillId: agentId) {
+            if var diff = buildFileDiff(tool: diffTool, input: diffInput, pillId: agentId) {
+                diff.remote = isRemote
                 let idx = state.appendSessionDiff(diff, for: agentId)
                 let step = String.makeDiffStep(filename: diff.name, added: diff.added, removed: diff.removed, diffId: idx)
                 appendStep(id: agentId, step: step)
