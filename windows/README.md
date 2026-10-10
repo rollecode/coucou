@@ -520,6 +520,9 @@ What changes on Linux:
   window anywhere.
 - **Click-through** is the window's input region, kept equal to the island
   shape, so the compositor sends every other click to what is underneath.
+- **NVIDIA**: with the proprietary driver, WebKitGTK's DMABUF renderer makes the
+  compositor kill the app on its first frame, so Coucou switches it off
+  (`WEBKIT_DISABLE_DMABUF_RENDERER=1`) unless you set that variable yourself.
 - **Mochi's eyes** follow the pointer only while it is over the island: Wayland
   gives no app the cursor position anywhere else. On the desktop, likewise,
   they follow it only while it is over him, and "the cursor is far away" (so

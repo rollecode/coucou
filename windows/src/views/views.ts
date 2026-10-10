@@ -741,13 +741,21 @@ function buildConfused(): ViewHost {
 
 // ── Note ──────────────────────────────────────────────────────────────────────
 
-function buildNote(): ViewHost {
+function buildNote(actions: ViewActions): ViewHost {
   const title = h("div", { class: "title" });
   const el = h("div", { class: "view" }, card(null, h("div", { class: "stack", style: "padding:0 18px 0 98px" }, title)));
+  let timer: number | null = null;
   return {
     el,
     sync() {
       title.textContent = State.noteMessage ?? "";
+      // A notice answers nothing and nobody is asked to dismiss it, so it goes
+      // away by itself. Scheduled once: sync runs on every state change.
+      if (timer != null) return;
+      timer = window.setTimeout(() => {
+        timer = null;
+        if (State.view === "note") actions.setView(State.defaultView());
+      }, 5000);
     },
   };
 }
@@ -842,7 +850,7 @@ export function buildViews(
   map.set("error", buildError(actions));
   map.set("finished", buildFinished(actions));
   map.set("confused", buildConfused());
-  map.set("note", buildNote());
+  map.set("note", buildNote(actions));
   map.set("settings", buildSettings(actions));
   map.set("prompt", buildPrompt(onChatHeightChange));
   map.set("upload", buildUpload());
