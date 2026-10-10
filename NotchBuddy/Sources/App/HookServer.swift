@@ -433,16 +433,6 @@ final class HookServer: @unchecked Sendable {
             close(fd)
             return
         }
-        // Another machine's terminal says nothing about this Mac's windows, and
-        // fields the app adds itself are never taken from it.
-        if let host {
-            for key in ["term_program", "iterm_session_id", "term_session_id", "bundle_id", "tty", "coucou_remote"] {
-                parsed.removeValue(forKey: key)
-            }
-            parsed["coucou_remote"] = host
-        }
-        let payload = parsed
-
         let coucouKind = payload["coucou_kind"] as? String ?? ""
 
         // statusline payloads are handled separately — no session, no reveal, no sound

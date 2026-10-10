@@ -7,7 +7,7 @@ enum RemoteEvent {
     /// Claude Code's ids are UUIDs: a longer one is not a session.
     static let maxSessionId = 128
 
-    private static let terminalFields: Set<String> = ["term_program", "iterm_session_id", "term_session_id", "bundle_id"]
+    private static let terminalFields: Set<String> = ["term_program", "iterm_session_id", "term_session_id", "bundle_id", "tty"]
 
     /// `payload` as the Mac uses it, tagged with `host`; nil when it is dropped.
     static func admit(_ payload: [String: Any], host: String) -> [String: Any]? {
