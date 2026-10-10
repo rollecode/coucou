@@ -394,10 +394,10 @@ struct ApprovalView: View {
                 CodeBlock(text: approval?.command ?? approval?.tool ?? "…")
                 HStack(spacing: 8) {
                     SecondaryButton("Deny") {
-                        if let id = shownId { HookServer.shared.sendApprovalDecision("deny", for: id) }
+                        if let id = shownId { HookServer.shared.clickApproval("deny", for: id) }
                     }
                     PrimaryButton("Allow") {
-                        if let id = shownId { HookServer.shared.sendApprovalDecision("allow", for: id) }
+                        if let id = shownId { HookServer.shared.clickApproval("allow", for: id) }
                     }
                     // Codex, Copilot CLI and Muse Code do not support updatedPermissions
                     let hideAlways = approval?.pillId == "agent_codex"
@@ -405,7 +405,7 @@ struct ApprovalView: View {
                         || approval?.pillId == "agent_muse"
                     if !hideAlways {
                         SecondaryButton("Always") {
-                            if let id = shownId { HookServer.shared.sendApprovalDecision("always", for: id) }
+                            if let id = shownId { HookServer.shared.clickApproval("always", for: id) }
                         }
                     }
                 }

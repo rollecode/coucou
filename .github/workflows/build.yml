@@ -27,6 +27,9 @@ jobs:
       - name: Test display choice
         run: bash scripts/test-display-choice.sh
 
+      - name: Test approval queue
+        run: bash scripts/test-approval-queue.sh
+
       - name: Test tied process
         run: bash scripts/test-tied-process.sh
 

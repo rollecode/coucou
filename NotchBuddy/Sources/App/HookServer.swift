@@ -44,6 +44,7 @@ final class HookServer: @unchecked Sendable {
 
     // Pending approvals, FIFO. Main actor only. Each entry owns its fd, disconnect source and timeout.
     private var approvalQueue = ApprovalQueue()
+    private var approvalGuard = ClickGuard()
     private var approvalResources: [UUID: ApprovalResources] = [:]
 
     /// True when a real nb-hook connection is holding an approval fd open.
@@ -190,6 +191,7 @@ final class HookServer: @unchecked Sendable {
             position: 1, total: approvalQueue.count,
             sourceLabel: approvalQueue.hasMixedSources ? agentLabel(for: entry.pillId) : nil)
         state.isPinned = true
+        approvalGuard.show(entry.id, at: ProcessInfo.processInfo.systemUptime)
         if state.focusId != entry.pillId {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = entry.pillId }
         }
@@ -1257,7 +1259,17 @@ final class HookServer: @unchecked Sendable {
         }
     }
 
-    /// Called by ApprovalView buttons. Writes the decision to the waiting nb-hook and cleans up.
+    /// A click on the card's buttons. Ignored for a moment after a new request took the card,
+    /// so a double-click meant for the previous request never answers this one.
+    @MainActor
+    func clickApproval(_ decision: String, for id: UUID) {
+        if approvalQueue.head?.id == id, !approvalGuard.accepts(id, at: ProcessInfo.processInfo.systemUptime) {
+            return
+        }
+        sendApprovalDecision(decision, for: id)
+    }
+
+    /// Writes the decision to the waiting nb-hook and cleans up.
     /// `id` is the request the card showed: a click is never applied to a different request.
     @MainActor
     func sendApprovalDecision(_ decision: String, for id: UUID) {
