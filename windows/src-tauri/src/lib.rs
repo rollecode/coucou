@@ -32,6 +32,7 @@ mod secrets;
 mod session_window;
 mod settings;
 mod shortcuts;
+mod slack;
 mod snippet;
 mod sounds;
 mod spotify;
@@ -815,6 +816,8 @@ pub fn run() {
             secret_set,
             secret_clear,
             refresh_integration,
+            slack::slack_open,
+            slack::slack_open_workspace,
             github_refresh,
             open_n8n,
             open_settings_window,

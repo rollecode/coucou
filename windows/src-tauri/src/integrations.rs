@@ -1,6 +1,6 @@
 // Integration pollers — the Rust side of StripePoller / GithubPoller /
 // VercelPoller / N8nPoller / ResendPoller / NotionPoller / CalcomPoller /
-// LinearPoller.
+// LinearPoller (SlackPoller is in slack.rs).
 //
 // Same endpoints, same first-run delays and intervals as the Swift pollers. Each
 // one emits an `integration` event; the island owns the badge, the sound and the
@@ -44,11 +44,11 @@ pub struct IntegrationEvent {
     pub detail: Option<String>,
 }
 
-fn emit(app: &AppHandle, update: IntegrationUpdate) {
+pub(crate) fn emit(app: &AppHandle, update: IntegrationUpdate) {
     let _ = app.emit_to(WINDOW_LABEL, "integration", update);
 }
 
-fn client() -> reqwest::Client {
+pub(crate) fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(TIMEOUT)
         .build()
@@ -74,7 +74,8 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_calcom", 8, 300, poll_calcom);
     spawn(app.clone(), "integration_notion", 9, 300, poll_notion);
     spawn(app.clone(), "integration_linear", 11, 60, poll_linear);
-    spawn(app, "integration_betterstack", 10, 60, poll_betterstack);
+    spawn(app.clone(), "integration_betterstack", 10, 60, poll_betterstack);
+    spawn(app, "integration_slack", 10, 60, crate::slack::poll);
 }
 
 /// True when the user has this integration switched on in settings.
@@ -123,6 +124,7 @@ pub async fn poll_once(app: AppHandle, id: &str) {
         "integration_resend" => poll_resend(app).await,
         "integration_notion" => poll_notion(app).await,
         "integration_calcom" => poll_calcom(app).await,
+        "integration_slack" => crate::slack::poll(app).await,
         "integration_betterstack" => poll_betterstack(app).await,
         "integration_linear" => poll_linear(app).await,
         _ => {}

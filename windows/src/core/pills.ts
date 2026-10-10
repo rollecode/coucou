@@ -131,6 +131,8 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calcom-api-key") },
   { id: "integration_stripe", name: "Stripe", color: "#0570DE", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("stripe-api-key") },
+  { id: "integration_slack", name: "Slack", color: "#E01E5A", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("slack-token") },
   { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("betterstack-token") },
   { id: "integration_linear", name: "Linear", color: "#5E6AD2", category: "service",

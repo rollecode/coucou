@@ -274,6 +274,8 @@ struct OverviewView: View {
             NSWorkspace.shared.open(URL(string: "https://notion.so")!)
         case "integration_calcom":
             NSWorkspace.shared.open(URL(string: "https://app.cal.com/bookings")!)
+        case "integration_slack":
+            SlackPoller.openWorkspace()
         case "integration_betterstack":
             NSWorkspace.shared.open(BetterStackAPI.dashboardURL)
         case "integration_linear":
@@ -2038,6 +2040,7 @@ struct IntegrationCardView: View {
         case "integration_stripe":  return KeychainStore.shared.get("stripe-api-key") != nil
         case "integration_notion":  return KeychainStore.shared.get("notion-api-key") != nil
         case "integration_calcom":  return KeychainStore.shared.get("calcom-api-key") != nil
+        case "integration_slack":   return KeychainStore.shared.get("slack-token")    != nil
         case "integration_betterstack": return KeychainStore.shared.get("betterstack-token") != nil
         case "integration_linear":  return KeychainStore.shared.get("linear-api-key") != nil
         default: return false
@@ -2055,6 +2058,7 @@ struct IntegrationCardView: View {
         case "integration_github":  return URL(string: "https://github.com")
         case "integration_stripe":  return URL(string: "https://dashboard.stripe.com/payments")
         case "integration_notion":  return URL(string: "https://notion.so")
+        case "integration_slack":   return safeWebURL(appState.slackWorkspaceURL) ?? URL(string: "https://app.slack.com")
         case "integration_calcom":  return URL(string: "https://app.cal.com/bookings")
         case "integration_betterstack": return BetterStackAPI.dashboardURL
         case "integration_linear":  return URL(string: appState.linearInbox?.inboxURL ?? "https://linear.app")
@@ -2105,6 +2109,11 @@ struct IntegrationCardView: View {
         task.id == "integration_calcom" && appState.calcomLoaded
     }
 
+    // Slack: show messages as soon as first poll completes
+    private var slackHasData: Bool {
+        task.id == "integration_slack" && appState.slackLoaded && appState.slackError == nil
+    }
+
     // Linear: show the inbox as soon as the first poll completes
     private var linearHasData: Bool {
         task.id == "integration_linear" && appState.linearInbox != nil
@@ -2150,6 +2159,7 @@ struct IntegrationCardView: View {
         if PillCatalog.definition(for: task.id)?.comingSoon == true { return Color(hex: "#6B7079") }
         let svcErr = task.id == "integration_stripe" ? appState.stripeError
                    : task.id == "integration_calcom"  ? appState.calcomError
+                   : task.id == "integration_slack"   ? appState.slackError
                    : task.id == "integration_betterstack" ? appState.betterstackError
                    : task.id == "integration_linear"  ? appState.linearError
                    : nil
@@ -2168,6 +2178,7 @@ struct IntegrationCardView: View {
         if PillCatalog.definition(for: task.id)?.comingSoon == true { return String(localized: "Coming soon") }
         let svcErr = task.id == "integration_stripe" ? appState.stripeError
                    : task.id == "integration_calcom"  ? appState.calcomError
+                   : task.id == "integration_slack"   ? appState.slackError
                    : task.id == "integration_betterstack" ? appState.betterstackError
                    : task.id == "integration_linear"  ? appState.linearError
                    : nil
@@ -2267,6 +2278,9 @@ struct IntegrationCardView: View {
                 .transition(.opacity)
         } else if notionHasData {
             NotionCardView()
+                .transition(.opacity)
+        } else if slackHasData {
+            SlackCardView()
                 .transition(.opacity)
         } else if betterstackHasData {
             BetterStackCardView()
@@ -2446,6 +2460,12 @@ struct IntegrationCardView: View {
                         Button("Refresh") { Task { @MainActor in CalcomPoller.shared.pollNow() } }
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Color(hex: "#C9956A").opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
+                    if task.id == "integration_slack" && isConfigured {
+                        Button("Refresh") { SlackPoller.shared.pollNow() }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: "#E01E5A").opacity(0.85))
                             .buttonStyle(.plain)
                     }
                     if task.id == "integration_betterstack" && isConfigured {
@@ -3814,6 +3834,68 @@ struct NotionCardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
         .transition(.opacity)
+    }
+}
+
+// MARK: - Slack Card View
+
+struct SlackCardView: View {
+    @ObservedObject private var appState = AppState.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: "#E01E5A")).frame(width: 7, height: 7)
+                Text("Slack").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text("Messages").font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+                Spacer(minLength: 4)
+                count(icon: "bubble.left.fill", value: appState.slackUnreadDMs)
+                count(icon: "at", value: appState.slackMentionCount)
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if appState.slackMessages.isEmpty {
+                    Text("No new messages").font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#6B7079"))
+                        .padding(.horizontal, 6).padding(.vertical, 4)
+                }
+                ForEach(appState.slackMessages.prefix(3)) { message in
+                    Button { SlackPoller.open(message) } label: { row(message) }
+                        .buttonStyle(.plain)
+                }
+            }
+            .padding(.leading, 102).padding(.trailing, 12).padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
+        .transition(.opacity)
+    }
+
+    private func count(icon: String, value: Int) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: icon).font(.system(size: 8, weight: .semibold))
+            Text("\(value)").font(.system(size: 10, weight: .semibold).monospacedDigit())
+        }
+        .foregroundColor(value > 0 ? Color(hex: "#E01E5A") : Color(hex: "#4B5563"))
+    }
+
+    private func row(_ message: SlackMessage) -> some View {
+        let accent = message.kind == .dm ? "#E01E5A" : "#ECB22E"
+        let place = message.kind == .dm ? message.author : "\(message.author) · #\(message.channelName ?? "")"
+        return HStack(spacing: 6) {
+            Circle().fill(Color(hex: accent)).frame(width: 5, height: 5).frame(width: 14)
+            Text(place).font(.system(size: 11, weight: .medium))
+                .foregroundColor(Color(hex: "#C5C8CD"))
+                .lineLimit(1).truncationMode(.tail)
+            Text(message.text).font(.system(size: 11))
+                .foregroundColor(Color(hex: "#8E939C"))
+                .lineLimit(1).truncationMode(.tail).layoutPriority(-1)
+            Spacer(minLength: 4)
+            Text(message.timeAgo).font(.system(size: 9))
+                .foregroundColor(Color(hex: "#4B5563"))
+        }
+        .padding(.horizontal, 6).padding(.vertical, 4)
+        .contentShape(Rectangle())
     }
 }
 

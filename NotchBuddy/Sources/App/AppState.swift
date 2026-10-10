@@ -496,6 +496,15 @@ final class AppState: ObservableObject {
     @Published var notionLoaded: Bool = false
     @Published var notionError: String? = nil
 
+    // Slack (populated by SlackPoller)
+    @Published var slackMessages: [SlackMessage] = []
+    @Published var slackUnreadDMs: Int = 0
+    @Published var slackMentionCount: Int = 0
+    @Published var slackLoaded: Bool = false
+    @Published var slackError: String? = nil
+    var slackTeamId: String = ""
+    var slackWorkspaceURL: String = ""
+
     // Linear (populated by LinearPoller)
     @Published var linearInbox: LinearInbox? = nil
     @Published var linearError: String? = nil
