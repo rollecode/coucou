@@ -188,6 +188,11 @@ function buildOverview(actions: ViewActions): ViewHost {
   const closeDiff = () => {
     if (activeDiffId == null) return;
     activeDiffId = null;
+    // Closing a live diff stops following that session until its next prompt.
+    if (State.liveDiff) {
+      State.liveStopped.add(State.liveDiff.pillId);
+      State.liveDiff = null;
+    }
     State.notify();
   };
   const ticker = new Ticker((diffId) => {
@@ -323,6 +328,10 @@ function buildOverview(actions: ViewActions): ViewHost {
       }
       syncPlanTimer(planOpen);
 
+      // Following edits live: the focused session's latest edit is the one open.
+      const live = State.liveDiff != null && task?.id === State.liveDiff.pillId;
+      if (live && State.mode === "expanded") activeDiffId = State.liveDiff!.diffId;
+
       // A diff that has since been dropped (cap, expiry, session end) just closes.
       const diff = task && activeDiffId != null ? State.findDiff(task.id, activeDiffId) : null;
       if (!diff) activeDiffId = null;
@@ -335,7 +344,7 @@ function buildOverview(actions: ViewActions): ViewHost {
         }
         plan.sync();
       } else if (task && diff) {
-        const key = `diff~${task.id}~${diff.id}`;
+        const key = `diff~${task.id}~${diff.id}~${live}`;
         if (key !== cardKey) {
           cardKey = key;
           mode = "diff";
@@ -346,6 +355,7 @@ function buildOverview(actions: ViewActions): ViewHost {
               closeDiff();
             },
             open: (path) => void Bridge.openFileInVSCode(path),
+            live,
           }));
         }
       } else if (task && sessionActive) {
