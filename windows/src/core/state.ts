@@ -105,6 +105,8 @@ export interface Settings {
   openOnHover: boolean;
   /** Space between the folded island's edges and Mochi or the pills, px. */
   compactPadding: CompactPadding;
+  /** The compact island hides a minute after the last activity; off, it stays. */
+  autoHide: boolean;
   absenceInterval: number;
   /** Declared pills next to the main one (at most 4), in the order they were added. */
   activeIntegrations: string[];
@@ -161,6 +163,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoCloseInterval: 15,
   openOnHover: false,
   compactPadding: COMPACT_PADDING,
+  autoHide: true,
   absenceInterval: 180,
   activeIntegrations: [
     "integration_resend", "integration_n8n", "integration_vercel", "integration_github",
