@@ -633,6 +633,8 @@ struct SettingsView: View {
         }
 
         #if !APPSTORE
+        RemoteHostsSection()
+
         GroupBox(String(localized: "hooks.gemini.title")) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(geminiHooksInstalled
