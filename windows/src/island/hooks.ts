@@ -211,6 +211,8 @@ interface HookPayload {
   platform?: string;
   /** The SSH host the session runs on, set by the app for a remote host's events. */
   coucou_remote?: string;
+  /** Set by the relay for Coucou's own chat (Claude Code as chat provider). */
+  coucou_chat?: boolean;
   /** "cursor" when Claude Code runs in Cursor's terminal (set by the relay). */
   term_editor?: string;
   /** StatusLine (the plan usage relay): Claude Code's 5-hour and weekly limits. */
@@ -465,6 +467,14 @@ function handleHook(island: Island, payload: HookPayload) {
     dropPendingCard(island);
   }
 
+  // Coucou's own chat runs Claude Code (claude_code.rs): it is no session to
+  // show, but a tool it wants to use still needs a click on the card.
+  const fromChat = payload.coucou_chat === true;
+  if (fromChat && name !== "PermissionRequest") {
+    State.notify();
+    return;
+  }
+
   // Read after the card above is dropped: its pill may have handed the front
   // back to the pill you were on.
   const focused = State.focusId === agentId;
@@ -629,7 +639,8 @@ function handleHook(island: Island, payload: HookPayload) {
         if (requestId) void Bridge.approvalDecline(requestId);
         break;
       }
-      ensurePill();
+      // The chat's card goes on the Claude Code pill as it is, never renamed.
+      if (!fromChat) ensurePill();
       supersedeStop();
       if (pendingTimeout != null) window.clearTimeout(pendingTimeout);
       const tool = payload.tool_name ?? "Tool";
