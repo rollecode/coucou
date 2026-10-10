@@ -23,6 +23,8 @@ const STRINGS = {
   placeholderNext: N_("Continue…"),
   send: N_("Send"),
   switchModel: N_("Switch provider or model"),
+  newChat: N_("New chat"),
+  newChatHint: N_("New conversation"),
   noModel: N_("Choose a model"),
   loading: N_("Loading models…"),
   noKey: N_("No API key — add it in Settings."),
@@ -199,6 +201,22 @@ function buildPicker(onChange: () => void): Picker {
   };
 }
 
+/**
+ * Starts over: empties the thread and drops the attached file, so the next
+ * question is not answered with the previous context. Not while an answer is
+ * on its way: it would land in the new chat.
+ */
+export function startNewChat(): boolean {
+  if (State.stateOverride === "thinking") return false;
+  State.chatHistory = [];
+  State.droppedFile = null;
+  State.promptContext = null;
+  void Bridge.chatReset();
+  Sound.play("blip");
+  State.notify();
+  return true;
+}
+
 // ── View ──────────────────────────────────────────────────────────────────────
 
 export function buildPrompt(onHeightChange: () => void): ViewHost {
@@ -222,7 +240,8 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName,
     svg(ICONS.chevronUpDown, 9, { stroke: 2 }),
   );
-  const modelRow = h("div", { class: "model-row" }, modelBtn);
+  const newBtn = h("button", { class: "model-btn new-chat-btn", title: tl(STRINGS.newChatHint) }, h("span", { text: t(STRINGS.newChat) }));
+  const modelRow = h("div", { class: "model-row" }, modelBtn, newBtn);
 
   const body = h("div", { class: "chat-body" });
   const picker = buildPicker(() => {
@@ -245,7 +264,15 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName.textContent = activeModel(State.settings) || t(STRINGS.noModel);
     modelBtn.classList.toggle("open", picker.isOpen);
     modelBtn.disabled = sending;
+    newBtn.hidden = State.chatHistory.length === 0 && !State.droppedFile;
+    newBtn.disabled = sending;
   }
+
+  newBtn.addEventListener("click", () => {
+    if (!startNewChat()) return;
+    input.value = "";
+    input.focus();
+  });
 
   modelBtn.addEventListener("click", () => {
     if (sending) return;
@@ -279,8 +306,8 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     onHeightChange();
 
     const file = State.droppedFile;
-    const context: ChatContext | null =
-      State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
+    // Rust decides whether the model already has this file (chat.rs, Chat::begin).
+    const context: ChatContext | null = file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
       const reply = await Bridge.chatSend(query, context);

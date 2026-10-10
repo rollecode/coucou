@@ -163,8 +163,8 @@ pub async fn send(
     if model.is_empty() {
         return Err(tf("Pick a {name} model above the chat box.", &[("name", p.name)]));
     }
-    let turn = chat.begin(p.id);
-    let user = user_message(turn.first, context.as_ref(), &query);
+    let turn = chat.begin(p.id, context.as_ref());
+    let user = user_message(turn.attach, context.as_ref(), &query);
     let body = request_body(p, model, &chat::system_prompt(false), &turn.history, &user);
 
     let endpoint = url(p, "chat/completions")?;
@@ -184,7 +184,7 @@ pub async fn send(
     let json: Value = serde_json::from_slice(&bytes).map_err(|e| tf("Bad API response: {error}", &[("error", &e.to_string())]))?;
     let text = reply_text(p, &json)?;
 
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, user, json!({ "role": "assistant", "content": text }), &plain, &text);
     Ok(ChatReply { text })
 }
