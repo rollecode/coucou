@@ -390,7 +390,8 @@ final class HookServer: @unchecked Sendable {
             agentId = "integration_claude"
             isExternalAgent = false
         } else if let host = ClaudeHost.terminal(termProgram: termProgram, bundleId: bundleId) {
-            agentId = "integration_claude"
+            // Claude Code in a terminal goes to its own pill when that is the main tool.
+            agentId = state.mainPillId == "workspace_claude" ? "workspace_claude" : "integration_claude"
             isExternalAgent = false
             hostApp = host.bundleId
         } else {
