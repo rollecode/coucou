@@ -329,6 +329,8 @@ struct SettingsView: View {
                     .help("Hovering the island opens it; it folds again shortly after the pointer leaves. Click inside to keep it open.")
                 Toggle("Auto-hide", isOn: $state.autoHide)
                     .help("The small island hides a minute after the last activity. Off: it stays at the top of the screen.")
+                Toggle("Follow edits live", isOn: $state.followEdits)
+                    .help("Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.")
                 HStack(spacing: 8) {
                     Text("Close after")
                     TextField("60", value: $state.autoCloseInterval, format: .number)
