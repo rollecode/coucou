@@ -437,10 +437,7 @@ export class Island {
     // forceHome cancels the collapse timer, and one only starts again on a state
     // change: an alert on an island that is already open, with the mouse
     // elsewhere, would otherwise stay open for good.
-    if (!this.wasInIsland) {
-      this.fsm.mouseLeft();
-      if (!State.isPinned) this.homeCollapseAt = performance.now() + State.settings.autoCloseInterval * 1000;
-    }
+    if (!this.wasInIsland) this.fsm.mouseLeft();
   }
 
   reveal() {
