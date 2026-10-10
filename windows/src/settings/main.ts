@@ -970,7 +970,11 @@ const INTEGRATIONS: IntegrationDef[] = [
     fields: [{ key: "slack-token", label: N_("Token"), placeholder: "xoxp-…", secret: true }],
     hint: N_("From your own Slack app, with the user scopes im:read, users:read and search:read.") },
   { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF",
-    fields: [{ key: "betterstack-token", label: N_("Token"), placeholder: "…", secret: true }],
+    fields: [
+      { key: "betterstack-token", label: N_("Token"), placeholder: "…", secret: true },
+      // Not returned by the API, and every page link needs it.
+      { key: "betterstack-team", label: N_("Team ID (optional)"), placeholder: "t1234", secret: false },
+    ],
     hint: N_("Better Stack → API tokens → Team-based tokens: an Uptime API token. Coucou only reads incidents and monitors.") },
   { id: "integration_linear", name: "Linear", color: "#5E6AD2",
     fields: [{ key: "linear-api-key", label: N_("API key"), placeholder: "…", secret: true }],

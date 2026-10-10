@@ -28,6 +28,7 @@ pub const KNOWN_KEYS: &[&str] = &[
     "timely-refresh-token",
     "slack-token",
     "betterstack-token",
+    "betterstack-team",
     "linear-api-key",
 ];
 

@@ -75,6 +75,7 @@ final class KeychainStore: @unchecked Sendable {
         "timely-client-id", "timely-client-secret", "timely-access-token", "timely-refresh-token",
         "slack-token",
         "betterstack-token",
+        "betterstack-team",
         "linear-api-key",
         "elevenlabs-api-key",
     ]

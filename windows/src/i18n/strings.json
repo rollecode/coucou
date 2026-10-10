@@ -4050,6 +4050,17 @@
    "ru": "Задачи",
    "id": "Tugas"
   },
+  "Team ID (optional)": {
+   "zh-Hans": "团队 ID（可选）",
+   "hi": "टीम आईडी (वैकल्पिक)",
+   "es": "ID del equipo (opcional)",
+   "ar": "معرّف الفريق (اختياري)",
+   "fr": "ID de l'équipe (facultatif)",
+   "bn": "টিম আইডি (ঐচ্ছিক)",
+   "pt-BR": "ID da equipe (opcional)",
+   "ru": "ID команды (необязательно)",
+   "id": "ID tim (opsional)"
+  },
   "Terminal": {
    "zh-Hans": "终端",
    "hi": "टर्मिनल",

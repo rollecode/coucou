@@ -282,7 +282,7 @@ struct OverviewView: View {
         case "integration_slack":
             SlackPoller.openWorkspace()
         case "integration_betterstack":
-            NSWorkspace.shared.open(BetterStackAPI.dashboardURL)
+            if let url = BetterStackAPI.page("incidents", team: BetterStackPoller.team) { NSWorkspace.shared.open(url) }
         case "integration_linear":
             if let url = URL(string: state.linearInbox?.inboxURL ?? "https://linear.app") {
                 NSWorkspace.shared.open(url)
@@ -2069,7 +2069,7 @@ struct IntegrationCardView: View {
         case "integration_calcom":  return URL(string: "https://app.cal.com/bookings")
         case CalendarWatcher.pillId: return URL(fileURLWithPath: "/System/Applications/Calendar.app")
         case "integration_timely":  return TimelyAPI.webURL
-        case "integration_betterstack": return BetterStackAPI.dashboardURL
+        case "integration_betterstack": return BetterStackAPI.page("incidents", team: BetterStackPoller.team)
         case "integration_linear":  return URL(string: appState.linearInbox?.inboxURL ?? "https://linear.app")
         default: return nil
         }
@@ -4124,15 +4124,16 @@ struct BetterStackCardView: View {
 
     /// Incidents first; then down monitors that no open incident already names.
     private var rows: [Row] {
+        let team = BetterStackPoller.team
         let incidents = appState.betterstackIncidents.map {
             Row(id: "i\($0.id)", accent: $0.acknowledged ? Self.amber : Self.red, name: $0.name,
                 detail: $0.acknowledged ? String(localized: "Acknowledged") : ($0.cause ?? ""),
-                trailing: $0.timeAgo, url: $0.webURL)
+                trailing: $0.timeAgo, url: $0.webURL(team: team))
         }
         let named = Set(appState.betterstackIncidents.map(\.name))
         let monitors = appState.betterstackDownMonitors.filter { !named.contains($0.name) }.map {
             Row(id: "m\($0.id)", accent: Self.red, name: $0.name, detail: String(localized: "Down"),
-                trailing: "", url: $0.webURL)
+                trailing: "", url: $0.webURL(team: team))
         }
         return Array((incidents + monitors).prefix(3))
     }
