@@ -1618,7 +1618,7 @@ async function render() {
 
   const keys = [
     "stripe-api-key", "github-token", "vercel-token",
-    "n8n-url", "n8n-api-key", "resend-api-key", "notion-api-key", "calcom-api-key", "linear-api-key", "betterstack-token", "slack-token",
+    "n8n-url", "n8n-api-key", "resend-api-key", "notion-api-key", "calcom-api-key", "linear-api-key", "betterstack-token", "betterstack-team", "slack-token",
     "timely-client-id", "timely-client-secret", "timely-access-token", "calendar-ical-url",
   ];
   const present: Record<string, boolean> = {};
