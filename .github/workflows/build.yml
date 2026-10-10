@@ -30,6 +30,9 @@ jobs:
       - name: Test loopback hosts
         run: bash scripts/test-loopback-host.sh
 
+      - name: Test loopback hosts
+        run: bash scripts/test-loopback-host.sh
+
       - name: Test relay wire
         run: bash scripts/test-relay-wire.sh
 
