@@ -260,15 +260,7 @@ export class Island {
     const prev = State.mode;
     if (mode === prev) return;
     State.mode = mode;
-    if (mode === "expanded") {
-      Sound.play("open");
-      // Keyboard-interactivity must be elevated for the whole expanded
-      // window, not just while the chat view happens to be open: on Linux a
-      // gtk-layer-shell surface in keyboard-mode "none" never receives any
-      // key event at all — Escape included — so Escape and click-outside
-      // only ever worked if chat had been opened first before this.
-      void Bridge.focusWindow(true);
-    }
+    if (mode === "expanded") Sound.play("open");
     if (prev === "expanded") {
       Sound.play("close");
       State.isPinned = false;
@@ -548,6 +540,9 @@ export class Island {
     this.islandEl.addEventListener("mousedown", (e) => {
       Sound.resume();
       State.lastActivity = performance.now();
+      // Escape and a click outside need the keyboard; an alert that opens on its
+      // own never takes it, so no keystroke meant for the terminal lands here.
+      void Bridge.focusWindow(true);
       if (State.mode !== "expanded") {
         this.fsm.click();
         return;
@@ -861,12 +856,11 @@ export class Island {
       if (on) view.sync();
     }
 
-    // Window-level keyboard focus is now handled once in `setMode` for the
-    // whole expanded window (see there for why) — here we only still need to
-    // give the caret to the chat's own text field once it is on screen.
+    // The chat takes the keyboard for its text field (a click already has).
     if (this.lastSyncedView !== State.view) {
       this.lastSyncedView = State.view;
       if (State.view === "prompt") {
+        void Bridge.focusWindow(true);
         window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
       }
     }

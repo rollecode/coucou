@@ -418,10 +418,9 @@ pub fn run() {
 
             if let Some(win) = island::window(&handle) {
                 platform::make_non_activating(&win);
-                // Collapsing on Escape already relies on the island being
-                // able to hold keyboard focus while expanded (see
-                // `setMode`); the same focus now also lets us notice a click
-                // elsewhere on the desktop and close the island for that too.
+                // Once a click or the chat gave the island the keyboard
+                // (focusWindow, island.ts), losing it means a click elsewhere:
+                // the island closes, as on Escape.
                 let blur_handle = handle.clone();
                 win.on_window_event(move |event| {
                     if let tauri::WindowEvent::Focused(false) = event {
