@@ -124,6 +124,9 @@ enum PillCatalog {
               category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_calcom",  name: "Cal.com",     color: "#C9956A",
               category: .service,   subtitle: "Integration",  source: .n8n),
+        // EventKit on the Mac (CalendarWatcher), a secret iCal address on Windows and Linux.
+        .init(id: "integration_calendar", name: "Calendar",   color: "#4F9DF7",
+              category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_stripe",  name: "Stripe",      color: "#0570DE",
               category: .service,   subtitle: "Integration",  source: .n8n),
         .init(id: "integration_timely",  name: "Timely",      color: "#F5A524",

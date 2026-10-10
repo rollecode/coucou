@@ -443,6 +443,16 @@ final class AppState: ObservableObject {
         }
     }
 
+    // Calendar filter — empty = every calendar of the Calendar app
+    @Published var calendarFilter: Set<String> = [] {
+        didSet {
+            if let data = try? JSONEncoder().encode(Array(calendarFilter)) {
+                UserDefaults.standard.set(data, forKey: "calendarFilter")
+            }
+            CalendarWatcher.shared.refresh()
+        }
+    }
+
     // Active integration pills (main workspace pill excluded). Max 4.
     @Published var activeIntegrations: Set<String> = ["integration_resend", "integration_n8n", "integration_vercel", "integration_github"] {
         didSet {
@@ -453,6 +463,9 @@ final class AppState: ObservableObject {
             if !activeIntegrations.contains("integration_github") && oldValue.contains("integration_github") {
                 githubPulse = nil
                 githubActivity = nil
+            }
+            if activeIntegrations.contains(CalendarWatcher.pillId) && !oldValue.contains(CalendarWatcher.pillId) {
+                CalendarWatcher.shared.refresh()
             }
         }
     }
@@ -484,6 +497,10 @@ final class AppState: ObservableObject {
     @Published var calcomBookings: [CalcomBooking] = []
     @Published var calcomLoaded: Bool = false
     @Published var calcomError: String? = nil
+
+    // Calendar (populated by CalendarWatcher)
+    @Published var calendarMeetings: [CalendarMeeting] = []
+    @Published var calendarLoaded: Bool = false
 
     // Timely (populated by TimelyPoller)
     @Published var timelyDay: TimelyDay? = nil
@@ -678,6 +695,8 @@ final class AppState: ObservableObject {
            let a = try? JSONDecoder().decode([String].self, from: d) { vercelProjectFilter = Set(a) }
         if let d = ud.data(forKey: "n8nWorkflowFilter"),
            let a = try? JSONDecoder().decode([String].self, from: d) { n8nWorkflowFilter = Set(a) }
+        if let d = ud.data(forKey: "calendarFilter"),
+           let a = try? JSONDecoder().decode([String].self, from: d) { calendarFilter = Set(a) }
         if let d = ud.data(forKey: "activeIntegrations"),
            let a = try? JSONDecoder().decode([String].self, from: d) { activeIntegrations = Set(a) }
         if let v = ud.string(forKey: "mainPill"), !v.isEmpty,

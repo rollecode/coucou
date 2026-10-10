@@ -21,6 +21,7 @@ pub const KNOWN_KEYS: &[&str] = &[
     "resend-api-key",
     "notion-api-key",
     "calcom-api-key",
+    "calendar-ical-url",
     "timely-client-id",
     "timely-client-secret",
     "timely-access-token",

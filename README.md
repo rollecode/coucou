@@ -47,6 +47,7 @@ Meet **Mochi**: a soft little squircle with big eyes that pops out of your notch
 - 🪟 **Drag Mochi onto any window** — attach that window as context for Claude *(macOS)*.
 - 🔌 **Integrations** — Stripe payments, n8n workflows, GitHub (open PRs, reviews requested, CI status), Vercel deployments, Resend emails, Notion, Cal.com, Linear (unread inbox entries and the issues assigned to you), Better Stack incidents and monitors that are down, Slack, Timely (running timer and today's hours against your capacity). Each one gets its own little colored Mochi.
 - 💬 **Slack** — unread direct messages and recent mentions of you in the notch; click one to open it in Slack. Uses a user token from your own Slack app with the `im:read`, `users:read` and `search:read` scopes (see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)).
+- 📅 **Calendar** — your next meeting with a countdown, the rest of the day below it, a **Join** button for Meet, Zoom and Teams links, and Mochi taps you 5 minutes before it starts. On the Mac it reads the Calendar app (Google accounts included, no key); on Windows and Linux, paste your Google Calendar's secret iCal address (or any iCal link).
 - 🎵 **Apple Music pill** *(macOS, GitHub build)* — add the Apple Music pill in Settings → Active pills to see what's playing and control playback from the notch; Mochi dances while it plays.
 - 🎧 **Spotify pill** *(macOS, GitHub build)* — add the Spotify pill in Settings → Active pills: album cover, title and artist, a progress bar you drag to seek, play/pause, previous/next, shuffle, repeat and volume, right from the notch; Mochi dances while it plays.
 - 👗 **Dress Mochi up** — right-click him for the wardrobe. He also dresses up for the seasons on his own.
@@ -244,6 +245,7 @@ Click the Coucou icon in the menu bar (macOS) or in the system tray (Windows, Li
 | **Active pills** *(macOS)* | choose which tools and agents appear in the island | Settings → Active pills |
 | Stripe, n8n, GitHub, Vercel, Resend, Notion, Cal.com, Linear, Better Stack, Slack | the service pills | Keychain / Windows Credential Manager / Secret Service, all optional |
 | **Timely** OAuth app | the Timely pill | Settings → Integrations → Timely: client ID and secret, **Connect**, paste the code. See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md#2bis-timely-suivi-du-temps) |
+| **Calendar** | the Calendar pill | Mac: Settings → Integrations → **Allow calendar access**. Windows and Linux: the secret iCal address, in the Credential Manager / Secret Service |
 
 If Coucou isn't running, the hook exits immediately: **Claude Code is never blocked.**
 

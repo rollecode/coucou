@@ -25,6 +25,7 @@ import { buildHeader, buildViews, type ViewActions, type ViewHost } from "../vie
 import { h } from "../views/dom";
 import { IslandStateMachine } from "./fsm";
 import { refreshHookPills } from "./integrations";
+import { calendarAgenda } from "./calendar";
 import { DesktopLink } from "./desktop";
 import type { ViewCommand } from "./shortcuts";
 import { DRAG_THRESHOLD } from "../mochi/desktop-logic";
@@ -196,6 +197,7 @@ export class Island {
           integration_stripe: "https://dashboard.stripe.com/payments",
           integration_notion: "https://notion.so",
           integration_calcom: "https://app.cal.com/bookings",
+          integration_calendar: calendarAgenda()?.next?.joinUrl ?? "https://calendar.google.com",
           integration_timely: "https://app.timelyapp.com",
           integration_betterstack: "https://uptime.betterstack.com/incidents",
         };

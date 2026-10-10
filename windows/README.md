@@ -424,6 +424,10 @@ own window.
   Apple Mail's scripting; neither has a safe equivalent that attaches a file
   here, and the drop card would need a third button it doesn't have.
 - Cal.com shows the next bookings as a list rather than the Mac's calendar.
+- The Calendar pill reads a secret iCal address (Google Calendar → Settings →
+  your calendar → Integrate calendar, or any iCal link) instead of the Mac's
+  Calendar app. The address is kept in the Credential Manager or Secret
+  Service; the island only ever gets the feed.
 - Timely's running timer moves on with each poll, once a minute, rather than
   every 30 seconds on screen.
 - The Cursor pill carries both Cursor Agent's own hooks and Claude Code running

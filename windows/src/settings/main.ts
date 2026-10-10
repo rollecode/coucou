@@ -955,6 +955,10 @@ const INTEGRATIONS: IntegrationDef[] = [
     fields: [{ key: "notion-api-key", label: N_("Integration token"), placeholder: "ntn_…", secret: true }] },
   { id: "integration_calcom", name: "Cal.com", color: "#C9956A",
     fields: [{ key: "calcom-api-key", label: N_("API key"), placeholder: "cal_…", secret: true }] },
+  { id: "integration_calendar", name: "Calendar", color: "#4F9DF7",
+    fields: [{ key: "calendar-ical-url", label: N_("Secret address in iCal format"),
+      placeholder: "https://calendar.google.com/calendar/ical/…/basic.ics", secret: true }],
+    hint: N_("Google Calendar → Settings → your calendar → Integrate calendar. Any iCal link works: Outlook, iCloud, Fastmail.") },
   // OAuth: the user's own Timely app; timelyRow() below trades its code for tokens.
   { id: "integration_timely", name: "Timely", color: "#F5A524",
     fields: [
@@ -1611,7 +1615,7 @@ async function render() {
   const keys = [
     "stripe-api-key", "github-token", "vercel-token",
     "n8n-url", "n8n-api-key", "resend-api-key", "notion-api-key", "calcom-api-key", "linear-api-key", "betterstack-token", "slack-token",
-    "timely-client-id", "timely-client-secret", "timely-access-token",
+    "timely-client-id", "timely-client-secret", "timely-access-token", "calendar-ical-url",
   ];
   const present: Record<string, boolean> = {};
   for (const k of keys) present[k] = (await Bridge.secretPresent(k)) ?? false;

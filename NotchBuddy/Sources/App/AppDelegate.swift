@@ -199,6 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         GithubPoller.shared.start()
         StripePoller.shared.start()
         CalcomPoller.shared.start()
+        CalendarWatcher.shared.start()
         NotionPoller.shared.start()
         TimelyPoller.shared.start()
         SlackPoller.shared.start()

@@ -129,6 +129,9 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("notion-api-key") },
   { id: "integration_calcom", name: "Cal.com", color: "#C9956A", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calcom-api-key") },
+  // The Mac reads EventKit; here, a secret iCal address (src/core/calendar.ts).
+  { id: "integration_calendar", name: "Calendar", color: "#4F9DF7", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calendar-ical-url") },
   { id: "integration_stripe", name: "Stripe", color: "#0570DE", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("stripe-api-key") },
   // Connected once Settings has traded Timely's code for a token.
