@@ -1188,6 +1188,13 @@ function generalSection(): HTMLElement {
     numberOnly.disabled = !v;
     void save();
   });
+  const expandSwitch = toggle(settings.expandOnActivity, (v) => { settings.expandOnActivity = v; void save(); }) as HTMLButtonElement;
+  expandSwitch.disabled = !settings.followActivity;
+  const followSwitch = toggle(settings.followActivity, (v) => {
+    settings.followActivity = v;
+    expandSwitch.disabled = !v;
+    void save();
+  });
 
   const screen = h("select", {}) as HTMLSelectElement;
   screen.append(
@@ -1242,6 +1249,15 @@ function generalSection(): HTMLElement {
       toggle(settings.followEdits, (v) => { settings.followEdits = v; void save(); }),
     ),
     h("div", { class: "hint", text: t("Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Follow the latest activity") }),
+      followSwitch,
+    ),
+    h("div", { class: "hint", text: t("The card shows the agent that did something last") }),
+    h("div", { class: "row sub" },
+      h("label", { text: t("Open the island on new activity") }),
+      expandSwitch,
+    ),
     h("div", { class: "row" },
       h("label", { text: t("Auto-close") }),
       autoClose,

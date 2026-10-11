@@ -31,6 +31,10 @@ pub struct Settings {
     /// The alerts that open the island instead of peeking (src/core/alerts.ts):
     /// "agentFinished", "agentError" or a pill ID, as the Mac's "expandOnAlert". None by default.
     pub expand_on_alert: Vec<String>,
+    /// The card follows the agent that did something last ("Follow the latest activity").
+    pub follow_activity: bool,
+    /// While following, new activity opens the island on that agent's card.
+    pub expand_on_activity: bool,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
     /// The always-on workspace pill (src/core/pills.ts checks it is one).
@@ -180,6 +184,8 @@ impl Default for Settings {
             auto_hide: true,
             follow_edits: false,
             expand_on_alert: Vec::new(),
+            follow_activity: false,
+            expand_on_activity: false,
             absence_interval: 180.0,
             active_integrations: vec![
                 "integration_resend".into(),
@@ -496,6 +502,8 @@ mod tests {
   "autoHide": false,
   "followEdits": true,
   "expandOnAlert": ["agentFinished", "integration_vercel"],
+  "followActivity": true,
+  "expandOnActivity": true,
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
   "mainPill": "agent_cursor",
@@ -1016,6 +1024,8 @@ mod tests {
                 "autoHide",
                 "followEdits",
                 "expandOnAlert",
+                "followActivity",
+                "expandOnActivity",
                 "absenceInterval",
                 "activeIntegrations",
                 "mainPill",

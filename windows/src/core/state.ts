@@ -114,6 +114,8 @@ export interface Settings {
   followEdits: boolean;
   /** Alerts that open the island instead of peeking: core/alerts.ts keys. Same as the Mac's "expandOnAlert". */
   expandOnAlert: string[];
+  followActivity: boolean;
+  expandOnActivity: boolean;
   absenceInterval: number;
   /** Declared pills next to the main one (at most 4), in the order they were added. */
   activeIntegrations: string[];
@@ -198,6 +200,8 @@ export const DEFAULT_SETTINGS: Settings = {
   autoHide: true,
   followEdits: false,
   expandOnAlert: [],
+  followActivity: false,
+  expandOnActivity: false,
   absenceInterval: 180,
   activeIntegrations: [
     "integration_resend", "integration_n8n", "integration_vercel", "integration_github",

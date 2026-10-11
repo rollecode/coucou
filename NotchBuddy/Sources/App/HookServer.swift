@@ -578,6 +578,7 @@ final class HookServer: @unchecked Sendable {
             }
         }
 
+        if name != "SessionEnd" { followActivity(pill: agentId) }
         let focused = state.focusId == agentId
         if isRemote, let host = payload["coucou_remote"] as? String {
             RemoteTerminal.remember(pillId: agentId, host: host, payload: payload)
@@ -1150,6 +1151,23 @@ final class HookServer: @unchecked Sendable {
             NotificationCenter.default.post(name: .hookExpand, object: view)
         } else if state.view != view {
             withAnimation(.easeIn(duration: 0.16)) { state.view = view }
+        }
+    }
+
+    /// Settings → Follow the latest activity: the pill that just did something takes the card, and with
+    /// "Open the island on new activity" the island opens on it. A view you opened stays, and an approval
+    /// or a question keeps the front.
+    @MainActor
+    private func followActivity(pill id: String) {
+        let state = AppState.shared
+        guard state.followActivity, state.isPresent, state.pendingApproval == nil, state.pendingQuestion == nil,
+              state.tasks.contains(where: { $0.id == id }) else { return }
+        if state.mode == .expanded && state.view != .overview { return }
+        if state.focusId != id {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.setFocus(id) }
+        }
+        if state.expandOnActivity && state.mode != .expanded {
+            NotificationCenter.default.post(name: .hookExpand, object: IslandView.overview)
         }
     }
 

@@ -405,6 +405,13 @@ final class AppState: ObservableObject {
     @Published var compactAgentsNumberOnly: Bool = false {
         didSet { UserDefaults.standard.set(compactAgentsNumberOnly, forKey: "compactAgentsNumberOnly") }
     }
+    // The card follows the agent that did something last; with expandOnActivity the island opens on it — persisted, off by default
+    @Published var followActivity: Bool = false {
+        didSet { UserDefaults.standard.set(followActivity, forKey: "followActivity") }
+    }
+    @Published var expandOnActivity: Bool = false {
+        didSet { UserDefaults.standard.set(expandOnActivity, forKey: "expandOnActivity") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -710,6 +717,8 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "followEdits") as? Bool { followEdits = v }
         if let v = ud.object(forKey: "compactShowAgents") as? Bool { compactShowAgents = v }
         if let v = ud.object(forKey: "compactAgentsNumberOnly") as? Bool { compactAgentsNumberOnly = v }
+        if let v = ud.object(forKey: "followActivity") as? Bool { followActivity = v }
+        if let v = ud.object(forKey: "expandOnActivity") as? Bool { expandOnActivity = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }
