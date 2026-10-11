@@ -137,6 +137,7 @@ export function islandSize(
   view: IslandViewName,
   chatCount = 0,
   pad: CompactPadding = COMPACT_PADDING,
+  compactMinW = 0,
 ): { w: number; h: number } {
   switch (mode) {
     case "hidden":
@@ -144,7 +145,7 @@ export function islandSize(
       // slides into the top edge of the screen instead of sitting there as a bar.
       return { w: NOTCH_W, h: 0 };
     case "compact":
-      return { w: COMPACT_W, h: pad.top + COMPACT_ROW + pad.bottom };
+      return { w: Math.max(COMPACT_W, compactMinW), h: pad.top + COMPACT_ROW + pad.bottom };
     case "expanded": {
       const h = view === "prompt" ? chatPromptHeight(chatCount) : VIEW_LAYOUTS[view].height;
       return { w: EXPANDED_W, h };

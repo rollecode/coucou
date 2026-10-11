@@ -1338,7 +1338,7 @@ final class IslandWindowController: NSWindowController {
         let panelH = window?.frame.height ?? 320
         let panelW = window?.frame.width  ?? 720
         let (islandW, fixedH) = islandSize(mode: s.mode, view: s.view,
-                                            progress: s.uploadProgress, nw: notchW, nh: notchH, pad: s.compactPadding, compactExtra: s.compactSideExtra)
+                                            progress: s.uploadProgress, nw: notchW, nh: notchH, pad: s.compactPadding, compactMinWidth: s.compactStatsWidth)
         // Chat view resizes dynamically — must match IslandContainer.chatPromptHeight
         let islandH: CGFloat
         if s.mode == .expanded && s.view == .prompt {
@@ -1437,7 +1437,7 @@ final class IslandPanel: NSPanel {
     func currentIslandFrame(nw: CGFloat, nh: CGFloat) -> CGRect {
         let s = AppState.shared
         let (w, fixedH) = islandSize(mode: s.mode, view: s.view,
-                                      progress: s.uploadProgress, nw: nw, nh: nh, pad: s.compactPadding, compactExtra: s.compactSideExtra)
+                                      progress: s.uploadProgress, nw: nw, nh: nh, pad: s.compactPadding, compactMinWidth: s.compactStatsWidth)
         let h: CGFloat
         if s.mode == .expanded && s.view == .prompt {
             let base: CGFloat = 240
@@ -2050,10 +2050,10 @@ func islandSize(mode: IslandMode, view: IslandView,
                 progress: Double = 0,
                 nw: CGFloat = IslandConst.notchWidth,
                 nh: CGFloat = IslandConst.notchHeight,
-                pad: CompactPadding = .standard, compactExtra: CGFloat = 0) -> (CGFloat, CGFloat) {
+                pad: CompactPadding = .standard, compactMinWidth: CGFloat = 0) -> (CGFloat, CGFloat) {
     switch mode {
     case .hidden:   return (nw, nh)
-    case .compact:  return (nw + 160 + 2 * compactExtra, max(nh, pad.top + IslandConst.compactRow + pad.bottom))
+    case .compact:  return (max(nw + 160, compactMinWidth), max(nh, pad.top + IslandConst.compactRow + pad.bottom))
     case .expanded:
         let layout = IslandConst.viewLayouts[view]!
         if view == .question, let h = QuestionLayout.height {

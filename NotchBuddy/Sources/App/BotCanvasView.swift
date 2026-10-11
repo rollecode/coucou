@@ -200,7 +200,7 @@ struct BotCanvasView: View {
         }
         let (islandW, islandH) = islandSize(mode: state.mode, view: state.view,
                                              progress: state.uploadProgress,
-                                             nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
+                                             nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
         let screen = IslandWindowController.islandScreen().frame
         let desktopTop = IslandWindowController.desktopTop
         // The pointer read now, not from the island poll (which slows down far from it).

@@ -143,7 +143,7 @@ struct IslandContainer: View {
             let anim = shrinking ? closeEase : openSpring
             let (w, h) = islandSize(mode: newMode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             let cr  = newMode == .expanded ? IslandConst.expandedCorner : IslandConst.roundedCorner
             let tr: CGFloat = 0
             withAnimation(anim) {
@@ -168,10 +168,10 @@ struct IslandContainer: View {
                 islandHeight = newView == .prompt ? chatPromptHeight : h
             }
         }
-        .onChange(of: state.compactSideExtra) { _, extra in
+        .onChange(of: state.compactStatsWidth) { _, minWidth in
             guard state.mode == .compact else { return }
             let (w, _) = islandSize(mode: .compact, view: state.view,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: extra)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: minWidth)
             withAnimation(openSpring) { islandWidth = w }
         }
         .onChange(of: state.chatHistory.count) { _, _ in
@@ -181,7 +181,7 @@ struct IslandContainer: View {
         .onAppear {
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             islandWidth      = w
             islandHeight     = state.view == .prompt ? chatPromptHeight : h
             cornerRadius     = state.mode == .expanded ? IslandConst.expandedCorner : IslandConst.roundedCorner
@@ -194,7 +194,7 @@ struct IslandContainer: View {
             // New screen, new resting size (notch ↔ bar): snap without animation.
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             islandWidth  = w
             islandHeight = (state.mode == .expanded && state.view == .prompt) ? chatPromptHeight : h
         }
@@ -826,8 +826,8 @@ extension AppState {
     /// The mini grid and its gap to the stats, wherever the padding puts it.
     var compactGridTaken: CGFloat { compactPadding.right + 2 * IslandConst.miniGridHalf + 10 }
 
-    /// Width added on each side of the compact island so the stats clear the notch and Mochi.
-    var compactSideExtra: CGFloat {
+    /// Narrowest compact island that keeps the stats clear of the notch and Mochi; 0 without stats.
+    var compactStatsWidth: CGFloat {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold)
         func widest(_ rows: [[CompactStat]]) -> CGFloat {
             var most: CGFloat = 0
@@ -838,10 +838,10 @@ extension AppState {
             return most
         }
         let sides = compactStatSides
+        if sides.left.isEmpty && sides.right.isEmpty { return 0 }
         let left = widest(sides.left) + compactBotTaken
         let right = widest(sides.right) + compactGridTaken
-        // islandSize gives each ear 80 beside the notch; without one the text may cross the middle.
-        let need = hasNotch ? max(left, right) - 80 : (left + right - notchWidth - 160) / 2
-        return max(0, ceil(need))
+        // With a notch each side holds its own stats; without one the text may cross the middle.
+        return hasNotch ? notchWidth + 2 * max(left, right) : left + right
     }
 }

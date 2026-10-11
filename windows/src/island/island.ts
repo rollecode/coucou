@@ -69,6 +69,8 @@ export class Island {
   private greetingCanvas!: HTMLCanvasElement;
   private miniGrid!: HTMLElement;
   private compactStats!: HTMLElement;
+  /** Narrowest compact island that fits the stats beside Mochi and the mini grid; 0 without stats. */
+  private statsMinW = 0;
   private compactCodexShown = false;
   private countdown!: HTMLElement;
   private wakeStrip!: HTMLElement;
@@ -681,7 +683,7 @@ export class Island {
   // ── Geometry ────────────────────────────────────────────────────────────────
 
   private targetSize(): { w: number; h: number; r: number } {
-    let { w, h } = islandSize(State.mode, State.view, State.chatHistory.length, State.settings.compactPadding);
+    let { w, h } = islandSize(State.mode, State.view, State.chatHistory.length, State.settings.compactPadding, this.statsMinW);
     if (State.mode === "expanded" && State.view === "question" && State.pendingApproval?.questions) {
       h = QUESTION_PICKER_H;
     }
@@ -1285,6 +1287,16 @@ export class Island {
       );
     }
     this.compactStats.style.opacity = count || windows.length ? "1" : "0";
+    // Mochi and the mini grid with their gaps, wherever the padding puts them.
+    const pad = State.settings.compactPadding;
+    const sides = pad.left + 2 * COMPACT_BOT_HALF + 8 + pad.right + 2 * MINI_GRID_HALF + 10;
+    const statsMinW = count || windows.length ? Math.ceil(this.compactStats.offsetWidth) + sides : 0;
+    if (statsMinW !== this.statsMinW) {
+      this.statsMinW = statsMinW;
+      if (State.mode === "compact") {
+        this.animateGeometry(false);
+      }
+    }
     // Codex is asked when the compact island comes into view, as by its pill.
     const codexShown = showGrid && State.settings.showCodexPlanInNotch;
     if (codexShown && !this.compactCodexShown) {
