@@ -435,7 +435,9 @@ final class HookServer: @unchecked Sendable {
         }
         #if !APPSTORE
         // The session's own process, so its first event takes the pill found for it (as on Linux).
-        if host == nil, let pid = Self.claudeAncestor(ofPeer: fd) { payload["coucou_claude_pid"] = Int(pid) }
+        if host == nil, let pid = Self.claudeAncestor(from: payload["hook_ppid"] as? Int, peer: fd) {
+            payload["coucou_claude_pid"] = Int(pid)
+        }
         #endif
 
         let coucouKind = payload["coucou_kind"] as? String ?? ""
@@ -998,11 +1000,16 @@ final class HookServer: @unchecked Sendable {
         return found.sorted { $0.pid < $1.pid }
     }
 
-    /// The `claude` process that ran a hook: the farthest one up from the relay on the socket.
-    private static func claudeAncestor(ofPeer fd: Int32) -> Int32? {
+    /// The `claude` process that ran a hook: the farthest one up from the hook's parent, else
+    /// from the relay on the socket (gone already when it sent its event and left).
+    private static func claudeAncestor(from hookParent: Int?, peer fd: Int32) -> Int32? {
         var pid: pid_t = 0
         var len = socklen_t(MemoryLayout<pid_t>.size)
-        guard getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0, pid > 1 else { return nil }
+        if let hookParent, (2...Int(Int32.max)).contains(hookParent) {
+            pid = pid_t(hookParent)
+        } else {
+            guard getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0, pid > 1 else { return nil }
+        }
         var found: Int32?
         var current = pid
         for _ in 0..<12 {
@@ -3663,6 +3670,8 @@ private let nbHookShellWrapper = """
 #!/bin/sh
 # Coucou hook relay — always exits 0, never blocks Claude Code
 HOOK_DIR="$(dirname "$0")"
+# The agent that ran the hook, still running after this relay has exited
+COUCOU_HOOK_PPID=$PPID; export COUCOU_HOOK_PPID
 out=""
 if xcode-select -p >/dev/null 2>&1; then
     out=$(/usr/bin/python3 "$HOOK_DIR/nb-hook.py" "$@" 2>/dev/null)
@@ -3929,6 +3938,8 @@ def main():
         payload['coucou_kind'] = 'ask_user_question'
         env = os.environ
         payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+        if env.get('COUCOU_HOOK_PPID', '').isdigit():
+            payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
         payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
         payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
         payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
@@ -3990,6 +4001,8 @@ def main():
     # Enrich with terminal context
     env = os.environ
     payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+    if env.get('COUCOU_HOOK_PPID', '').isdigit():
+        payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
     payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
     payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
     payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
@@ -4319,6 +4332,8 @@ def main():
         payload['coucou_kind'] = 'ask_user_question'
         env = os.environ
         payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+        if env.get('COUCOU_HOOK_PPID', '').isdigit():
+            payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
         payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
         payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
         payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
@@ -4378,6 +4393,8 @@ def main():
 
     env = os.environ
     payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+    if env.get('COUCOU_HOOK_PPID', '').isdigit():
+        payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
     payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
     payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
     payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
