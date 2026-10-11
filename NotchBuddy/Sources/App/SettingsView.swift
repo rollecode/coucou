@@ -130,6 +130,16 @@ struct SettingsView: View {
     @State private var n8nWorkflows: [String] = []
     @State private var loadingN8n: Bool = false
 
+    // One alert key of state.expandOnAlert as a switch
+    private func alertBinding(_ key: String) -> Binding<Bool> {
+        Binding(
+            get: { state.expandOnAlert.contains(key) },
+            set: { on in
+                if on { state.expandOnAlert.insert(key) } else { state.expandOnAlert.remove(key) }
+            }
+        )
+    }
+
     // Bindings in minutes for the absence field
     private var absenceMinutes: Binding<Double> {
         Binding(
@@ -342,6 +352,14 @@ struct SettingsView: View {
                     .help("The small island hides a minute after the last activity. Off: it stays at the top of the screen.")
                 Toggle("Follow edits live", isOn: $state.followEdits)
                     .help("Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.")
+                Text("Alerts that open the island")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Toggle("Agent finished", isOn: alertBinding(AlertExpansion.agentFinished))
+                Toggle("Agent error", isOn: alertBinding(AlertExpansion.agentError))
+                ForEach(PillCatalog.available.filter { AlertExpansion.pills.contains($0.id) }, id: \.id) { def in
+                    Toggle(def.name, isOn: alertBinding(def.id))
+                }
                 HStack(spacing: 8) {
                     Text("Close after")
                     TextField("60", value: $state.autoCloseInterval, format: .number)

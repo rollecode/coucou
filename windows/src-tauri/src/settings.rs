@@ -28,6 +28,9 @@ pub struct Settings {
     /// Each Claude Code file edit opens the island on its diff as it happens.
     /// Off by default.
     pub follow_edits: bool,
+    /// The alerts that open the island instead of peeking (src/core/alerts.ts):
+    /// "agentFinished", "agentError" or a pill ID, as the Mac's "expandOnAlert". None by default.
+    pub expand_on_alert: Vec<String>,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
     /// The always-on workspace pill (src/core/pills.ts checks it is one).
@@ -171,6 +174,7 @@ impl Default for Settings {
             compact_padding: CompactPadding::default(),
             auto_hide: true,
             follow_edits: false,
+            expand_on_alert: Vec::new(),
             absence_interval: 180.0,
             active_integrations: vec![
                 "integration_resend".into(),
@@ -483,6 +487,7 @@ mod tests {
   "compactPadding": { "top": 2.0, "right": 6.0, "bottom": 4.0, "left": 6.0 },
   "autoHide": false,
   "followEdits": true,
+  "expandOnAlert": ["agentFinished", "integration_vercel"],
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
   "mainPill": "agent_cursor",
@@ -999,6 +1004,7 @@ mod tests {
                 "compactPadding",
                 "autoHide",
                 "followEdits",
+                "expandOnAlert",
                 "absenceInterval",
                 "activeIntegrations",
                 "mainPill",

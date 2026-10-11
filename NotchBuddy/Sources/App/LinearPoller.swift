@@ -83,7 +83,9 @@ final class LinearPoller: @unchecked Sendable {
         state.tasks[idx].steps = [[newest.key, newest.title].compactMap { $0 }.joined(separator: " ")]
         if !focused { state.tasks[idx].pillBadge = .finished }
         SoundEngine.shared.play("finish")
-        NotificationCenter.default.post(name: .hookReveal, object: nil)
+        if !state.openForAlert("integration_linear", pill: "integration_linear") {
+            NotificationCenter.default.post(name: .hookReveal, object: nil)
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
             guard let i = state.tasks.firstIndex(where: { $0.id == "integration_linear" }) else { return }

@@ -118,7 +118,9 @@ final class BetterStackPoller: @unchecked Sendable {
         s.tasks[idx].stepIndex = s.tasks[idx].steps.count - 1
         if s.focusId != id { s.tasks[idx].pillBadge = error ? .error : .finished }
         SoundEngine.shared.play(error ? "error" : "finish")
-        NotificationCenter.default.post(name: .hookReveal, object: nil)
+        if !s.openForAlert("integration_betterstack", pill: Self.pillId) {
+            NotificationCenter.default.post(name: .hookReveal, object: nil)
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
             guard let i = s.tasks.firstIndex(where: { $0.id == id }) else { return }

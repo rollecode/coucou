@@ -6,6 +6,7 @@
 import {
   agenda, eventsBetween, parseIcs, reminderAt, upcomingWindow, type Agenda, type CalendarEvent, type ParsedCalendar,
 } from "../core/calendar";
+import { openForAlert } from "../core/alerts";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
 import type { Island } from "./island";
@@ -73,7 +74,9 @@ function remind(island: Island, meeting: CalendarEvent) {
   task.stepIndex = 0;
   if (State.focusId !== CALENDAR) task.pillBadge = "approval";
   Sound.play("question");
-  island.reveal();
+  if (!openForAlert(island, CALENDAR, CALENDAR, "overview")) {
+    island.reveal();
+  }
   State.notify();
 
   window.setTimeout(() => {

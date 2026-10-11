@@ -163,7 +163,9 @@ final class CalendarWatcher {
         state.tasks[idx].steps = [meeting.title]
         if state.focusId != Self.pillId { state.tasks[idx].pillBadge = .approval }
         SoundEngine.shared.play("question")
-        NotificationCenter.default.post(name: .hookReveal, object: nil)
+        if !state.openForAlert("integration_calendar", pill: Self.pillId) {
+            NotificationCenter.default.post(name: .hookReveal, object: nil)
+        }
 
         let clearAt = meeting.start.timeIntervalSinceNow + Self.clearAfterStart
         DispatchQueue.main.asyncAfter(deadline: .now() + clearAt) {

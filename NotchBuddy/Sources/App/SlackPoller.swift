@@ -152,7 +152,9 @@ final class SlackPoller {
         state.tasks[idx].steps = [newest.author]
         if state.focusId != Self.pillId { state.tasks[idx].pillBadge = .finished }
         SoundEngine.shared.play("finish")
-        NotificationCenter.default.post(name: .hookReveal, object: nil)
+        if !state.openForAlert("integration_slack", pill: Self.pillId) {
+            NotificationCenter.default.post(name: .hookReveal, object: nil)
+        }
 
         // Same 60 s auto-clear as the other services; the messages stay on the card.
         DispatchQueue.main.asyncAfter(deadline: .now() + 60) {

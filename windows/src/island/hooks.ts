@@ -7,6 +7,7 @@
 
 import { Bridge, onEvent } from "../core/bridge";
 import { buildFileDiff, fileName, makeDiffStep, toOneLine } from "../core/diff";
+import { AGENT_ERROR, AGENT_FINISHED, openForAlert } from "../core/alerts";
 import { Sound } from "../core/sound";
 import { State, type ApprovalInfo, type AskedQuestion } from "../core/state";
 import { pillDefinition } from "../core/pills";
@@ -746,8 +747,11 @@ function handleHook(island: Island, payload: HookPayload) {
       State.updateTask(agentId, "finished");
       Sound.play("finish");
       // A card waiting for an answer is never covered by another alert.
-      if (focused && !State.pendingApproval) surface("finished", true);
-      else State.setPillBadge(agentId, "finished");
+      if (focused && !State.pendingApproval) {
+        surface("finished", true);
+      } else if (!openForAlert(island, AGENT_FINISHED, agentId, "finished")) {
+        State.setPillBadge(agentId, "finished");
+      }
       cancelStopTimer(agentId);
       stopTimers.set(
         agentId,
@@ -775,8 +779,11 @@ function handleHook(island: Island, payload: HookPayload) {
       supersedeStop();
       State.updateTask(agentId, "error");
       Sound.play("error");
-      if (focused && !State.pendingApproval) surface("error", true);
-      else State.setPillBadge(agentId, "error");
+      if (focused && !State.pendingApproval) {
+        surface("error", true);
+      } else if (!openForAlert(island, AGENT_ERROR, agentId, "error")) {
+        State.setPillBadge(agentId, "error");
+      }
       break;
 
     case "SessionEnd":

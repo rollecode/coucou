@@ -112,6 +112,8 @@ export interface Settings {
   autoHide: boolean;
   /** Each Claude Code file edit opens the island on its diff as it happens. */
   followEdits: boolean;
+  /** Alerts that open the island instead of peeking: core/alerts.ts keys. Same as the Mac's "expandOnAlert". */
+  expandOnAlert: string[];
   absenceInterval: number;
   /** Declared pills next to the main one (at most 4), in the order they were added. */
   activeIntegrations: string[];
@@ -192,6 +194,7 @@ export const DEFAULT_SETTINGS: Settings = {
   compactPadding: COMPACT_PADDING,
   autoHide: true,
   followEdits: false,
+  expandOnAlert: [],
   absenceInterval: 180,
   activeIntegrations: [
     "integration_resend", "integration_n8n", "integration_vercel", "integration_github",
