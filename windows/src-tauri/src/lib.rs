@@ -929,6 +929,12 @@ pub fn run() {
             integrations::start(handle.clone());
             spotify::sync(&handle, &loaded.active_integrations);
             remote::sync(&handle, &loaded.remote_hosts);
+            // The entry stores the executable's path: point it at this one, in case the app moved.
+            if loaded.autostart {
+                if let Err(err) = handle.autolaunch().enable() {
+                    log::line(format!("autostart: {err}"));
+                }
+            }
             shortcuts::apply(&handle, &loaded.shortcuts);
             Ok(())
         })
