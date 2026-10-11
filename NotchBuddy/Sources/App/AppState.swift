@@ -274,6 +274,10 @@ final class AppState: ObservableObject {
     @Published var openOnHover: Bool = false {
         didSet { UserDefaults.standard.set(openOnHover, forKey: "openOnHover") }
     }
+    // The compact island hides a minute after the last activity — persisted, on by default
+    @Published var autoHide: Bool = true {
+        didSet { UserDefaults.standard.set(autoHide, forKey: "autoHide") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -432,6 +436,9 @@ final class AppState: ObservableObject {
     /// True from "OK Coucou" until Coucou has finished answering (island stays compact).
     /// Drives Mochi's single attentive pose for the whole exchange.
     @Published var voiceActive = false
+    /// Listening / thinking / speaking — drives per-frame Mochi animations.
+    /// Set by IslandWindowController; read by BotCanvasView each display frame.
+    @Published var voiceSubState: BotVoiceSubState = .none
     #endif
 
     // Claude plan gauge (from statusline hook)
@@ -505,6 +512,7 @@ final class AppState: ObservableObject {
         if let v = ud.string(forKey: "lmstudioServerURL"), !v.isEmpty { lmstudioServerURL = v }
         // Migrate old 60s default → 15s
         if let v = ud.object(forKey: "openOnHover") as? Bool { openOnHover = v }
+        if let v = ud.object(forKey: "autoHide") as? Bool { autoHide = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }
