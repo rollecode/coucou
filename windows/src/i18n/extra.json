@@ -3998,6 +3998,17 @@
    "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
    "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
    "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini."
+  },
+  "No response text.": {
+   "zh-Hans": "没有回复内容。",
+   "hi": "जवाब में कोई टेक्स्ट नहीं।",
+   "es": "La respuesta no tiene texto.",
+   "ar": "لا يوجد نص في الرد.",
+   "fr": "La réponse ne contient pas de texte.",
+   "bn": "উত্তরে কোনো লেখা নেই।",
+   "pt-BR": "A resposta não tem texto.",
+   "ru": "В ответе нет текста.",
+   "id": "Tidak ada teks balasan."
   }
  }
 }
