@@ -566,6 +566,7 @@ final class HookServer: @unchecked Sendable {
         }
         let agentId = isExternalAgent || isCodexEvent ? baseId : claudePill(workspaceId: baseId, sessionId: sessionId)
         let ownSession = agentId.hasPrefix(PillCatalog.sessionPillPrefix)
+        state.quietSessionPills.remove(agentId)
 
         func ensurePill() {
             if ownSession {
@@ -925,6 +926,7 @@ final class HookServer: @unchecked Sendable {
             guard let pillId else { continue }
             state.clearSessionDiffs(for: pillId)
             state.removeTask(id: pillId)
+            state.quietSessionPills.remove(pillId)
         }
         for session in found {
             let key = "pid-\(session.pid)"
@@ -947,6 +949,7 @@ final class HookServer: @unchecked Sendable {
             let raw = session.name.isEmpty ? URL(fileURLWithPath: session.cwd).lastPathComponent : session.name
             let projectName = aliasProjectName(raw.isEmpty ? "Session" : raw)
             let pillId = claudePill(workspaceId: terminalWorkspace(), sessionId: key)
+            state.quietSessionPills.insert(pillId)
             if pillId.hasPrefix(PillCatalog.sessionPillPrefix) {
                 upsertSessionTask(id: pillId, projectName: projectName, cwd: session.cwd, bundleId: "")
             } else {
