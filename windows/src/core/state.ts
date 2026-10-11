@@ -131,6 +131,9 @@ export interface Settings {
   planRelayInstalled: boolean;
   /** Show the Codex plan pill in the island's header. */
   showCodexPlanInNotch: boolean;
+  compactShowAgents: boolean;
+  compactAgentsNumberOnly: boolean;
+  compactShowPlan: boolean;
   /** Who the chat talks to (see core/providers.ts); picked in the chat view. */
   chatProvider: ProviderId;
   /** The model picked for each provider other than Anthropic, by provider id. */
@@ -207,6 +210,9 @@ export const DEFAULT_SETTINGS: Settings = {
   showPlanInNotch: false,
   planRelayInstalled: false,
   showCodexPlanInNotch: false,
+  compactShowAgents: true,
+  compactAgentsNumberOnly: false,
+  compactShowPlan: true,
   chatProvider: "anthropic",
   chatModels: {},
   ollamaUrl: "",
