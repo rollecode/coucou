@@ -595,7 +595,7 @@ final class HookServer: @unchecked Sendable {
             let resolved = approvalQueue.resolved(byEvent: name, sessionId: sessionId, pillId: agentId,
                                                   tool: tool, inputKey: inputKey)
             if resolved.isEmpty { return }
-            dismissApprovals(ids: resolved.map(\.id), note: handledNote(for: agentId))
+            dismissApprovals(ids: resolved.map(\.id), note: isRemote ? String(localized: "Handled elsewhere.") : handledNote(for: agentId))
             // Approval dismissed — fall through so the resolving event updates state normally.
         }
 
@@ -1767,8 +1767,7 @@ final class HookServer: @unchecked Sendable {
             for matcher in permReqHooks {
                 if let hookList = matcher["hooks"] as? [[String: Any]] {
                     for hook in hookList {
-                        if let cmd = hook["command"] as? String,
-                           cmd.contains("NotchBuddy") || cmd.contains("coucou") {
+                        if let cmd = hook["command"] as? String, isLocalCoucouHook(cmd) {
                             hasCoucouHooks = true
                             if let timeout = hook["timeout"] as? Int, timeout < 120 { return true }
                         }
@@ -1783,8 +1782,7 @@ final class HookServer: @unchecked Sendable {
             let hasAskEntry = preToolHooks.contains { m in
                 (m["matcher"] as? String) == "AskUserQuestion"
                 && (m["hooks"] as? [[String: Any]])?.contains {
-                    let cmd = $0["command"] as? String ?? ""
-                    return cmd.contains("NotchBuddy") || cmd.contains("coucou")
+                    isLocalCoucouHook($0["command"] as? String ?? "")
                 } ?? false
             }
             if !hasAskEntry { return true }
@@ -1835,9 +1833,10 @@ final class HookServer: @unchecked Sendable {
         return (data, snapshot.bytes)
     }
 
-    /// `settings` with Coucou's hooks for Claude Code, running `quotedCmd`; anybody
-    /// else's hooks untouched. Also used for a remote host's settings.json.
-    static func withClaudeHooks(_ original: [String: Any], command quotedCmd: String) throws -> [String: Any] {
+    /// `settings` with Coucou's hooks for Claude Code, running `quotedCmd`; only the hooks `owns`
+    /// claims are replaced. Also used for a remote host's settings.json.
+    static func withClaudeHooks(_ original: [String: Any], command quotedCmd: String,
+                                owns: (String) -> Bool = isLocalCoucouHook) throws -> [String: Any] {
         var settings = original
         let events: [(String, Int)] = [
             ("SessionStart", 10), ("SessionEnd", 10),
@@ -1852,7 +1851,7 @@ final class HookServer: @unchecked Sendable {
         var hooks = try ClaudeSettingsFile.hooks(in: settings, name: "settings.json")
         for (event, timeout) in events {
             var existing = try ClaudeSettingsFile.hookGroups(in: hooks, event: event, name: "settings.json")
-            existing.removeAll { ($0["hooks"] as? [[String: Any]])?.contains { ($0["command"] as? String)?.contains("NotchBuddy") == true || ($0["command"] as? String)?.contains("coucou") == true } ?? false }
+            existing = removingHooks(from: existing, where: owns)
             existing.append(["hooks": [["type": "command", "command": quotedCmd, "timeout": timeout]]])
             hooks[event] = existing
         }
@@ -1877,19 +1876,15 @@ final class HookServer: @unchecked Sendable {
         try ClaudeSettingsFile.write(newData, to: settingsURL, expecting: snapshot.bytes)
     }
 
-    /// `settings` without Coucou's entries; nothing else changed.
-    static func withoutClaudeHooks(_ original: [String: Any]) -> [String: Any] {
+    /// `settings` without the hooks `owns` claims; nothing else changed.
+    static func withoutClaudeHooks(_ original: [String: Any],
+                                   owns: (String) -> Bool = isLocalCoucouHook) -> [String: Any] {
         var settings = original
         guard var hooks = settings["hooks"] as? [String: Any] else { return settings }
 
         for key in hooks.keys {
-            if var matchers = hooks[key] as? [[String: Any]] {
-                matchers.removeAll { matcher in
-                    (matcher["hooks"] as? [[String: Any]])?.contains {
-                        ($0["command"] as? String)?.contains("NotchBuddy") == true ||
-                        ($0["command"] as? String)?.contains("coucou") == true
-                    } ?? false
-                }
+            if let groups = hooks[key] as? [[String: Any]] {
+                let matchers = removingHooks(from: groups, where: owns)
                 if matchers.isEmpty { hooks.removeValue(forKey: key) }
                 else { hooks[key] = matchers }
             }
@@ -1912,7 +1907,7 @@ final class HookServer: @unchecked Sendable {
               let settings = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let sl = settings["statusLine"] as? [String: Any],
               let cmd = sl["command"] as? String else { return false }
-        return cmd.contains("nb-hook")
+        return isLocalCoucouHook(cmd)
     }
 
     private var _pendingStatusLineData: Data?
@@ -1955,7 +1950,7 @@ final class HookServer: @unchecked Sendable {
             }
 
             if let existing = oldSL,
-               let cmd = existing["command"] as? String, !cmd.contains("nb-hook") {
+               let cmd = existing["command"] as? String, !isLocalCoucouHook(cmd) {
                 // Keep existing object but swap command; save old for later restoration
                 var updated = existing
                 updated["command"] = quotedCmd
@@ -1963,7 +1958,7 @@ final class HookServer: @unchecked Sendable {
                 _pendingPreviousData = try? JSONSerialization.data(withJSONObject: existing,
                                                                    options: [.prettyPrinted, .sortedKeys])
             } else if let existing = oldSL,
-                      let cmd = existing["command"] as? String, cmd.contains("nb-hook") {
+                      let cmd = existing["command"] as? String, isLocalCoucouHook(cmd) {
                 // Already installed — rebuild to update path if needed, keep other fields
                 var updated = existing
                 updated["command"] = quotedCmd
@@ -1973,7 +1968,7 @@ final class HookServer: @unchecked Sendable {
             }
         } else {
             // Uninstall: only if it's ours
-            if let cur = oldSL, let cmd = cur["command"] as? String, cmd.contains("nb-hook") {
+            if let cur = oldSL, let cmd = cur["command"] as? String, isLocalCoucouHook(cmd) {
                 if let prevData = try? Data(contentsOf: statusLinePreviousURL),
                    let prevObj = (try? JSONSerialization.jsonObject(with: prevData)) as? [String: Any] {
                     newSL = prevObj
@@ -2058,13 +2053,8 @@ final class HookServer: @unchecked Sendable {
         var settings = snapshot.object
         guard var hooks = settings["hooks"] as? [String: Any] else { return }
         for key in hooks.keys {
-            if var matchers = hooks[key] as? [[String: Any]] {
-                matchers.removeAll { matcher in
-                    (matcher["hooks"] as? [[String: Any]])?.contains {
-                        ($0["command"] as? String)?.contains("coucou") == true ||
-                        ($0["command"] as? String)?.contains("NotchBuddy") == true
-                    } ?? false
-                }
+            if let groups = hooks[key] as? [[String: Any]] {
+                let matchers = removingHooks(from: groups, where: isLocalCoucouHook)
                 if matchers.isEmpty { hooks.removeValue(forKey: key) }
                 else { hooks[key] = matchers }
             }
@@ -2096,10 +2086,7 @@ final class HookServer: @unchecked Sendable {
         var hooks = try ClaudeSettingsFile.hooks(in: settings, name: "settings.json")
         for (event, timeout) in events {
             var existing = try ClaudeSettingsFile.hookGroups(in: hooks, event: event, name: "settings.json")
-            existing.removeAll { ($0["hooks"] as? [[String: Any]])?.contains {
-                ($0["command"] as? String)?.contains("coucou") == true ||
-                ($0["command"] as? String)?.contains("NotchBuddy") == true
-            } ?? false }
+            existing = removingHooks(from: existing, where: isLocalCoucouHook)
             existing.append(["hooks": [["type": "command", "command": quotedCmd, "timeout": timeout]]])
             hooks[event] = existing
         }
@@ -3654,7 +3641,7 @@ let nbHookPythonGitHub = """
 #!/usr/bin/env python3
 # nb-hook.py — Coucou hook relay for Claude Code and third-party agents (GitHub version)
 # Reads JSON from stdin, forwards to Coucou via Unix socket, translates response.
-import sys, json, os, socket, subprocess
+import sys, json, os, re, socket, subprocess, time
 
 def session_tty():
     # The session's terminal tab ("/dev/ttys004"), as Terminal.app names its tabs. Hooks run
@@ -3750,6 +3737,56 @@ def normalize_tool_fields(payload):
     if not payload.get('cwd') and payload.get('workdir'):
         payload['cwd'] = payload['workdir']
 
+# Several Coucous on one host each run a relay for the same call; the one answered marks it
+# here and the others let go. Same files and key as the Linux coucou-hook.
+ANSWERED_DIR = os.path.expanduser('~/.coucou/answered')
+
+def answer_key(payload):
+    tid = payload.get('tool_use_id')
+    if isinstance(tid, str) and 0 < len(tid) <= 128 and re.fullmatch(r'[A-Za-z0-9_-]+', tid):
+        return tid
+    sid, tool = payload.get('session_id'), payload.get('tool_name')
+    text = '%s\\n%s\\n%s' % (sid if isinstance(sid, str) else '', tool if isinstance(tool, str) else '',
+        json.dumps(payload.get('tool_input'), sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+    h = 0xcbf29ce484222325
+    for b in text.encode('utf-8'):
+        h = ((h ^ b) * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
+    return 'h%016x' % h
+
+def mark_answered(key):
+    try:
+        os.makedirs(ANSWERED_DIR, exist_ok=True)
+        os.chmod(ANSWERED_DIR, 0o700)
+        tmp = os.path.join(ANSWERED_DIR, '.%s.%d' % (key, os.getpid()))
+        open(tmp, 'w').close()
+        os.replace(tmp, os.path.join(ANSWERED_DIR, key))
+        now = time.time()
+        for name in os.listdir(ANSWERED_DIR):
+            p = os.path.join(ANSWERED_DIR, name)
+            if now - os.path.getmtime(p) > 3600:
+                os.remove(p)
+    except OSError:
+        pass
+
+def read_reply(s, key, budget):
+    # The app's reply line, or '' once another relay on this host has answered the call.
+    s.settimeout(0.2)
+    chunks = []
+    deadline = time.monotonic() + budget
+    while time.monotonic() < deadline:
+        try:
+            chunk = s.recv(4096)
+        except socket.timeout:
+            if os.path.exists(os.path.join(ANSWERED_DIR, key)):
+                return ''
+            continue
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b'\\n' in chunk:
+            break
+    return b''.join(chunks).decode().strip()
+
 def main():
     raw = b''
     payload = {}
@@ -3805,6 +3842,8 @@ def main():
                 pass
         return
 
+    key = answer_key(payload)
+
     # --ask mode: dedicated hook for AskUserQuestion via PreToolUse (Claude Code 2.1.85+)
     if '--ask' in sys.argv[1:]:
         tool = payload.get('tool_name', '')
@@ -3828,16 +3867,8 @@ def main():
             s.settimeout(125)
             s.connect(socket_path)
             s.sendall(wire(payload, waits=True))
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
@@ -3845,6 +3876,7 @@ def main():
                 except Exception:
                     decision = ''
                 if decision == 'answer':
+                    mark_answered(key)
                     answers = resp_obj.get('answers', {})
                     questions = payload.get('tool_input', {}).get('questions', [])
                     out = {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'updatedInput': {'questions': questions, 'answers': answers}}}
@@ -3923,22 +3955,16 @@ def main():
             s.settimeout(118)
             s.connect(socket_path)
             s.sendall(wire(payload, waits=True))
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
                     decision = resp_obj.get('permissionDecision', '')
                 except Exception:
                     decision = ''
+                if decision in ('allow', 'always', 'deny', 'answer'):
+                    mark_answered(key)
                 if agent == 'hermes':
                     hermes_choice = 'once' if decision == 'allow' else decision
                     if hermes_choice in ('once', 'always', 'deny'):
@@ -4018,7 +4044,7 @@ private let nbHookPythonAppStore = """
 #!/usr/bin/env python3
 # nb-hook.py — Coucou (App Store) hook relay for Claude Code and third-party agents
 # Socket lives inside the sandboxed container; script runs outside the sandbox.
-import sys, json, os, socket
+import sys, json, os, re, socket, time
 
 # The app reads at most 1 MiB per event and drops a bigger one whole, a
 # permission request included: past that, keep only what the card needs.
@@ -4095,6 +4121,56 @@ def normalize_tool_fields(payload):
     if not payload.get('cwd') and payload.get('workdir'):
         payload['cwd'] = payload['workdir']
 
+# Several Coucous on one host each run a relay for the same call; the one answered marks it
+# here and the others let go. Same files and key as the Linux coucou-hook.
+ANSWERED_DIR = os.path.expanduser('~/.coucou/answered')
+
+def answer_key(payload):
+    tid = payload.get('tool_use_id')
+    if isinstance(tid, str) and 0 < len(tid) <= 128 and re.fullmatch(r'[A-Za-z0-9_-]+', tid):
+        return tid
+    sid, tool = payload.get('session_id'), payload.get('tool_name')
+    text = '%s\\n%s\\n%s' % (sid if isinstance(sid, str) else '', tool if isinstance(tool, str) else '',
+        json.dumps(payload.get('tool_input'), sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+    h = 0xcbf29ce484222325
+    for b in text.encode('utf-8'):
+        h = ((h ^ b) * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
+    return 'h%016x' % h
+
+def mark_answered(key):
+    try:
+        os.makedirs(ANSWERED_DIR, exist_ok=True)
+        os.chmod(ANSWERED_DIR, 0o700)
+        tmp = os.path.join(ANSWERED_DIR, '.%s.%d' % (key, os.getpid()))
+        open(tmp, 'w').close()
+        os.replace(tmp, os.path.join(ANSWERED_DIR, key))
+        now = time.time()
+        for name in os.listdir(ANSWERED_DIR):
+            p = os.path.join(ANSWERED_DIR, name)
+            if now - os.path.getmtime(p) > 3600:
+                os.remove(p)
+    except OSError:
+        pass
+
+def read_reply(s, key, budget):
+    # The app's reply line, or '' once another relay on this host has answered the call.
+    s.settimeout(0.2)
+    chunks = []
+    deadline = time.monotonic() + budget
+    while time.monotonic() < deadline:
+        try:
+            chunk = s.recv(4096)
+        except socket.timeout:
+            if os.path.exists(os.path.join(ANSWERED_DIR, key)):
+                return ''
+            continue
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b'\\n' in chunk:
+            break
+    return b''.join(chunks).decode().strip()
+
 def main():
     raw = b''
     payload = {}
@@ -4145,6 +4221,8 @@ def main():
                 pass
         return
 
+    key = answer_key(payload)
+
     # --ask mode: dedicated hook for AskUserQuestion via PreToolUse (Claude Code 2.1.85+)
     if '--ask' in sys.argv[1:]:
         tool = payload.get('tool_name', '')
@@ -4167,16 +4245,8 @@ def main():
             s.settimeout(125)
             s.connect(socket_path)
             s.sendall(wire(payload, waits=True))
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
@@ -4184,6 +4254,7 @@ def main():
                 except Exception:
                     decision = ''
                 if decision == 'answer':
+                    mark_answered(key)
                     answers = resp_obj.get('answers', {})
                     questions = payload.get('tool_input', {}).get('questions', [])
                     out = {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'updatedInput': {'questions': questions, 'answers': answers}}}
@@ -4260,22 +4331,16 @@ def main():
             s.settimeout(118)
             s.connect(socket_path)
             s.sendall(wire(payload, waits=True))
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
                     decision = resp_obj.get('permissionDecision', '')
                 except Exception:
                     decision = ''
+                if decision in ('allow', 'always', 'deny', 'answer'):
+                    mark_answered(key)
                 if agent == 'hermes':
                     hermes_choice = 'once' if decision == 'allow' else decision
                     if hermes_choice in ('once', 'always', 'deny'):
