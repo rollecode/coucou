@@ -725,7 +725,7 @@ struct CompactMiniGrid: View {
     }
 }
 
-// MARK: - Compact stats (agents and plan usage, right-aligned before the mini grid)
+// MARK: - Compact stats (agents beside Mochi or with the plan, plan usage before the mini grid)
 
 struct CompactStat {
     let label: String
@@ -737,20 +737,28 @@ struct CompactStats: View {
     @ObservedObject var state: AppState
 
     var body: some View {
-        let rows = state.compactStatRows
-        VStack(alignment: .trailing, spacing: 2) {
+        let sides = state.compactStatSides
+        ZStack {
+            column(sides.left, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, state.compactBotTaken)
+            column(sides.right, alignment: .trailing)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, state.compactGridTaken)
+        }
+        .font(.system(size: 9, weight: .semibold).monospacedDigit())
+        .lineLimit(1)
+        .allowsHitTesting(false)
+        .onAppear { refreshCodex() }
+    }
+
+    private func column(_ rows: [[CompactStat]], alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
             ForEach(rows.indices, id: \.self) { i in
                 row(rows[i])
             }
         }
-        .font(.system(size: 9, weight: .semibold).monospacedDigit())
-        .lineLimit(1)
         .fixedSize()
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        // Clears the mini grid wherever the padding puts it.
-        .padding(.trailing, state.compactPadding.right + 2 * IslandConst.miniGridHalf + 10)
-        .allowsHitTesting(false)
-        .onAppear { refreshCodex() }
     }
 
     private func row(_ items: [CompactStat]) -> some View {
@@ -773,43 +781,64 @@ struct CompactStats: View {
 }
 
 extension AppState {
-    /// Agents, then the plan's 5-hour and week windows: Claude's when its pill is on and has numbers, else Codex's.
-    var compactStatRows: [[CompactStat]] {
-        var rows: [[CompactStat]] = []
-        // Agents and workspaces; services and chat providers are .n8n.
+    /// Agents and workspaces; services and chat providers are .n8n.
+    private var compactAgentStat: CompactStat? {
         let agents = tasks.filter { $0.source != .n8n }.count
-        if agents > 0 {
-            rows.append([CompactStat(label: String(localized: "Agents"), value: "\(agents)", color: "#F5F6F8")])
-        }
+        return agents > 0 ? CompactStat(label: String(localized: "Agents"), value: "\(agents)", color: "#F5F6F8") : nil
+    }
+
+    /// The plan's 5-hour and week windows: Claude's when its pill is on and has numbers, else Codex's.
+    private var compactPlanStats: [CompactStat] {
         #if !APPSTORE
         let plans: [PlanUsage?] = [
             showPlanInNotch && planRelayInstalled ? (demoPlanUsageOverride ?? claudePlanUsage) : nil,
             showCodexPlanInNotch ? codexPlanUsage?.planUsage : nil,
         ]
-        if let u = plans.compactMap({ $0 }).first(where: { $0.fiveHour != nil || $0.sevenDay != nil }) {
-            let windows: [(String, PlanWindow?)] = [
-                (String(localized: "plan.5hours"), u.fiveHour),
-                (String(localized: "plan.week"), u.sevenDay),
-            ]
-            rows.append(windows.compactMap { (label, window) -> CompactStat? in
-                guard let window else { return nil }
-                let pct = ClaudePlanGauge.effectivePct(window)
-                return CompactStat(label: label, value: "\(Int(pct.rounded()))%", color: ClaudePlanGauge.color(for: pct))
-            })
+        guard let u = plans.compactMap({ $0 }).first(where: { $0.fiveHour != nil || $0.sevenDay != nil }) else { return [] }
+        let windows: [(String, PlanWindow?)] = [
+            (String(localized: "plan.5hours"), u.fiveHour),
+            (String(localized: "plan.week"), u.sevenDay),
+        ]
+        return windows.compactMap { (label, window) -> CompactStat? in
+            guard let window else { return nil }
+            let pct = ClaudePlanGauge.effectivePct(window)
+            return CompactStat(label: label, value: "\(Int(pct.rounded()))%", color: ClaudePlanGauge.color(for: pct))
         }
+        #else
+        return []
         #endif
-        return rows
     }
 
-    /// Width added on each side of the compact island so the widest stats row clears the notch.
+    /// Rows beside Mochi and rows before the mini grid. A notch splits the island in two ears,
+    /// so the agents go beside Mochi and the plan windows stack, to keep each ear narrow.
+    var compactStatSides: (left: [[CompactStat]], right: [[CompactStat]]) {
+        let agents = compactAgentStat.map { [[$0]] } ?? []
+        let plan = compactPlanStats
+        if hasNotch {
+            return (agents, plan.map { [$0] })
+        }
+        return ([], agents + (plan.isEmpty ? [] : [plan]))
+    }
+
+    /// Mochi and its gap to the stats, wherever the padding puts it.
+    var compactBotTaken: CGFloat { compactPadding.left + 2 * IslandConst.compactBotHalf + 8 }
+
+    /// The mini grid and its gap to the stats, wherever the padding puts it.
+    var compactGridTaken: CGFloat { compactPadding.right + 2 * IslandConst.miniGridHalf + 10 }
+
+    /// Width added on each side of the compact island so the stats clear the notch and Mochi.
     var compactSideExtra: CGFloat {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold)
-        let widest = compactStatRows
-            .map { $0.enumerated().map { i, s in (i > 0 ? " · " : "") + s.label + " " + s.value }.joined() }
-            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }
-            .max() ?? 0
-        // The right ear is 80 wide; the mini grid and its padding take the rest of the row.
-        let taken = compactPadding.right + 2 * IslandConst.miniGridHalf + 10
-        return widest == 0 ? 0 : max(0, ceil(widest + 4 + taken - 80))
+        func widest(_ rows: [[CompactStat]]) -> CGFloat {
+            rows.map { $0.enumerated().map { i, s in (i > 0 ? " · " : "") + s.label + " " + s.value }.joined() }
+                .map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) + 4 }
+                .max() ?? 0
+        }
+        let sides = compactStatSides
+        let left = widest(sides.left) + compactBotTaken
+        let right = widest(sides.right) + compactGridTaken
+        // islandSize gives each ear 80 beside the notch; without one the text may cross the middle.
+        let need = hasNotch ? max(left, right) - 80 : (left + right - notchWidth - 160) / 2
+        return max(0, ceil(need))
     }
 }
