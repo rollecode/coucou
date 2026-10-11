@@ -41,7 +41,7 @@ function expireApproval(island: Island, requestId: string): void {
 }
 
 /** Takes the approval or question card down and gives the island back, or shows the next request. */
-function dropPendingCard(island: Island): void {
+export function dropPendingCard(island: Island): void {
   if (!State.pendingApproval) return;
   State.endApproval();
   const next = State.pendingApproval as ApprovalInfo | null;

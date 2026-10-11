@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Coucou for Android**, by @Rhytam23 — your agents, Allow and Deny with your fingerprint or screen lock (even on a locked phone), answers to Claude's questions, chat through the computer's own keys, plan usage and services, an optional island over other apps, a widget, a quick-settings tile and an ongoing notification. It pairs with Coucou 0.4.0 or later on Windows or Linux. Android 11 or later, English only; the first signed APK is on its way. Build it today from [`android/`](android/README.md) (#501 by @Rhytam23)
+
+## Windows and Linux 0.4.0 — October 11, 2026
+
+- **Your Android phone** — Settings → Android phone: the link for [Coucou for Android](android/README.md), an opt-in server on your local network, off by default (nothing listens until you turn it on), paired with a QR code and a pinned certificate. "Pair again" disconnects every phone, a command too long to show in full can only be allowed on the computer, and each extra (session details, answers, chat through your own keys, file changes, plan usage, services) has its own switch (#500 by @Rhytam23)
+- **Plan usage**: Settings and the README say that the Claude gauge needs the Claude Code command-line tool, not the Claude desktop app (#479 by @Rhytam23)
+- Newer versions of the GitHub actions in the build workflows (#499 by @Rhytam23)
+
 ## 0.3.0 — October 11, 2026
 
 - **« OK Coucou »: talk to Mochi** *(macOS, GitHub build)* — say « OK Coucou » and ask anything, in English or French. Claude is Coucou's brain, with your own Anthropic API key: add or swap pills, play music, ask how much you made on Stripe today, your GitHub stars, your Vercel deploys, what your agents are doing, search the web, open an app. It keeps the thread, asks back when something is missing, and listens again for your answer. Speech recognition runs on your Mac; your words and the data Coucou reads to answer go to Anthropic, never audio. Turn it on in Settings → Voice
