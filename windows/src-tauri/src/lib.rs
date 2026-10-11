@@ -17,7 +17,9 @@ mod island;
 mod local_chat;
 mod log;
 mod net;
+mod open_webui;
 mod openai_compat;
+mod phone_link;
 mod pipe;
 mod platform;
 #[cfg(target_os = "linux")]
@@ -92,6 +94,17 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         // Where Mochi sits on the desktop is desktop.rs's to say, not a webview's.
         let mut settings = settings.clone();
         settings.desktop_mochi = current.desktop_mochi.clone();
+        // Same for the phone link: only its own commands turn it on or off.
+        settings.phone_link = current.phone_link;
+        settings.phone_chat = current.phone_chat;
+        settings.phone_details = current.phone_details;
+        settings.phone_answers = current.phone_answers;
+        settings.phone_diffs = current.phone_diffs;
+        settings.phone_usage = current.phone_usage;
+        settings.phone_services = current.phone_services.clone();
+        settings.phone_relay = current.phone_relay;
+        settings.phone_relay_url = current.phone_relay_url.clone();
+        settings.phone_chat_models = current.phone_chat_models.clone();
         *current = settings;
         (screen_changed, autostart_changed, shortcuts_changed)
     };
@@ -453,9 +466,10 @@ async fn chat_send(
     chat: State<'_, Chat>,
     query: String,
     context: Option<ChatContext>,
+    variables: Option<chat::PromptVariables>,
 ) -> Result<ChatReply, String> {
     let settings = shared.settings.lock().unwrap().clone();
-    chat::send(&app, &chat, &settings, query, context).await
+    chat::send(&app, &chat, &settings, query, context, variables.unwrap_or_default()).await
 }
 
 /// The models a provider offers, for the picker in the chat view. Only asked
@@ -472,11 +486,11 @@ async fn local_connect(provider: String, url: String) -> Result<local_chat::Conn
     local_chat::connect(&provider, &url).await
 }
 
-/// Stores the custom server's key for the address typed next to it; it is only
-/// ever sent to that address.
+/// Stores a server's key (the custom server's, Open WebUI's) for the address
+/// typed next to it; it is only ever sent to that address.
 #[tauri::command]
-fn local_set_key(url: String, key: String) -> Result<(), String> {
-    local_chat::set_custom_key(&url, &key)
+fn local_set_key(provider: String, url: String, key: String) -> Result<(), String> {
+    local_chat::set_key(&provider, &url, &key)
 }
 
 #[tauri::command]
@@ -499,7 +513,7 @@ fn secret_present(key: String) -> bool {
 #[tauri::command]
 fn secret_set(app: AppHandle, key: String, value: String) -> Result<(), String> {
     // Bound to its server's address: only local_set_key may store it.
-    if key == local_chat::CUSTOM_KEY {
+    if key == local_chat::CUSTOM_KEY || key == open_webui::KEY {
         return Err("use local_set_key".into());
     }
     let before = (key == "github-token").then(|| secrets::get(&key));
@@ -713,6 +727,32 @@ pub fn run() {
             set_paused,
             shortcuts_status,
             shortcuts_suspend,
+            phone_link::phone_link_status,
+            phone_link::phone_link_set_enabled,
+            phone_link::phone_link_pairing,
+            phone_link::phone_link_new_pairing,
+            phone_link::phone_link_publish,
+            phone_link::phone_link_publish_question,
+            phone_link::phone_link_publish_prefs,
+            phone_link::phone_answers_status,
+            phone_link::phone_answers_set_enabled,
+            phone_link::phone_diffs_status,
+            phone_link::phone_diffs_set_enabled,
+            phone_link::phone_link_send_diff,
+            phone_link::phone_usage_status,
+            phone_link::phone_usage_set_enabled,
+            phone_link::phone_relay_status,
+            phone_link::phone_relay_set,
+            phone_link::phone_relay_set_access,
+            phone_link::phone_link_publish_usage,
+            phone_link::phone_services_status,
+            phone_link::phone_services_set,
+            phone_link::phone_link_publish_services,
+            phone_link::phone_details_status,
+            phone_link::phone_details_set_enabled,
+            phone_link::phone_chat_status,
+            phone_link::phone_chat_set_enabled,
+            phone_link::phone_chat_set_models,
             recap::recap_history,
             recap::recap_prefs,
             recap::recap_set_enabled,
@@ -742,6 +782,7 @@ pub fn run() {
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
+            app.manage(phone_link::PhoneLink::new(handle.clone()));
             tray::build(&handle)?;
             // Before the island: see create_settings_window.
             create_settings_window(&handle);
@@ -774,13 +815,20 @@ pub fn run() {
             log::line(format!("--- Coucou {} started ---", env!("CARGO_PKG_VERSION")));
             hooks::ensure_hook_exe(&handle);
             pipe::start(handle.clone());
+            phone_link::start_if_enabled(&handle);
             integrations::start(handle.clone());
             spotify::sync(&handle, &loaded.active_integrations);
             shortcuts::apply(&handle, &loaded.shortcuts);
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Coucou");
+        .build(tauri::generate_context!())
+        .expect("error while building Coucou")
+        .run(|app, event| {
+            // Withdraw the phone link's announcement on the local network before the process ends.
+            if let tauri::RunEvent::Exit = event {
+                phone_link::stop_on_exit(app);
+            }
+        });
 }
 
 #[cfg(test)]

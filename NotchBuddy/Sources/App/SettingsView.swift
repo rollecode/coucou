@@ -92,6 +92,9 @@ struct SettingsView: View {
     @State private var lmstudioURL:  String = AppState.shared.lmstudioServerURL
     @State private var connectingOllama:    Bool = false
     @State private var connectingLMStudio:  Bool = false
+    @State private var openWebUIURL:        String = AppState.shared.openWebUIServerURL
+    @State private var openWebUIKey:        String = ""
+    @State private var connectingOpenWebUI: Bool = false
 
     // Integration keys
     @State private var resendKey: String    = KeychainStore.shared.get("resend-api-key")  ?? ""
@@ -1144,6 +1147,53 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Divider()
+
+                // ── Open WebUI ──────────────────────────────────────────────────
+                HStack(spacing: 8) {
+                    Circle().fill(Color(hex: ChatProvider.openwebui.accentHex)).frame(width: 8, height: 8)
+                    Text("Open WebUI").font(.system(size: 12, weight: .semibold))
+                    if !state.openWebUIServerURL.isEmpty {
+                        Text(String(localized: "Connected"))
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(hex: "#22C55E"))
+                    }
+                }
+                if state.openWebUIServerURL.isEmpty {
+                    TextField("http://127.0.0.1:8080", text: $openWebUIURL)
+                        .textFieldStyle(.roundedBorder)
+                    SecureField(String(localized: "API key"), text: $openWebUIKey)
+                        .textFieldStyle(.roundedBorder)
+                    Text(String(localized: "Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one."))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(connectingOpenWebUI ? String(localized: "chat.connecting") : String(localized: "chat.connect")) {
+                        Task { await connectOpenWebUI() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(connectingOpenWebUI)
+                } else {
+                    Text(state.openWebUIServerURL)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Toggle(String(localized: "Web search"), isOn: $state.openWebUIWebSearch)
+                    Text(String(localized: "Open WebUI searches the web before answering, where its admin has turned web search on."))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(String(localized: "chat.disconnect")) {
+                        state.openWebUIServerURL = ""
+                        openWebUIURL = ""
+                        KeychainStore.shared.remove(OpenWebUI.keychainKey)
+                        state.fetchedProviderModels[.openwebui] = nil
+                        state.providerModelFetchError[.openwebui] = nil
+                        state.openWebUIModelGroups = [:]
+                        if state.chatProvider == .openwebui { state.chatProvider = .anthropic }
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
             .padding(.vertical, 4)
         }
@@ -1258,17 +1308,11 @@ struct SettingsView: View {
     #if !APPSTORE
     @State private var voicePermissionsGranted: Bool = false
     @ObservedObject private var voiceEngine = VoiceEngine.shared
-    @AppStorage("voiceSpeakEnabled")  private var speakEnabled:   Bool = true
-    @AppStorage("voiceCaptionEnabled") private var captionEnabled: Bool = true
-    @AppStorage("voiceWeatherEnabled") private var weatherEnabled: Bool = false
-    @AppStorage("voiceWeatherCity")    private var weatherCity: String = ""
     @AppStorage("voiceLanguage")       private var voiceLanguage: String = "en"
-    @AppStorage("voiceListenLanguage") private var listenLanguage: String = "auto"
     @AppStorage("voiceTTSEngine")      private var ttsEngine: String = "system"
     @AppStorage("voiceElevenGender")   private var elevenGender: String = "female"
     @AppStorage("voicePitchFemale")    private var pitchFemale: Double = VoiceSettings.defaultPitchFemale
     @AppStorage("voicePitchMale")      private var pitchMale: Double = VoiceSettings.defaultPitchMale
-    @AppStorage("voiceWebSearchEnabled") private var webSearchEnabled: Bool = false
     @State private var webKeySaved: Bool = !(KeychainStore.shared.get("anthropic-api-key") ?? "").isEmpty
     @State private var elevenKeyDraft: String = ""
     @State private var elevenKeySaved: Bool = KeychainStore.shared.get(ElevenLabsTTS.keyName) != nil
@@ -1281,128 +1325,23 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var voiceSection: some View {
+        // Claude is Coucou's brain: no model, language or feature switches any more,
+        // only the wake word, the Anthropic key it needs, and Coucou's voice.
         GroupBox(String(localized: "«\u{202F}OK Coucou\u{202F}» — voice wake word")) {
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(String(localized: "Enable voice command"), isOn: $voiceEngine.isEnabled)
                     .disabled(!voicePermissionsGranted && !voiceEngine.isEnabled)
 
-                Picker(String(localized: "voice.listen-language"), selection: $listenLanguage) {
-                    Text(String(localized: "voice.listen-auto")).tag("auto")
-                    Text(verbatim: "English").tag("en")
-                    Text(verbatim: "Français").tag("fr")
-                }
-                .frame(maxWidth: 320)
-                .onChange(of: listenLanguage) { _, _ in VoiceEngine.shared.reloadLanguage() }
-
-                Picker(String(localized: "voice.language"), selection: $voiceLanguage) {
-                    Text(verbatim: "English").tag("en")
-                    Text(verbatim: "Français").tag("fr")
-                }
-                .frame(maxWidth: 320)
-                .onChange(of: voiceLanguage) { _, _ in VoiceBrain.shared.endConversation() }
-
-                Toggle(String(localized: "voice.setting-speak"), isOn: $speakEnabled)
-
-                if speakEnabled {
-                    Picker(String(localized: "voice.tts-engine"), selection: $ttsEngine) {
-                        Text(String(localized: "voice.tts-system")).tag("system")
-                        Text(verbatim: "ElevenLabs").tag("elevenlabs")
-                    }
-                    .frame(maxWidth: 260)
-
-                    if ttsEngine == "elevenlabs" {
-                        HStack(spacing: 6) {
-                            SecureField(elevenKeySaved ? String(localized: "voice.tts-key-saved")
-                                                       : String(localized: "voice.tts-key"),
-                                        text: $elevenKeyDraft)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 220)
-                            Button(String(localized: "Save")) {
-                                let k = elevenKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                                if k.isEmpty { KeychainStore.shared.remove(ElevenLabsTTS.keyName) }
-                                else { KeychainStore.shared.set(ElevenLabsTTS.keyName, value: k) }
-                                elevenKeyDraft = ""
-                                elevenKeySaved = !k.isEmpty
-                                ElevenLabsTTS.shared.reset()
-                            }
-                        }
-                    }
-
-                    Picker(String(localized: "voice.tts-gender"), selection: $elevenGender) {
-                        Text(String(localized: "voice.tts-female")).tag("female")
-                        Text(String(localized: "voice.tts-male")).tag("male")
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 220)
-                    .onChange(of: elevenGender) { _, _ in ElevenLabsTTS.shared.reset() }
-
-                    if ttsEngine == "system" {
-                        HStack(spacing: 8) {
-                            Text(String(localized: "voice.tts-pitch"))
-                            Slider(value: elevenGender == "male" ? $pitchMale : $pitchFemale,
-                                   in: 0.8...1.6, step: 0.05,
-                                   onEditingChanged: { editing in
-                                       // Released: hear the new pitch right away.
-                                       if !editing { speakVoiceSample() }
-                                   })
-                            .frame(maxWidth: 180)
-                        }
-                        let current = VoiceSpeaker.macVoiceName(for: Locale(identifier: voiceLanguage == "fr" ? "fr-FR" : "en-US"),
-                                                                gender: elevenGender)
-                        Text(String(format: String(localized: "voice.mac-voice-current %@"), current))
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                        Text(String(localized: "voice.mac-voices-help"))
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button(String(localized: "voice.mac-voices-open")) {
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension") {
-                                NSWorkspace.shared.open(url)
-                            }
-                        }
-                    }
-
-                    Button(String(localized: "voice.tts-test")) { speakVoiceSample() }
-                }
-
-                Toggle(String(localized: "voice.setting-captions"), isOn: $captionEnabled)
-
-                Toggle(String(localized: "voice.setting-web"), isOn: $webSearchEnabled)
-                    .disabled(!webKeySaved && !webSearchEnabled)
-                Text(webKeySaved ? String(localized: "voice.setting-web-desc")
-                                 : String(localized: "voice.setting-web-nokey"))
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .onAppear { webKeySaved = !(KeychainStore.shared.get("anthropic-api-key") ?? "").isEmpty }
-
-                Toggle(String(localized: "voice.setting-weather"), isOn: $weatherEnabled)
-                if weatherEnabled {
-                    TextField(String(localized: "voice.setting-weather-city"), text: $weatherCity)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 220)
-                    Text(String(localized: "voice.setting-weather-desc"))
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Text("When enabled, Coucou listens for the wake word «\u{202F}OK Coucou\u{202F}». Speech recognition runs entirely on-device — no audio or transcript leaves your Mac.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
                 HStack(alignment: .top, spacing: 6) {
-                    Circle()
-                        .fill(Color(hex: "#F97316"))
-                        .frame(width: 8, height: 8)
-                        .padding(.top, 2)
-                    Text("While listening, macOS shows the orange microphone dot in the top-right of the menu bar. This is normal system behaviour.")
+                    Image(systemName: webKeySaved ? "checkmark.circle.fill" : "exclamationmark.circle")
+                        .foregroundColor(webKeySaved ? .green : .orange)
+                    Text(webKeySaved ? String(localized: "voice.setting-web-desc")
+                                     : String(localized: "voice.setting-web-nokey"))
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .onAppear { webKeySaved = !(KeychainStore.shared.get("anthropic-api-key") ?? "").isEmpty }
 
                 if voiceEngine.recognizerUnavailable {
                     HStack(spacing: 6) {
@@ -1415,21 +1354,6 @@ struct SettingsView: View {
                     }
                 }
 
-                // Local model status
-                #if canImport(FoundationModels)
-                if #available(macOS 26, *) {
-                    let status = VoiceBrain.shared.modelStatus
-                    HStack(spacing: 6) {
-                        Image(systemName: status == .available ? "cpu.fill" : "cpu")
-                            .foregroundColor(status == .available ? .green : .secondary)
-                        Text(localModelStatusLabel(status))
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                #endif
-
                 if let err = voiceEngine.audioError {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -1440,24 +1364,7 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-            }
-            .padding(6)
-        }
 
-        GroupBox(String(localized: "Permissions")) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: micStatusIcon)
-                        .foregroundColor(micStatusColor)
-                    Text("\(String(localized: "Microphone:")) \(micStatusLabel)")
-                        .font(.system(size: 12))
-                }
-                HStack(spacing: 6) {
-                    Image(systemName: speechStatusIcon)
-                        .foregroundColor(speechStatusColor)
-                    Text("\(String(localized: "Speech recognition:")) \(speechStatusLabel)")
-                        .font(.system(size: 12))
-                }
                 if !voicePermissionsGranted {
                     Button(String(localized: "Request permissions")) {
                         Task {
@@ -1475,7 +1382,72 @@ struct SettingsView: View {
                 && VoiceSettings.speechStatus == .granted
         }
 
-        VoiceTranscriptHistoryView()
+        GroupBox(String(localized: "voice.tts-engine")) {
+            VStack(alignment: .leading, spacing: 10) {
+                Picker(String(localized: "voice.tts-engine"), selection: $ttsEngine) {
+                    Text(String(localized: "voice.tts-system")).tag("system")
+                    Text(verbatim: "ElevenLabs").tag("elevenlabs")
+                }
+                .labelsHidden()   // the box is already titled "Voice"
+                .frame(maxWidth: 260)
+
+                if ttsEngine == "elevenlabs" {
+                    HStack(spacing: 6) {
+                        SecureField(elevenKeySaved ? String(localized: "voice.tts-key-saved")
+                                                   : String(localized: "voice.tts-key"),
+                                    text: $elevenKeyDraft)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 220)
+                        Button(String(localized: "Save")) {
+                            let k = elevenKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if k.isEmpty { KeychainStore.shared.remove(ElevenLabsTTS.keyName) }
+                            else { KeychainStore.shared.set(ElevenLabsTTS.keyName, value: k) }
+                            elevenKeyDraft = ""
+                            elevenKeySaved = !k.isEmpty
+                            ElevenLabsTTS.shared.reset()
+                        }
+                    }
+                }
+
+                Picker(String(localized: "voice.tts-gender"), selection: $elevenGender) {
+                    Text(String(localized: "voice.tts-female")).tag("female")
+                    Text(String(localized: "voice.tts-male")).tag("male")
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220)
+                .onChange(of: elevenGender) { _, _ in ElevenLabsTTS.shared.reset() }
+
+                if ttsEngine == "system" {
+                    HStack(spacing: 8) {
+                        Text(String(localized: "voice.tts-pitch"))
+                        Slider(value: elevenGender == "male" ? $pitchMale : $pitchFemale,
+                               in: 0.8...1.6, step: 0.05,
+                               onEditingChanged: { editing in
+                                   // Released: hear the new pitch right away.
+                                   if !editing { speakVoiceSample() }
+                               })
+                        .frame(maxWidth: 180)
+                    }
+                    let current = VoiceSpeaker.macVoiceName(for: Locale(identifier: voiceLanguage == "fr" ? "fr-FR" : "en-US"),
+                                                            gender: elevenGender)
+                    Text(String(format: String(localized: "voice.mac-voice-current %@"), current))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    Text(String(localized: "voice.mac-voices-help"))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(String(localized: "voice.mac-voices-open")) {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                }
+
+                Button(String(localized: "voice.tts-test")) { speakVoiceSample() }
+            }
+            .padding(6)
+        }
     }
 
     #if !APPSTORE
@@ -1655,6 +1627,50 @@ struct SettingsView: View {
             statusMessage = String(localized: "status.local.connected \(models.count)")
         case .failure:
             statusMessage = String(format: String(localized: "status.local.unreachable %1$@ %2$@"), name, normalised)
+        }
+    }
+
+    /// Stores the key with the address it is for (it is only ever sent there),
+    /// then checks that Open WebUI answers with models for it.
+    private func connectOpenWebUI() async {
+        let normalised = LocalChat.normaliseURL(openWebUIURL)
+        guard normalised.hasPrefix("http://") || normalised.hasPrefix("https://") else {
+            statusMessage = String(localized: "status.local.url-invalid")
+            return
+        }
+        let typedKey = openWebUIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !typedKey.isEmpty {
+            guard OpenWebUI.mayCarryKey(normalised) else {
+                statusMessage = String(localized: "A key is only sent over https, or to a server on this computer.")
+                return
+            }
+            KeychainStore.shared.set(OpenWebUI.keychainKey, value: OpenWebUI.boundKey(typedKey, url: normalised))
+            openWebUIKey = ""
+        }
+        guard let key = OpenWebUI.key(stored: KeychainStore.shared.get(OpenWebUI.keychainKey), url: normalised) else {
+            statusMessage = String(localized: "Add an Open WebUI API key in Settings → Local models first.")
+            return
+        }
+        connectingOpenWebUI = true
+        statusMessage = ""
+        do {
+            let models = try await OpenWebUI.models(baseURL: normalised, key: key)
+            connectingOpenWebUI = false
+            guard !models.isEmpty else {
+                statusMessage = String(localized: "Open WebUI has no models for this account.")
+                return
+            }
+            state.openWebUIServerURL = normalised
+            openWebUIURL = normalised
+            state.fetchedProviderModels[.openwebui] = nil
+            state.providerModelFetchError[.openwebui] = nil
+            statusMessage = String(localized: "status.local.connected \(models.count)")
+        } catch let failure as OpenWebUI.Failure {
+            connectingOpenWebUI = false
+            statusMessage = failure.message
+        } catch {
+            connectingOpenWebUI = false
+            statusMessage = String(format: String(localized: "status.local.unreachable %1$@ %2$@"), "Open WebUI", normalised)
         }
     }
 

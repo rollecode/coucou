@@ -31,6 +31,17 @@ enum BotEmote: String, CaseIterable {
     case listening   // attentive: head tilt + wide-open eyes
 }
 
+// MARK: - Voice sub-state
+
+/// What Mochi is doing during a voice exchange (compact island or expanded).
+/// Driven by IslandWindowController; read by BotEngine each frame.
+enum BotVoiceSubState: Equatable {
+    case none       // voice not active
+    case listening  // mic open, waiting for words
+    case thinking   // command received, waiting for AI / TTS queue to drain
+    case speaking   // TTS audio playing
+}
+
 // MARK: - Approval info (pending PermissionRequest from Claude Code)
 
 struct ApprovalInfo: Sendable {
@@ -81,6 +92,7 @@ enum ChatProvider: String, CaseIterable, Codable {
     case openai    = "openai"
     case ollama    = "ollama"
     case lmstudio  = "lmstudio"
+    case openwebui = "openwebui"
 
     var displayName: String {
         switch self {
@@ -89,6 +101,7 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .openai:    "OpenAI"
         case .ollama:    "Ollama"
         case .lmstudio:  "LM Studio"
+        case .openwebui: "Open WebUI"
         }
     }
 
@@ -99,6 +112,7 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .openai:    "#10A37F"
         case .ollama:    "#FACC15"
         case .lmstudio:  "#A3E635"
+        case .openwebui: "#FFFFFF"
         }
     }
 
@@ -109,6 +123,7 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .openai:    "gpt-4o"
         case .ollama:    "llama3.2"
         case .lmstudio:  "local-model"
+        case .openwebui: ""
         }
     }
 
@@ -119,11 +134,13 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .openai:    "openai-api-key"
         case .ollama:    ""
         case .lmstudio:  ""
+        // Bound to its address: OpenWebUI.keychainKey.
+        case .openwebui: ""
         }
     }
 
     var isLocal: Bool {
-        self == .ollama || self == .lmstudio
+        self == .ollama || self == .lmstudio || self == .openwebui
     }
 
     var pillID: String {
@@ -133,6 +150,7 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .openai:    "ai_openai"
         case .ollama:    "ai_ollama"
         case .lmstudio:  "ai_lmstudio"
+        case .openwebui: "ai_openwebui"
         }
     }
 
