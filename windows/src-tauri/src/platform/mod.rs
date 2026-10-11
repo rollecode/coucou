@@ -19,8 +19,8 @@ pub use self::linux::*;
 mod linux_focus;
 #[cfg(target_os = "linux")]
 pub use self::linux_focus::{
-    claude_processes, farthest_named, focus_process_window, focus_session_window, process_ancestors, runs_in_terminal,
-    terminal_processes, tmux_session_name, window_owners,
+    claude_processes, farthest_named, focus_process_window, focus_session_window, machine_id, own_ancestor,
+    process_ancestors, runs_in_terminal, same_process, terminal_processes, tmux_session_name, window_owners,
 };
 
 /// Wall-clock time in the user's time zone, for log lines and backup names.

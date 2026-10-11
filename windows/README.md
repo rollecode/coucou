@@ -645,8 +645,10 @@ What changes on Linux:
   working: each install has its own socket there, `~/.coucou/<id>.sock`, and
   its own hook entries, which name that socket; installing or uninstalling
   touches only those. Every Coucou attached shows the request; the first
-  answer counts, and the others' cards go once the tool has run. Approvals work as for local sessions; Open terminal does not
-  (the session's window is not on this machine). Connect to a host once in a
+  answer counts, and the others' cards go once the tool has run. Approvals work as for local sessions. Open terminal brings
+  forward the session's own terminal when the host is this same machine (another
+  user through `sudo su`), else a terminal already ssh'd into the host, else a
+  new one attached to it over ssh. Connect to a host once in a
   terminal first, so its key is known: Coucou never answers ssh's questions.
   The Mac app has the same section (Settings → Agents → Remote hosts, not in
   the App Store build); it copies its Python relay (`nb-hook.py`) instead.
