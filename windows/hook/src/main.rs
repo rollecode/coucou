@@ -249,13 +249,17 @@ fn prepare(raw: &[u8], args: &Args, env: &dyn Fn(&str) -> Option<String>, cwd: &
         if let Some(session) = env(TMUX_SESSION).filter(|s| is_tmux_name(s)) {
             map.insert("tmux_session".into(), Value::String(session));
         }
-        if let Some(id) = env(MACHINE_ID).filter(|id| is_machine_id(id)) {
-            map.insert("machine_id".into(), Value::String(id));
-        }
     }
-    // Who ran the hook, so Coucou on this same machine finds the session's terminal.
-    if let Some(ppid) = env(HOOK_PPID).and_then(|p| p.parse::<u32>().ok()) {
-        map.insert("hook_ppid".into(), ppid.into());
+    // As a remote relay: the machine and who ran the hook, so Coucou on this same machine finds the session's terminal.
+    if env("COUCOU_SOCKET").is_some_and(|s| !s.is_empty()) {
+        if matches!(name.as_str(), "SessionStart" | "UserPromptSubmit") {
+            if let Some(id) = env(MACHINE_ID).filter(|id| is_machine_id(id)) {
+                map.insert("machine_id".into(), Value::String(id));
+            }
+        }
+        if let Some(ppid) = env(HOOK_PPID).and_then(|p| p.parse::<u32>().ok()) {
+            map.insert("hook_ppid".into(), ppid.into());
+        }
     }
 
     // Kept whole: what goes back to Claude Code must be its own input, not the
@@ -561,7 +565,7 @@ mod tests {
     #[test]
     fn the_machine_rides_with_session_start_and_prompts_and_the_parent_with_every_event() {
         let args = |e: &str| Args { agent: String::new(), event: e.into() };
-        let env = env_of(&[(MACHINE_ID, "0123abcdef"), (HOOK_PPID, "4242")]);
+        let env = env_of(&[("COUCOU_SOCKET", "/h/.coucou/1.sock"), (MACHINE_ID, "0123abcdef"), (HOOK_PPID, "4242")]);
         let line = |raw: &str, e: &str, env: &dyn Fn(&str) -> Option<String>| {
             let ev = prepare(raw.as_bytes(), &args(e), env, "/w").unwrap();
             serde_json::from_str::<Value>(ev.line.trim_end()).unwrap()
@@ -571,9 +575,12 @@ mod tests {
         let tool = line(r#"{"hook_event_name":"PreToolUse"}"#, "PreToolUse", &env);
         assert!(tool.get("machine_id").is_none());
         assert_eq!(tool["hook_ppid"], 4242);
-        let odd = env_of(&[(MACHINE_ID, "../etc/passwd"), (HOOK_PPID, "1; rm")]);
+        let odd = env_of(&[("COUCOU_SOCKET", "/h/.coucou/1.sock"), (MACHINE_ID, "../etc/passwd"), (HOOK_PPID, "1; rm")]);
         let start = line(r#"{"hook_event_name":"SessionStart"}"#, "SessionStart", &odd);
         assert!(start.get("machine_id").is_none() && start.get("hook_ppid").is_none());
+        let local = env_of(&[(MACHINE_ID, "0123abcdef"), (HOOK_PPID, "4242")]);
+        let start = line(r#"{"hook_event_name":"SessionStart"}"#, "SessionStart", &local);
+        assert!(start.get("machine_id").is_none() && start.get("hook_ppid").is_none(), "a local relay sends neither");
     }
 
     #[test]
@@ -867,24 +874,36 @@ mod tests {
             serde_json::json!({ "hook_event_name": "PreToolUse", "session_id": "s", "tool_use_id": "toolu_01X", "tool_name": "AskUserQuestion", "tool_input": { "questions": [{ "question": "Q?" }] } }).to_string(),
             serde_json::json!({ "hook_event_name": "PermissionRequest", "session_id": "s", "tool_name": "Bash", "tool_input": { "z": [1, true, null], "a": "ä \"q\" \\ \n\t\u{1}/€", "n": -3 } }).to_string(),
             format!("\u{feff}{}", serde_json::json!({ "session_id": "s", "cwd": "" })),
+            serde_json::json!({ "hook_event_name": "UserPromptSubmit", "session_id": "s", "prompt": "hi" }).to_string(),
             "not json".to_string(),
         ];
-        let env = serde_json::json!({ "CURSOR_TRACE_ID": "1", "TERM_PROGRAM": "kitty" });
-        let cases: Vec<Value> = raws.iter().map(|r| serde_json::json!([r, "SessionStart", env, "/home/me/here"])).collect();
+        // A local relay, then a remote one (COUCOU_SOCKET) with good and with bad machine ids and parents.
+        let envs: [&'static [(&'static str, &'static str)]; 3] = [
+            &[("CURSOR_TRACE_ID", "1"), ("TERM_PROGRAM", "kitty"), (MACHINE_ID, "0123abcdef"), (HOOK_PPID, "4242")],
+            &[("COUCOU_SOCKET", "/h/.coucou/1.sock"), (MACHINE_ID, "0123-ABCdef"), (HOOK_PPID, "4242")],
+            &[("COUCOU_SOCKET", "/h/.coucou/1.sock"), (MACHINE_ID, "../etc"), (HOOK_PPID, "1; rm")],
+        ];
+        let mut cases = Vec::new();
+        for vars in envs {
+            let env: Map<String, Value> = vars.iter().map(|(k, v)| (k.to_string(), Value::from(*v))).collect();
+            cases.extend(raws.iter().map(|r| serde_json::json!([r, "SessionStart", env, "/home/me/here"])));
+        }
         let Some(py) = python("m.prepare(c[0].encode(), c[1], c[2], c[3])", &Value::Array(cases)) else { return };
-        let vars = env_of(&[("CURSOR_TRACE_ID", "1"), ("TERM_PROGRAM", "kitty")]);
         let args = Args { agent: String::new(), event: "SessionStart".into() };
-        for (raw, got) in raws.iter().zip(py) {
-            let want = prepare(raw.as_bytes(), &args, &vars, "/home/me/here");
-            match want {
-                None => assert!(got.is_null(), "{raw:.40}"),
-                Some(ev) => {
-                    let line: Value = serde_json::from_str(ev.line.trim_end()).unwrap();
-                    let py_line: Value = serde_json::from_str(got[0].as_str().unwrap().trim_end()).unwrap();
-                    assert_eq!(py_line, line, "{raw:.40}");
-                    assert_eq!(got[1], Value::String(ev.name), "{raw:.40}");
-                    assert_eq!(got[2], ev.question.unwrap_or(Value::Null), "{raw:.40}");
-                    assert_eq!(got[3], Value::String(ev.key), "both relays name the call alike: {raw:.40}");
+        let mut py = py.into_iter();
+        for vars in envs {
+            for raw in &raws {
+                let got = py.next().unwrap();
+                match prepare(raw.as_bytes(), &args, &env_of(vars), "/home/me/here") {
+                    None => assert!(got.is_null(), "{raw:.40}"),
+                    Some(ev) => {
+                        let line: Value = serde_json::from_str(ev.line.trim_end()).unwrap();
+                        let py_line: Value = serde_json::from_str(got[0].as_str().unwrap().trim_end()).unwrap();
+                        assert_eq!(py_line, line, "{raw:.40} {vars:?}");
+                        assert_eq!(got[1], Value::String(ev.name), "{raw:.40}");
+                        assert_eq!(got[2], ev.question.unwrap_or(Value::Null), "{raw:.40}");
+                        assert_eq!(got[3], Value::String(ev.key), "both relays name the call alike: {raw:.40}");
+                    }
                 }
             }
         }

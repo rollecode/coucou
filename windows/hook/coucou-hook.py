@@ -2,7 +2,7 @@
 # coucou-hook for a macOS host behind a Linux Coucou's SSH tunnel (remote.rs):
 # main.rs, normalize.rs and reply.rs for Claude Code, in Python. Never blocks
 # Claude Code, never prints a decision nobody clicked.
-import json, os, re, socket, stat, struct, sys, threading, time
+import json, os, re, socket, stat, struct, subprocess, sys, threading, time
 
 CONNECT_TIMEOUT = 0.3
 ANSWERED_POLL = 0.2
@@ -15,6 +15,9 @@ DIFF_TOOLS = ("Edit", "MultiEdit", "Write")
 DIFF_FIELDS = ("old_string", "new_string", "content")
 MAX_DIFF_FIELD_LEN = 256 * 1024
 MAX_DIFF_TOTAL = 512 * 1024
+# Not environment variables: HostEnv answers them, as main.rs's `env` does.
+MACHINE_ID = "coucou:machine_id"
+HOOK_PPID = "coucou:hook_ppid"
 
 
 def cut(s, limit):
@@ -60,6 +63,36 @@ def term_editor(env):
     helper = env.get("VSCODE_GIT_ASKPASS_NODE", "")
     exe = helper.replace("\\", "/").rsplit("/", 1)[-1].lower()
     return "cursor" if exe.startswith("cursor") else None
+
+
+def machine_id():
+    """This machine's id: Linux's machine-id, else the Mac's IOPlatformUUID. '' when none."""
+    for path in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+        try:
+            with open(path) as f:
+                mid = f.read().strip()
+            if mid:
+                return mid
+        except OSError:
+            pass
+    try:
+        out = subprocess.run(["/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+                             capture_output=True, text=True, timeout=1).stdout
+        m = re.search(r'"IOPlatformUUID" = "([^"]*)"', out)
+        return m.group(1) if m else ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+class HostEnv(dict):
+    """os.environ, plus this machine's id and the relay's parent, asked only when read."""
+
+    def get(self, key, default=None):
+        if key == MACHINE_ID:
+            return machine_id() or default
+        if key == HOOK_PPID:
+            return str(os.getppid())
+        return super().get(key, default)
 
 
 def answer_key(payload):
@@ -126,6 +159,14 @@ def prepare(raw, arg_event, env, cwd):
                      ("term_session_id", "TERM_SESSION_ID"), ("vscode_pid", "VSCODE_PID"),
                      ("session_pid", "CLAUDE_CODE_SSE_PORT")):
         payload.setdefault(field, env.get(var, ""))
+    # As a remote relay: the machine and who ran the hook, so Coucou on this same machine finds the session's terminal.
+    if env.get("COUCOU_SOCKET"):
+        mid = env.get(MACHINE_ID, "") if name in ("SessionStart", "UserPromptSubmit") else ""
+        if re.fullmatch(r"[0-9A-Fa-f-]{1,64}", mid):
+            payload["machine_id"] = mid
+        ppid = env.get(HOOK_PPID, "")
+        if re.fullmatch(r"[0-9]{1,10}", ppid) and int(ppid) <= 0xFFFFFFFF:
+            payload["hook_ppid"] = int(ppid)
     question = payload.get("tool_input") if payload.get("tool_name") == "AskUserQuestion" else None
     keeps_diff = name == "PostToolUse" and payload.get("tool_name") in DIFF_TOOLS
     tool_input = payload.pop("tool_input", None) if keeps_diff else None
@@ -249,7 +290,7 @@ def main():
         cwd = os.getcwd()
     except OSError:
         cwd = ""
-    event = prepare(raw, arg_event, os.environ, cwd)
+    event = prepare(raw, arg_event, HostEnv(os.environ), cwd)
     if event is None:
         return
     line, name, question, key = event
