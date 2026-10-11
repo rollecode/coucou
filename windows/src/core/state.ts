@@ -169,6 +169,8 @@ export interface Settings {
   /** Claude Code in the chat: effort ("" = its own) and working folder ("" = Coucou's). */
   claudeCodeEffort: string;
   claudeCodeDir: string;
+  /** This install's id on remote hosts. Rust owns it: what the page sends back is ignored. */
+  remoteClientId: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -205,6 +207,7 @@ export const DEFAULT_SETTINGS: Settings = {
   remoteHosts: [],
   claudeCodeEffort: "",
   claudeCodeDir: "",
+  remoteClientId: "",
 };
 
 type Listener = () => void;

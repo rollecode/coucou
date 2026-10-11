@@ -91,6 +91,9 @@ pub struct Settings {
     pub claude_code_effort: String,
     /// The folder it works in; "" is Coucou's own, so nothing lands in $HOME.
     pub claude_code_dir: String,
+    /// This install's id on remote hosts: its socket and hook entries there carry
+    /// it (remote.rs). Made once, owned by the Rust side.
+    pub remote_client_id: String,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -170,6 +173,7 @@ impl Default for Settings {
             remote_hosts: Vec::new(),
             claude_code_effort: String::new(),
             claude_code_dir: String::new(),
+            remote_client_id: String::new(),
         }
     }
 }
@@ -185,7 +189,12 @@ fn settings_path() -> PathBuf {
 }
 
 pub fn load() -> Settings {
-    load_from(&settings_path())
+    let mut settings = load_from(&settings_path());
+    if !crate::remote::valid_client_id(&settings.remote_client_id) {
+        settings.remote_client_id = crate::remote::new_client_id();
+        let _ = save(&settings);
+    }
+    settings
 }
 
 pub fn save(settings: &Settings) -> std::io::Result<()> {
@@ -460,7 +469,8 @@ mod tests {
   "desktopMochi": { "onDesktop": true, "spot": { "x": 1500.5, "y": -300.0, "space": "screen" } },
   "remoteHosts": ["devbox", "me@build.example.org"],
   "claudeCodeEffort": "high",
-  "claudeCodeDir": "/home/me/projects/site"
+  "claudeCodeDir": "/home/me/projects/site",
+  "remoteClientId": "0a1b2c3d"
 }"##;
 
     fn custom() -> Value {
@@ -872,6 +882,7 @@ mod tests {
                 "remoteHosts",
                 "claudeCodeEffort",
                 "claudeCodeDir",
+                "remoteClientId",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);

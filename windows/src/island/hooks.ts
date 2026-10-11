@@ -508,6 +508,14 @@ function handleHook(island: Island, payload: HookPayload) {
     return;
   }
 
+  // A waiting relay hung up: its request was answered elsewhere.
+  if (payload.hook_event_name === "Released") {
+    const released = (a: ApprovalInfo) => a.requestId === payload.request_id;
+    State.unqueueApprovals(released);
+    if (State.pendingApproval && released(State.pendingApproval)) dropPendingCard(island);
+    return;
+  }
+
   if (State.paused) {
     // Silence here used to cost Claude Code nearly two minutes: the relay waited
     // for a decision from an island that had already decided not to look. Say so,
@@ -579,7 +587,9 @@ function handleHook(island: Island, payload: HookPayload) {
       if (q.requestId) void Bridge.approvalDecline(q.requestId);
     }
   }
-  if (pending && TURN_OVER.has(name) && ownTurn(pending)) {
+  // The tool ran: answered elsewhere (another Coucou, the terminal).
+  const toolDone = (name === "PostToolUse" || name === "PostToolUseFailure") && pending?.tool === payload.tool_name;
+  if (pending && (TURN_OVER.has(name) || toolDone) && ownTurn(pending)) {
     if (pending.requestId) void Bridge.approvalDecline(pending.requestId);
     dropPendingCard(island);
   }
