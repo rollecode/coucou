@@ -127,6 +127,11 @@ struct IslandContainer: View {
                         .position(x: islandWidth - state.compactPadding.right - IslandConst.miniGridHalf,
                                   y: compactRowCenterY(islandH: islandHeight, pad: state.compactPadding))
                         .transition(.opacity)
+                    CompactStats(state: state)
+                        .frame(width: islandWidth)
+                        .position(x: islandWidth / 2,
+                                  y: compactRowCenterY(islandH: islandHeight, pad: state.compactPadding))
+                        .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: state.mode == .compact)
@@ -137,7 +142,7 @@ struct IslandContainer: View {
             let anim = shrinking ? closeEase : openSpring
             let (w, h) = islandSize(mode: newMode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
             let cr  = newMode == .expanded ? IslandConst.expandedCorner : IslandConst.roundedCorner
             let tr: CGFloat = 0
             withAnimation(anim) {
@@ -162,6 +167,12 @@ struct IslandContainer: View {
                 islandHeight = newView == .prompt ? chatPromptHeight : h
             }
         }
+        .onChange(of: state.compactSideExtra) { _, extra in
+            guard state.mode == .compact else { return }
+            let (w, _) = islandSize(mode: .compact, view: state.view,
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: extra)
+            withAnimation(openSpring) { islandWidth = w }
+        }
         .onChange(of: state.chatHistory.count) { _, _ in
             guard state.mode == .expanded, state.view == .prompt else { return }
             withAnimation(openSpring) { islandHeight = chatPromptHeight }
@@ -169,7 +180,7 @@ struct IslandContainer: View {
         .onAppear {
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
             islandWidth      = w
             islandHeight     = state.view == .prompt ? chatPromptHeight : h
             cornerRadius     = state.mode == .expanded ? IslandConst.expandedCorner : IslandConst.roundedCorner
@@ -182,7 +193,7 @@ struct IslandContainer: View {
             // New screen, new resting size (notch ↔ bar): snap without animation.
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactExtra: state.compactSideExtra)
             islandWidth  = w
             islandHeight = (state.mode == .expanded && state.view == .prompt) ? chatPromptHeight : h
         }
@@ -711,4 +722,60 @@ struct CompactMiniGrid: View {
         }
         .frame(width: 28, height: 28)
     }
+}
+
+// MARK: - Compact stats (agent session count beside Mochi, plan % beside the mini grid)
+
+struct CompactStats: View {
+    @ObservedObject var state: AppState
+
+    // Agents and workspaces; services and chat providers are .n8n.
+    private var agentCount: Int { state.tasks.filter { $0.source != .n8n }.count }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            if agentCount > 0 {
+                Text(verbatim: "\(agentCount)")
+                    .foregroundColor(Color(hex: "#8E939C"))
+            }
+            Spacer(minLength: 0)
+            if let pct = state.compactPlanPct {
+                Text(verbatim: "\(Int(pct.rounded()))%")
+                    .foregroundColor(Color(hex: ClaudePlanGauge.color(for: pct)))
+            }
+        }
+        .font(.system(size: 10, weight: .semibold).monospacedDigit())
+        .lineLimit(1)
+        // Clears Mochi and the mini grid wherever the padding puts them.
+        .padding(.leading, state.compactPadding.left + 2 * IslandConst.compactBotHalf + 4)
+        .padding(.trailing, state.compactPadding.right + 2 * IslandConst.miniGridHalf + 6)
+        .allowsHitTesting(false)
+        .onAppear { refreshCodex() }
+    }
+
+    private func refreshCodex() {
+        #if !APPSTORE
+        if state.showCodexPlanInNotch { state.refreshCodexPlanUsage() }
+        #endif
+    }
+}
+
+extension AppState {
+    /// The highest % among the plans shown in the header; nil when none has numbers.
+    var compactPlanPct: Double? {
+        #if !APPSTORE
+        let claude = showPlanInNotch && planRelayInstalled
+            ? (demoPlanUsageOverride ?? claudePlanUsage).flatMap { ClaudePlanGauge.dominantPct($0) }
+            : nil
+        let codex = showCodexPlanInNotch
+            ? codexPlanUsage.flatMap { ClaudePlanGauge.dominantPct($0.planUsage) }
+            : nil
+        return [claude, codex].compactMap { $0 }.max()
+        #else
+        return nil
+        #endif
+    }
+
+    /// Width added on each side of the compact island so "100%" clears the notch.
+    var compactSideExtra: CGFloat { compactPlanPct == nil ? 0 : 12 }
 }
