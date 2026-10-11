@@ -89,9 +89,13 @@ fn xdg_user_dir(text: &str, key: &str, home: &Path) -> Option<PathBuf> {
 /// The compositor answers with a protocol error and the app dies on its first
 /// frame ("explicit sync is used, but no acquire point is set", seen on KDE with
 /// an RTX 2080 Ti). Software frames avoid it, and an island this small does not
-/// need the fast path. A value the user set themselves stays.
+/// need the fast path. A value the user set themselves stays. Only on KDE, where
+/// the crash was seen: elsewhere software frames leave a transparent island
+/// partly unpainted after it resizes.
 fn work_around_nvidia_explicit_sync() {
-    if Path::new("/proc/driver/nvidia/version").exists()
+    let kde = std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|d| d.split(':').any(|d| d == "KDE"));
+    if kde
+        && Path::new("/proc/driver/nvidia/version").exists()
         && std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none()
     {
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
