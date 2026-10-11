@@ -738,7 +738,7 @@ struct CompactStats: View {
 
     var body: some View {
         let rows = state.compactStatRows
-        VStack(alignment: .trailing, spacing: 1) {
+        VStack(alignment: .trailing, spacing: 2) {
             ForEach(rows.indices, id: \.self) { i in
                 row(rows[i])
             }
@@ -748,7 +748,7 @@ struct CompactStats: View {
         .fixedSize()
         .frame(maxWidth: .infinity, alignment: .trailing)
         // Clears the mini grid wherever the padding puts it.
-        .padding(.trailing, state.compactPadding.right + 2 * IslandConst.miniGridHalf + 6)
+        .padding(.trailing, state.compactPadding.right + 2 * IslandConst.miniGridHalf + 10)
         .allowsHitTesting(false)
         .onAppear { refreshCodex() }
     }
@@ -809,7 +809,7 @@ extension AppState {
             .map { ($0 as NSString).size(withAttributes: [.font: font]).width }
             .max() ?? 0
         // The right ear is 80 wide; the mini grid and its padding take the rest of the row.
-        let taken = compactPadding.right + 2 * IslandConst.miniGridHalf + 6
+        let taken = compactPadding.right + 2 * IslandConst.miniGridHalf + 10
         return widest == 0 ? 0 : max(0, ceil(widest + 4 + taken - 80))
     }
 }

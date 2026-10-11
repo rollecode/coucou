@@ -195,7 +195,7 @@ body {
   color: #8e939c;
   font: 600 9px var(--font);
   font-variant-numeric: tabular-nums;
-  line-height: 11px;
+  line-height: 12px;
   text-align: right;
   white-space: nowrap;
   pointer-events: none;

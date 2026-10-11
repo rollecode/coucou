@@ -717,7 +717,7 @@ export class Island {
     const pad = State.settings.compactPadding;
     this.miniGrid.style.left = `${w - pad.right - 2 * MINI_GRID_HALF}px`;
     this.miniGrid.style.top = `${pad.top + COMPACT_BOT_HALF - MINI_GRID_HALF}px`;
-    this.compactStats.style.right = `${pad.right + 2 * MINI_GRID_HALF + 6}px`;
+    this.compactStats.style.right = `${pad.right + 2 * MINI_GRID_HALF + 10}px`;
     this.compactStats.style.top = `${pad.top + COMPACT_BOT_HALF}px`;
     this.greetingCanvas.style.left = `${(w - EXPANDED_W) / 2}px`;
     this.uploadCanvas.el.style.left = `${(w - EXPANDED_W) / 2}px`;
