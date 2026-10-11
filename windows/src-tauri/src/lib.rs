@@ -288,7 +288,7 @@ async fn claude_sessions() -> Vec<ClaudeProcess> {
 /// runs in, when it was found (see session_window.rs); otherwise opens the
 /// folder in VS Code, as before.
 #[tauri::command]
-fn open_session(session_id: Option<String>, path: Option<String>) -> bool {
+fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>) -> bool {
     // On another machine: no window or folder here is the session's.
     if session_id.as_deref().is_some_and(remote::is_remote_session) {
         return false;
@@ -299,6 +299,7 @@ fn open_session(session_id: Option<String>, path: Option<String>) -> bool {
     let folder = path.as_deref().map(session_window::folder_name).unwrap_or_default().to_string();
     #[cfg(windows)]
     {
+        let _ = app;
         if platform::focus_session_window(&owners, &folder) {
             return true;
         }
@@ -309,7 +310,10 @@ fn open_session(session_id: Option<String>, path: Option<String>) -> bool {
     // opens when none of them could bring the window forward.
     #[cfg(target_os = "linux")]
     {
+        // The island gives the keyboard back first, or the compositor hands it to the window it had before.
+        focus_window(app, false);
         std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(60));
             if platform::focus_session_window(&owners, &folder) {
                 return;
             }
