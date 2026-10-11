@@ -9,6 +9,7 @@ import {
   ISLAND_SHORTCUTS, SHORTCUTS, SHORTCUT_TEXT, activeKeys, displayKeys, duplicates, effective,
   recordPress, type Binding,
 } from "../core/shortcuts";
+import { COMPACT_PADDING, COMPACT_PADDING_MAX, type CompactPadding } from "../core/layout";
 import { DEFAULT_SETTINGS, type Settings } from "../core/state";
 import { SOUND_NAMES } from "../core/sound";
 import {
@@ -17,6 +18,7 @@ import {
 } from "../core/pills";
 import { h, clear } from "../views/dom";
 import { agentsSection } from "./agents";
+import { phoneSection } from "./phone";
 import { colorDot } from "./colors";
 import { renderDiff, statusDot } from "./parts";
 import {
@@ -238,6 +240,7 @@ function claudeSection(status: HookStatus): HTMLElement {
  */
 const PLAN_SETTINGS_TEXT = {
   get claude() { return t("Shows your Claude plan usage (5-hour and weekly limits) in the island's header. Coucou adds a status line relay in ~/.claude/settings.json. If you already have a status line, it keeps working as before. Pro and Max plans only."); },
+  get claudeCli() { return t("The numbers come from the Claude Code command-line tool. The Claude desktop app does not report them, so the gauge stays empty if you only use the desktop app."); },
   get showClaude() { return t("Show in notch"); },
   get codex() { return t("Shows your Codex plan usage (weekly limit and free resets left) in the island's header. Coucou asks the Codex CLI (codex app-server) when the pill shows; nothing is installed. Codex must be signed in with ChatGPT."); },
   get showCodex() { return t("Show Codex plan in the notch"); },
@@ -283,6 +286,7 @@ function planSection(status: HookStatus): HTMLElement {
         class: "hint",
         text: PLAN_SETTINGS_TEXT.claude,
       }),
+      h("div", { class: "hint", text: PLAN_SETTINGS_TEXT.claudeCli }),
       h("div", { class: "row" }, h("label", { text: PLAN_SETTINGS_TEXT.showClaude }), sw),
       h("div", { class: "row" },
         h("label", { text: t("Relay") }),
@@ -907,6 +911,24 @@ function generalSection(): HTMLElement {
     void save();
   });
 
+  const paddingField = (side: keyof CompactPadding, label: string) => {
+    const input = h("input", {
+      type: "number", min: "0", max: String(COMPACT_PADDING_MAX), step: "0.5",
+      value: String(Math.round(settings.compactPadding[side])),
+      title: label,
+    }) as HTMLInputElement;
+    input.addEventListener("change", () => {
+      const v = Number(input.value);
+      const value = Number.isFinite(v) && input.value !== ""
+        ? Math.max(0, Math.min(COMPACT_PADDING_MAX, Math.round(v * 2) / 2))
+        : COMPACT_PADDING[side];
+      settings.compactPadding = { ...settings.compactPadding, [side]: value };
+      input.value = String(value);
+      void save();
+    });
+    return [h("span", { class: "hint", text: label }), input];
+  };
+
   const screen = h("select", {}) as HTMLSelectElement;
   screen.append(
     h("option", { value: "primary", text: t("Main display") }),
@@ -954,6 +976,16 @@ function generalSection(): HTMLElement {
       autoClose,
       h("span", { class: "hint", text: t("seconds after you leave the island") }),
     ),
+    h("div", { class: "row" },
+      h("label", { text: t("Padding") }),
+      h("div", { class: "padding-grid" },
+        ...paddingField("top", t("Top")),
+        ...paddingField("bottom", t("Bottom")),
+        ...paddingField("left", t("Left")),
+        ...paddingField("right", t("Right")),
+      ),
+    ),
+    h("div", { class: "hint", text: t("pixels between the folded island's edges and Mochi or the pills") }),
     h("div", { class: "row" },
       h("label", { text: t("Island lives on") }),
       screen,
@@ -1367,6 +1399,7 @@ async function render() {
     localSection(customKey),
     activePillsSection(connected),
     integrationsSection(present),
+    phoneSection(settings.phoneLink ?? false, toggle, settings),
     generalSection(),
     shortcutsSection(shortcutReport),
     h("div", {

@@ -94,6 +94,18 @@ section > h2 {
   flex: 1 1 auto;
 }
 
+/* Settings → General → Padding: top and bottom, then left and right. */
+.padding-grid {
+  display: grid;
+  grid-template-columns: auto 56px auto 56px;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.padding-grid input {
+  width: 56px;
+}
+
 .dot {
   width: 8px;
   height: 8px;
@@ -427,3 +439,7 @@ select option {
 html[dir="rtl"] :is(.diff, .path, .keycap, input[type="password"], input[type="text"]) {
   direction: ltr;
 }
+
+/* Settings → Android phone: the pairing QR code (an SVG from Rust, black on white). */
+.qr { width: 220px; max-width: 100%; background: #fff; border-radius: 8px; padding: 4px; }
+.qr svg { display: block; width: 100%; height: auto; }
