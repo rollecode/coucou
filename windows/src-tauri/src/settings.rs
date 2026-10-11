@@ -135,13 +135,11 @@ pub struct CompactPadding {
     pub right: f64,
     pub bottom: f64,
     pub left: f64,
-    /// The whole island's width; 0 keeps the default.
-    pub width: f64,
 }
 
 impl Default for CompactPadding {
     fn default() -> Self {
-        Self { top: 6.0, right: 25.5, bottom: 6.0, left: 30.0, width: 0.0 }
+        Self { top: 6.0, right: 25.5, bottom: 6.0, left: 30.0 }
     }
 }
 
@@ -486,7 +484,7 @@ mod tests {
   "soundVolume": 0.5,
   "autoCloseInterval": 30.0,
   "openOnHover": true,
-  "compactPadding": { "top": 2.0, "right": 6.0, "bottom": 4.0, "left": 6.0, "width": 300.0 },
+  "compactPadding": { "top": 2.0, "right": 6.0, "bottom": 4.0, "left": 6.0 },
   "autoHide": false,
   "followEdits": true,
   "expandOnAlert": ["agentFinished", "integration_vercel"],
