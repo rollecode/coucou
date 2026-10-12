@@ -434,6 +434,10 @@ final class AppState: ObservableObject {
             || quietOnScreenShare && callSensors.contains("scr")
         if on != inCall { inCall = on }
     }
+    // The agents count leaves out idle ones — persisted, off by default
+    @Published var compactAgentsWorkingOnly: Bool = false {
+        didSet { UserDefaults.standard.set(compactAgentsWorkingOnly, forKey: "compactAgentsWorkingOnly") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -744,6 +748,7 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "quietOnCamera") as? Bool { quietOnCamera = v }
         if let v = ud.object(forKey: "quietOnMic") as? Bool { quietOnMic = v }
         if let v = ud.object(forKey: "quietOnScreenShare") as? Bool { quietOnScreenShare = v }
+        if let v = ud.object(forKey: "compactAgentsWorkingOnly") as? Bool { compactAgentsWorkingOnly = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }

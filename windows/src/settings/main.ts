@@ -1169,9 +1169,12 @@ function generalSection(): HTMLElement {
 
   const numberOnly = toggle(settings.compactAgentsNumberOnly, (v) => { settings.compactAgentsNumberOnly = v; void save(); }) as HTMLButtonElement;
   numberOnly.disabled = !settings.compactShowAgents;
+  const workingOnly = toggle(settings.compactAgentsWorkingOnly, (v) => { settings.compactAgentsWorkingOnly = v; void save(); }) as HTMLButtonElement;
+  workingOnly.disabled = !settings.compactShowAgents;
   const showAgents = toggle(settings.compactShowAgents, (v) => {
     settings.compactShowAgents = v;
     numberOnly.disabled = !v;
+    workingOnly.disabled = !v;
     void save();
   });
   const expandSwitch = toggle(settings.expandOnActivity, (v) => { settings.expandOnActivity = v; void save(); }) as HTMLButtonElement;
@@ -1280,6 +1283,10 @@ function generalSection(): HTMLElement {
     h("div", { class: "row sub" },
       h("label", { text: t("Show the number only") }),
       numberOnly,
+    ),
+    h("div", { class: "row sub" },
+      h("label", { text: t("Count working agents only") }),
+      workingOnly,
     ),
     h("div", { class: "row" },
       h("label", { text: t("Show plan usage in the folded island") }),
