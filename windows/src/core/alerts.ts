@@ -22,7 +22,7 @@ export interface AlertHost {
 /** Settings asks this alert to open the island, and nothing paused, open or waiting stands in the way. */
 export function opensOnAlert(key: string): boolean {
   return State.settings.expandOnAlert.includes(key) &&
-    !State.paused && State.mode !== "expanded" && !State.pendingApproval;
+    !State.paused && !State.inCall && State.mode !== "expanded" && !State.pendingApproval;
 }
 
 /** Opens the island on the pill's card when Settings asks for it; false when it did not. */

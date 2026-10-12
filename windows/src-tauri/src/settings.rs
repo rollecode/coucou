@@ -134,6 +134,10 @@ pub struct Settings {
     pub phone_relay: bool,
     /// The relay's address (`wss://…`), empty until the user enters it. Not a secret. Owned by Rust.
     pub phone_relay_url: String,
+    /// Settings → General → Calls: the island hides and goes silent while one of these is in use. On by default.
+    pub quiet_on_camera: bool,
+    pub quiet_on_mic: bool,
+    pub quiet_on_screen_share: bool,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -230,6 +234,9 @@ impl Default for Settings {
             phone_services: Vec::new(),
             phone_relay: false,
             phone_relay_url: String::new(),
+            quiet_on_camera: true,
+            quiet_on_mic: true,
+            quiet_on_screen_share: true,
         }
     }
 }
@@ -542,7 +549,10 @@ mod tests {
   "phoneUsage": true,
   "phoneServices": ["integration_stripe"],
   "phoneRelay": true,
-  "phoneRelayUrl": "wss://relay.example.workers.dev"
+  "phoneRelayUrl": "wss://relay.example.workers.dev",
+  "quietOnCamera": false,
+  "quietOnMic": false,
+  "quietOnScreenShare": false
 }"##;
 
     fn custom() -> Value {
@@ -1065,6 +1075,9 @@ mod tests {
                 "phoneServices",
                 "phoneRelay",
                 "phoneRelayUrl",
+                "quietOnCamera",
+                "quietOnMic",
+                "quietOnScreenShare",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);

@@ -240,7 +240,7 @@ function followActivity(island: Island, id: string) {
   if (!State.tasks.some((t) => t.id === id)) return;
   if (State.mode === "expanded" && State.view !== "overview") return;
   if (State.focusId !== id) State.setFocus(id);
-  if (s.expandOnActivity && State.mode !== "expanded") island.alert("overview");
+  if (s.expandOnActivity && State.mode !== "expanded" && !State.inCall) island.alert("overview");
 }
 
 function cancelStopTimer(id: string): boolean {
@@ -498,7 +498,7 @@ function followEdit(island: Island, pillId: string, diffId: number) {
   // Its code view when the session has one; the diff card otherwise (remote hosts, other agents).
   const view = hasCode(pillId) ? "code" : "overview";
   if (expanded) island.setView(view);
-  else island.alert(view);
+  else if (!State.inCall) island.alert(view);
 }
 
 /** The session's turn is over or starts anew: it stops being followed, or may be again. */
@@ -561,6 +561,7 @@ function handleHook(island: Island, payload: HookPayload) {
 
   /** Alerts force the island open; work events only reveal the compact island. */
   const surface = (view: Parameters<Island["alert"]>[0], isAlert: boolean) => {
+    if (State.inCall) return;
     if (State.mode === "expanded") {
       if (isAlert) island.setView(view);
     } else if (isAlert) {
@@ -830,6 +831,11 @@ function handleHook(island: Island, payload: HookPayload) {
       break;
 
     case "PermissionRequest": {
+      // On a call the island stays away: the terminal takes the question at once.
+      if (State.inCall) {
+        if (payload.request_id) void Bridge.approvalDecline(payload.request_id);
+        break;
+      }
       // Only Claude Code and the agents the relay can answer for (Codex, Copilot
       // CLI, Muse Code — same as the Mac) get a card. Anyone else's request is
       // declined at once, so the agent asks in its own terminal.

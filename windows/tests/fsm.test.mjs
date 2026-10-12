@@ -397,3 +397,14 @@ test("turning auto-hide back on lets the next countdown hide it", () => {
   seconds(60);
   assert.equal(fsm.state, "hidden");
 });
+
+test("on a call nothing reveals, hover and click do nothing, until it ends", () => {
+  fsm.paused = true;
+  fsm.reveal();
+  fsm.mouseEntered();
+  fsm.click();
+  assert.equal(fsm.state, "hidden");
+  fsm.paused = false;
+  fsm.reveal();
+  assert.equal(fsm.state, "petit");
+});

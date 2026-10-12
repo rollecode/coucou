@@ -1316,6 +1316,7 @@ export class Island {
     this.fsm.openOnHover = State.settings.openOnHover;
     this.animateGeometry(false);
     this.applyAutoHide(State.settings.autoHide);
+    this.syncCall();
     State.notify();
   }
 
@@ -1327,6 +1328,19 @@ export class Island {
     if (!on && !State.paused) this.fsm.reveal();
     // Cancels the countdown to hidden, or starts it again once the setting is off.
     if (this.fsm.state === "petit" && !this.wasInIsland) this.fsm.mouseLeft();
+  }
+
+  /** A call started: the island goes away, a card waiting for an answer excepted. Ended: back, folded. */
+  syncCall() {
+    const on = State.inCall;
+    if (on === this.fsm.paused) return;
+    this.fsm.paused = on;
+    Sound.quiet = on;
+    if (on) {
+      if (!State.pendingApproval) this.fsm.forceHidden();
+    } else if (State.mode === "hidden" && State.tasks.length > 0) {
+      this.revealSilently();
+    }
   }
 
   get panelSize() {

@@ -3,6 +3,7 @@
 mod agent_hooks;
 mod agents;
 mod betterstack;
+mod calls;
 mod chat;
 mod claude;
 mod claude_code;
@@ -931,6 +932,7 @@ pub fn run() {
             sounds::custom_sound,
             sounds::reveal_sounds_folder,
             sounds::reload_sounds,
+            calls::call_sensors,
             spotify::spotify_refresh,
             spotify::spotify_control,
             spotify::spotify_open,
@@ -990,6 +992,7 @@ pub fn run() {
                     log::line(format!("autostart: {err}"));
                 }
             }
+            calls::start(handle.clone());
             shortcuts::apply(&handle, &loaded.shortcuts);
             Ok(())
         })
