@@ -673,6 +673,8 @@ function handleHook(island: Island, payload: HookPayload) {
         beginTurn(agentId, code);
         leaveCode();
       }
+      // A new turn: the finished card would show the prompt as if it were the answer.
+      if (State.mode === "expanded" && State.view === "finished" && State.focusId === agentId) island.setView("overview");
       surface("overview", false);
       break;
     }
