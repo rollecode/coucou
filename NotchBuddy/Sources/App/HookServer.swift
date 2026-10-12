@@ -578,7 +578,8 @@ final class HookServer: @unchecked Sendable {
             }
         }
 
-        if name != "SessionEnd" { followActivity(pill: agentId) }
+        // The agent's activity, never the user's own prompt or session start.
+        if !["SessionEnd", "SessionStart", "UserPromptSubmit"].contains(name) { followActivity(pill: agentId) }
         let focused = state.focusId == agentId
         if isRemote, let host = payload["coucou_remote"] as? String {
             RemoteTerminal.remember(pillId: agentId, host: host, payload: payload)
