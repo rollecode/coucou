@@ -875,7 +875,9 @@ final class IslandWindowController: NSWindowController {
             collapse(allowPendingApproval: true)
             return
         }
-        if !TerminalTarget.activate(sessionBundleId: state.focusTask?.sessionBundleId, tty: state.focusTask?.sessionTTY) {
+        let found = state.focusTask.flatMap { HookServer.shared.sessionTerminal(pill: $0.id) }
+        if !TerminalTarget.activate(sessionBundleId: found?.bundleId ?? state.focusTask?.sessionBundleId,
+                                    tty: found?.tty ?? state.focusTask?.sessionTTY) {
             NSWorkspace.shared.open(
                 URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
         }

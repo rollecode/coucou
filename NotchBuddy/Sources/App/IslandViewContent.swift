@@ -262,6 +262,10 @@ struct OverviewView: View {
     private func openAgentTarget(_ task: AgentTask?) {
         guard let task else { return }
         if RemoteTerminal.open(pillId: task.id) { return }
+        #if !APPSTORE
+        if let found = HookServer.shared.sessionTerminal(pill: task.id),
+           TerminalTarget.activate(sessionBundleId: found.bundleId, tty: found.tty) { return }
+        #endif
         switch task.id {
         case "integration_claude":
             if ClaudeHost.activate(task.hostApp, tty: task.sessionTTY) { return }
