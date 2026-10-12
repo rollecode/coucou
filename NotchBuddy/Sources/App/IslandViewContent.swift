@@ -4665,20 +4665,15 @@ struct AgentPillsView: View {
         state.tasks.filter { $0.id != state.focusId }
     }
 
-    // Two columns of four fit the card; past that the grid scrolls.
-    private var displayTasks: [AgentTask] {
-        Array(others.prefix(8))
-    }
-
     private let columns = [
         GridItem(.flexible(), spacing: 4),
         GridItem(.flexible(), spacing: 4)
     ]
 
     var body: some View {
-        if displayTasks.count > 4 {
+        if others.count > 6 {
             ScrollView(.vertical, showsIndicators: false) {
-                grid.padding(.top, 6)
+                grid.padding(.vertical, 6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -4693,7 +4688,7 @@ struct AgentPillsView: View {
 
     private var grid: some View {
         LazyVGrid(columns: columns, spacing: 4) {
-            ForEach(displayTasks) { task in
+            ForEach(others) { task in
                 #if !APPSTORE
                 if task.id == "integration_music" {
                     MusicPill(task: task, state: state, swapping: $swapping) {
@@ -5038,13 +5033,9 @@ struct PillBadgeView: View {
 struct ColumnAgentsView: View {
     @ObservedObject var state: AppState
 
-    var others: [AgentTask] {
-        state.tasks.filter { $0.id != state.focusId }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(others.prefix(4).enumerated()), id: \.1.id) { idx, task in
+            ForEach(Array(state.othersByActivity.prefix(4).enumerated()), id: \.1.id) { idx, task in
                 MiniBotCanvasView(task: task)
                     .frame(width: 16 / 0.6, height: 16 / 0.6)
                     .frame(width: 16, height: 16)

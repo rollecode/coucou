@@ -441,8 +441,7 @@ function buildOverview(actions: ViewActions): ViewHost {
       highlightRow(rows, State.cardSelection, State.cardSelection !== shownSelection);
       shownSelection = State.cardSelection;
 
-      // Two columns of four fit the card; past that the grid scrolls.
-      const others = State.otherTasks.slice(0, 8);
+      const others = State.otherTasks;
       const pillKey = others.map((t) => `${t.id}:${t.color}:${t.pillBadge ?? ""}`).join("|");
       if (pillKey !== pillIds) {
         pillIds = pillKey;
