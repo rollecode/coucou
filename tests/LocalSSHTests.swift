@@ -47,6 +47,10 @@ struct LocalSSHTests {
         let host = LocalSSH.destination("ssh://deploy@localhost:2222")!
         func same(_ line: String, _ want: LocalSSH.Destination) -> Bool { LocalSSH.same(call(line)!.0, want) }
         check(same("ssh -p 2222 deploy@localhost", host), "the host as typed")
+        let ip = LocalSSH.Resolved(user: "me", port: 22, addresses: ["192.0.2.7"])
+        check(LocalSSH.sameAddress(ip, LocalSSH.Resolved(user: "me", port: 22, addresses: ["192.0.2.7", "::1"])), "an alias of the same address")
+        check(!LocalSSH.sameAddress(ip, LocalSSH.Resolved(user: "me", port: 2222, addresses: ["192.0.2.7"])), "same address, another port")
+        check(!LocalSSH.sameAddress(ip, nil), "unresolved")
         check(same("ssh -p 2222 LOCALHOST", host), "no user named: any")
         check(!same("ssh deploy@localhost", host), "another port")
         check(!same("ssh -p 2222 root@localhost", host), "another user")
@@ -61,6 +65,10 @@ struct LocalSSHTests {
         check(LocalSSH.pick(found, tmux: "work-2")?.pid == 12, "the ssh on the session's tmux wins")
         check(LocalSSH.pick(found, tmux: "")?.pid == 11, "else the newest")
         check(LocalSSH.pick([], tmux: "x") == nil, "none")
+        let panes = [(LocalSSH.Proc(pid: 20, ppid: 1, tty: "/dev/ttys005", age: 900, name: "ssh"), ""),
+                     (LocalSSH.Proc(pid: 21, ppid: 1, tty: "/dev/ttys007", age: 5, name: "ssh"), "")]
+        check(LocalSSH.pick(panes, tmux: "work-2", titles: ["/dev/ttys005": "work-2 · claude"])?.pid == 20,
+              "or the one whose terminal title names it")
 
         let ps = """
               812     1 ??        3-01:02:03 launchd

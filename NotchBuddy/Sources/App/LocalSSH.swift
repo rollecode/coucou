@@ -131,14 +131,15 @@ enum LocalSSH {
     }
 
     /// Of the ssh processes to a host, with their remote commands: the one running
-    /// the session's tmux session, else the newest.
-    static func pick(_ found: [(Proc, String)], tmux: String) -> Proc? {
-        func namesTmux(_ command: String) -> Bool {
-            !tmux.isEmpty && command.split(whereSeparator: { !($0.isASCII && ($0.isLetter || $0.isNumber) || "._-".contains($0)) })
+    /// the session's tmux session, by its command or its terminal title (`titles` by tty), else the newest.
+    static func pick(_ found: [(Proc, String)], tmux: String, titles: [String: String] = [:]) -> Proc? {
+        func namesTmux(_ text: String) -> Bool {
+            !tmux.isEmpty && text.split(whereSeparator: { !($0.isASCII && ($0.isLetter || $0.isNumber) || "._-".contains($0)) })
                 .contains { $0 == tmux }
         }
+        func runsTmux(_ f: (Proc, String)) -> Bool { namesTmux(f.1) || namesTmux(titles[f.0.tty] ?? "") }
         return found.max { a, b in
-            let (ta, tb) = (namesTmux(a.1), namesTmux(b.1))
+            let (ta, tb) = (runsTmux(a), runsTmux(b))
             return ta != tb ? !ta : a.0.age > b.0.age
         }?.0
     }
@@ -240,18 +241,64 @@ enum LocalSSH {
 
     /// Our processes, and among them the ssh or mosh to `host` on a terminal to bring forward,
     /// Coucou's own left out. nil when there is none.
-    static func find(host: String, tmux: String) -> (ssh: Proc, all: [Proc])? {
+    static func find(host: String, tmux: String, titles: [String: String] = [:]) -> (ssh: Proc, all: [Proc])? {
         guard let want = destination(host) else { return nil }
         let all = ownProcesses()
         let me = ProcessInfo.processInfo.processIdentifier
+        let wanted = resolved(want)
         let found: [(Proc, String)] = all.compactMap { p in
             guard p.name == "ssh" || p.name == "mosh-client", !ancestors(of: p.pid, in: all).contains(me) else { return nil }
             let args = argv(procArgs: procArgs(p.pid))
-            guard let c = p.name == "ssh" ? call(args) : moshCall(args), same(c.0, want) else { return nil }
+            guard let c = p.name == "ssh" ? call(args) : moshCall(args),
+                  same(c.0, want) || sameAddress(resolved(c.0), wanted) else { return nil }
             return (p, c.1)
         }
-        guard let ssh = pick(found, tmux: tmux) else { return nil }
+        guard let ssh = pick(found, tmux: tmux, titles: titles) else { return nil }
         return (ssh, all)
+    }
+
+    /// A destination as ssh would reach it: `~/.ssh/config` applied (`ssh -G`), the host's addresses.
+    struct Resolved: Equatable {
+        var user: String
+        var port: Int
+        var addresses: Set<String>
+    }
+
+    static func resolved(_ d: Destination) -> Resolved? {
+        var args = ["-G"]
+        if let port = d.port { args += ["-p", String(port)] }
+        if let user = d.user { args += ["-l", user] }
+        var config: [String: String] = [:]
+        for line in run("/usr/bin/ssh", args + ["--", d.host]).split(separator: "\n") {
+            let f = line.split(separator: " ", maxSplits: 1).map(String.init)
+            if f.count == 2, config[f[0]] == nil { config[f[0]] = f[1] }
+        }
+        guard let host = config["hostname"], let user = config["user"], let port = config["port"].flatMap(Int.init) else { return nil }
+        return Resolved(user: user, port: port, addresses: addresses(host))
+    }
+
+    /// Same user and port, and a host address in common: an alias, or the name of an address.
+    static func sameAddress(_ a: Resolved?, _ b: Resolved?) -> Bool {
+        guard let a, let b else { return false }
+        return a.user == b.user && a.port == b.port && !a.addresses.isDisjoint(with: b.addresses)
+    }
+
+    private static func addresses(_ host: String) -> Set<String> {
+        var hints = addrinfo(ai_flags: 0, ai_family: AF_UNSPEC, ai_socktype: SOCK_STREAM, ai_protocol: 0,
+                             ai_addrlen: 0, ai_canonname: nil, ai_addr: nil, ai_next: nil)
+        var list: UnsafeMutablePointer<addrinfo>?
+        guard getaddrinfo(host, nil, &hints, &list) == 0 else { return [host] }
+        defer { freeaddrinfo(list) }
+        var out: Set<String> = []
+        var p = list
+        while let a = p?.pointee {
+            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            if getnameinfo(a.ai_addr, a.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 {
+                out.insert(String(cString: name))
+            }
+            p = a.ai_next
+        }
+        return out
     }
 
     private static func procArgs(_ pid: Int32) -> [UInt8] {
