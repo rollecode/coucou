@@ -87,7 +87,26 @@ enum IslandHoverTests {
         notch.mouseLeft()
         try await waitFor(.hidden, notch, timeout: 5)
 
-        print("Island open on hover, auto-hide and notchless screens: 10 cases passed")
+        // A call: nothing reveals, hover and click do nothing, until it ends.
+        let call = machine()
+        call.paused = true
+        call.reveal()
+        call.mouseEntered()
+        call.click()
+        precondition(call.state == .hidden)
+        call.paused = false
+        call.reveal()
+        precondition(call.state == .petit)
+
+        // A call starting mid-way takes the open island down at once.
+        let mid = machine()
+        mid.mouseEntered()
+        precondition(mid.state == .home)
+        mid.paused = true
+        mid.forceHidden()
+        precondition(mid.state == .hidden && !mid.openedByHover)
+
+        print("Island open on hover, auto-hide, notchless screens and calls: 12 cases passed")
     }
 
     @MainActor

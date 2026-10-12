@@ -412,6 +412,28 @@ final class AppState: ObservableObject {
     @Published var expandOnActivity: Bool = false {
         didSet { UserDefaults.standard.set(expandOnActivity, forKey: "expandOnActivity") }
     }
+    // Settings → General → Calls: the island hides and goes silent while one of these is in use
+    @Published var quietOnCamera: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnCamera, forKey: "quietOnCamera"); updateInCall() }
+    }
+    @Published var quietOnMic: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnMic, forKey: "quietOnMic"); updateInCall() }
+    }
+    @Published var quietOnScreenShare: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnScreenShare, forKey: "quietOnScreenShare"); updateInCall() }
+    }
+    /// `cam`, `mic`, `scr` held by another app right now (CallWatcher).
+    var callSensors: Set<String> = [] {
+        didSet { updateInCall() }
+    }
+    /// A call is on: nothing reveals, no alert, no sound, until it ends.
+    @Published private(set) var inCall = false
+    private func updateInCall() {
+        let on = quietOnCamera && callSensors.contains("cam")
+            || quietOnMic && callSensors.contains("mic")
+            || quietOnScreenShare && callSensors.contains("scr")
+        if on != inCall { inCall = on }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -719,6 +741,9 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "compactAgentsNumberOnly") as? Bool { compactAgentsNumberOnly = v }
         if let v = ud.object(forKey: "followActivity") as? Bool { followActivity = v }
         if let v = ud.object(forKey: "expandOnActivity") as? Bool { expandOnActivity = v }
+        if let v = ud.object(forKey: "quietOnCamera") as? Bool { quietOnCamera = v }
+        if let v = ud.object(forKey: "quietOnMic") as? Bool { quietOnMic = v }
+        if let v = ud.object(forKey: "quietOnScreenShare") as? Bool { quietOnScreenShare = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }
@@ -859,7 +884,7 @@ final class AppState: ObservableObject {
         // If no tasks and not expanded/peek, go hidden
         if tasks.isEmpty && mode == .compact {
             mode = .hidden
-        } else if !tasks.isEmpty && mode == .hidden && isPresent {
+        } else if !tasks.isEmpty && mode == .hidden && isPresent && !inCall {
             mode = .compact
         }
     }

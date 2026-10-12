@@ -192,6 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if !APPSTORE
         RemoteHosts.shared.start()
         _ = VoiceEngine.shared  // registers system observers; starts mic only if the user enabled voice
+        CallWatcher.shared.start()
         #endif
         N8nPoller.shared.start()
         VercelPoller.shared.start()
