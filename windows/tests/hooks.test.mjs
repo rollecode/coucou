@@ -110,6 +110,13 @@ test("a session on a remote host is named with the host and keeps no local folde
   assert.notEqual(task().sessionCwd, "/srv/api-server");
 });
 
+test("a named session goes by its name, and the home folder is ~", () => {
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me", home: "/home/me" });
+  assert.equal(task().name, "~");
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me", home: "/home/me", session_name: "coucou-mac" });
+  assert.equal(task().name, "coucou-mac");
+});
+
 test("known project folders get their display name, and no folder is a Session", () => {
   hook({ hook_event_name: "SessionStart", cwd: "/home/me/notch-buddy" });
   assert.equal(task().name, "Notch Buddy");

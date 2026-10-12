@@ -1662,8 +1662,7 @@ final class HookServer: @unchecked Sendable {
     /// Mac: the name carries the host, and there is no folder to open here.
     private func sessionPlace(_ payload: [String: Any]) -> (cwd: String, name: String) {
         let cwd = payload["cwd"] as? String ?? ""
-        let rawName = URL(fileURLWithPath: cwd).lastPathComponent
-        let name = aliasProjectName(rawName.isEmpty ? "Session" : rawName)
+        let name = sessionName(payload, cwd: cwd)
         guard let host = payload["coucou_remote"] as? String else { return (cwd, name) }
         return ("", "\(name) · \(SSHDestination.label(host))")
     }
@@ -1723,6 +1722,14 @@ final class HookServer: @unchecked Sendable {
     }
 
     // MARK: - Project name alias mapping
+
+    /// The session's own name (Claude Code's /rename, read by the hook), else its folder, `~` at home.
+    private func sessionName(_ payload: [String: Any], cwd: String) -> String {
+        if let name = payload["session_name"] as? String, !name.isEmpty { return name }
+        if !cwd.isEmpty, cwd == (payload["home"] as? String ?? NSHomeDirectory()) { return "~" }
+        let folder = URL(fileURLWithPath: cwd).lastPathComponent
+        return aliasProjectName(folder.isEmpty ? "Session" : folder)
+    }
 
     private func aliasProjectName(_ name: String) -> String {
         let aliases: [String: String] = [
@@ -3954,6 +3961,22 @@ def read_reply(s, key, budget):
         if b'\\n' in chunk:
             break
     return b''.join(chunks).decode().strip()
+def claude_session_name(sid):
+    # The name given with /rename, from Claude Code's session registry
+    if not sid:
+        return ''
+    try:
+        d = os.path.expanduser('~/.claude/sessions')
+        for f in os.listdir(d):
+            if not f.endswith('.json'):
+                continue
+            with open(os.path.join(d, f)) as fh:
+                s = json.load(fh)
+            if s.get('sessionId') == sid:
+                return str(s.get('name') or '')
+    except Exception:
+        pass
+    return ''
 
 def main():
     raw = b''
@@ -4032,6 +4055,8 @@ def main():
                 payload['cwd'] = paths[0]
             else:
                 payload['cwd'] = os.getcwd()
+        payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+        payload['home'] = os.path.expanduser('~')
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
@@ -4095,6 +4120,8 @@ def main():
             payload['cwd'] = paths[0]
         else:
             payload['cwd'] = os.getcwd()
+    payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+    payload['home'] = os.path.expanduser('~')
 
     # The tmux session, so another machine can attach to it (remote Open terminal)
     if payload.get('hook_event_name') in ('SessionStart', 'UserPromptSubmit') and env.get('TMUX'):
@@ -4353,6 +4380,22 @@ def read_reply(s, key, budget):
         if b'\\n' in chunk:
             break
     return b''.join(chunks).decode().strip()
+def claude_session_name(sid):
+    # The name given with /rename, from Claude Code's session registry
+    if not sid:
+        return ''
+    try:
+        d = os.path.expanduser('~/.claude/sessions')
+        for f in os.listdir(d):
+            if not f.endswith('.json'):
+                continue
+            with open(os.path.join(d, f)) as fh:
+                s = json.load(fh)
+            if s.get('sessionId') == sid:
+                return str(s.get('name') or '')
+    except Exception:
+        pass
+    return ''
 
 def main():
     raw = b''
@@ -4425,6 +4468,8 @@ def main():
                 payload['cwd'] = paths[0]
             else:
                 payload['cwd'] = os.getcwd()
+        payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+        payload['home'] = os.path.expanduser('~')
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
@@ -4486,6 +4531,8 @@ def main():
             payload['cwd'] = paths[0]
         else:
             payload['cwd'] = os.getcwd()
+    payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+    payload['home'] = os.path.expanduser('~')
 
     # The tmux session, so another machine can attach to it (remote Open terminal)
     if payload.get('hook_event_name') in ('SessionStart', 'UserPromptSubmit') and env.get('TMUX'):
