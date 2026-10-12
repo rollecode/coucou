@@ -55,6 +55,11 @@
 		1C8BC5BEFFFB2E94A503FA68 /* LiveRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0F4DECC561804FB81240F8 /* LiveRevealView.swift */; };
 		1D23613B270FE8B11C5E27A7 /* IslandDisplayChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A09E73F1E58019EF6EA2A62 /* IslandDisplayChoice.swift */; };
 		1D4CE0CCD2B5A0FFE50C7F06 /* TerminalTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AF6F7A027AB1D46309DD49 /* TerminalTarget.swift */; };
+		AA4B191682537CC92C899BC9 /* CryptoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036DE9440154C95E2B90C1EA /* CryptoViews.swift */; };
+		91ECF9F7C5C7E5F6886FA02F /* CryptoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033D87BF740911193C67D94D /* CryptoController.swift */; };
+		AE2F7E3B42815ADC7EE77B8D /* MailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCFDE7CC2BD8BCA9A6C9DF45 /* MailViews.swift */; };
+		56D42241B003E714A77CF838 /* MailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB502629F8A6EE9E8A647B2E /* MailController.swift */; };
+		9CF7070265B7CDC933FD9776 /* PillSessionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30A2AD5885FA3226E0337D67 /* PillSessionRegistry.swift */; };
 		1DAB0704A136FF8E6FB34191 /* ClaudeResponseText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444604C7E2C530B664849EF9 /* ClaudeResponseText.swift */; };
 		1DCF28998358810CDBC93F91 /* ClaudeHookDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA7D927F6BB2667D37AA963 /* ClaudeHookDetection.swift */; };
 		1E55440B97C640993E93D04D /* DiffEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32FB972D02162720E566674 /* DiffEngine.swift */; };
@@ -142,6 +147,11 @@
 		65CB53E20B2289CA3AC3E8FE /* TurnSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1C4152EBDBD7C24CABFFD7 /* TurnSnapshot.swift */; };
 		6613EB914852E6EEB1FF37BF /* IntentParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39753CFF90B494D449CCD95 /* IntentParser.swift */; };
 		6726F74966EDE7F82BFE89B2 /* TerminalTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AF6F7A027AB1D46309DD49 /* TerminalTarget.swift */; };
+		A42BEDAC04B72921BF113A2C /* CryptoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036DE9440154C95E2B90C1EA /* CryptoViews.swift */; };
+		BA41CE5D1739D3024B4F3214 /* CryptoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033D87BF740911193C67D94D /* CryptoController.swift */; };
+		F6D1C30750D5232B70F678C1 /* MailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCFDE7CC2BD8BCA9A6C9DF45 /* MailViews.swift */; };
+		2B2706A9D900EE525E470A6F /* MailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB502629F8A6EE9E8A647B2E /* MailController.swift */; };
+		11363898DA837388E2823E7F /* PillSessionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30A2AD5885FA3226E0337D67 /* PillSessionRegistry.swift */; };
 		68A950E3C23FD612639D9776 /* IslandViewContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA02B08886939FF6FE0475DD /* IslandViewContent.swift */; };
 		68C3ACC708B69035FD0CB8C4 /* TurnSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1C4152EBDBD7C24CABFFD7 /* TurnSnapshot.swift */; };
 		694AB4504CD65662E1681E5C /* ServicePublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0C229BD085D76EB3DD94DF /* ServicePublisher.swift */; };
@@ -498,6 +508,11 @@
 		871CA2BADC67D97C97C7009D /* error.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = error.wav; sourceTree = "<group>"; };
 		8790ACE9F73BD74640A0F20C /* LocalChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalChat.swift; sourceTree = "<group>"; };
 		87AF6F7A027AB1D46309DD49 /* TerminalTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTarget.swift; sourceTree = "<group>"; };
+		036DE9440154C95E2B90C1EA /* CryptoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoViews.swift; sourceTree = "<group>"; };
+		033D87BF740911193C67D94D /* CryptoController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoController.swift; sourceTree = "<group>"; };
+		DCFDE7CC2BD8BCA9A6C9DF45 /* MailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailViews.swift; sourceTree = "<group>"; };
+		AB502629F8A6EE9E8A647B2E /* MailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailController.swift; sourceTree = "<group>"; };
+		30A2AD5885FA3226E0337D67 /* PillSessionRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PillSessionRegistry.swift; sourceTree = "<group>"; };
 		888B3E1420BCB6292BDC8117 /* WeeklyRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyRecapView.swift; sourceTree = "<group>"; };
 		8ACB4350729C6513824D1ADF /* ColorHex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHex.swift; sourceTree = "<group>"; };
 		8BF22817EC70748F2D1FB2E7 /* ClaudePlanGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudePlanGauge.swift; sourceTree = "<group>"; };
@@ -676,6 +691,11 @@
 				118E9E633B45C15CC4FE6962 /* SSHDestination.swift */,
 				2EF78999D68D56ADE4CEFBE2 /* StripePoller.swift */,
 				87AF6F7A027AB1D46309DD49 /* TerminalTarget.swift */,
+				036DE9440154C95E2B90C1EA /* CryptoViews.swift */,
+				033D87BF740911193C67D94D /* CryptoController.swift */,
+				DCFDE7CC2BD8BCA9A6C9DF45 /* MailViews.swift */,
+				AB502629F8A6EE9E8A647B2E /* MailController.swift */,
+				30A2AD5885FA3226E0337D67 /* PillSessionRegistry.swift */,
 				244A7909EEDA4BFF4C2EA9B5 /* TerminalTarget+AppKit.swift */,
 				777958C3DDAF3BD94ADD9890 /* TiedProcess.swift */,
 				2DCA09304D7FAE26A100D495 /* TimelyAPI.swift */,
@@ -1179,6 +1199,11 @@
 				CEE1717FE0CCF2911BDA0F64 /* TiedProcess.swift in Sources */,
 				3E4DE5616B3A0CFA78518B39 /* TimelyAPI.swift in Sources */,
 				A7886652D06EBE1A70A9A85D /* TimelyPoller.swift in Sources */,
+				AA4B191682537CC92C899BC9 /* CryptoViews.swift in Sources */,
+				91ECF9F7C5C7E5F6886FA02F /* CryptoController.swift in Sources */,
+				AE2F7E3B42815ADC7EE77B8D /* MailViews.swift in Sources */,
+				56D42241B003E714A77CF838 /* MailController.swift in Sources */,
+				9CF7070265B7CDC933FD9776 /* PillSessionRegistry.swift in Sources */,
 				8551E592C5FFC6A0A7458A26 /* TurnEndPolicy.swift in Sources */,
 				0408FE7F86EBEE61CAED32DA /* TurnRecorder.swift in Sources */,
 				68C3ACC708B69035FD0CB8C4 /* TurnSnapshot.swift in Sources */,
@@ -1399,6 +1424,11 @@
 				197D0B911BB0A8258542D109 /* TiedProcess.swift in Sources */,
 				46E8796D0B8FE53272525C59 /* TimelyAPI.swift in Sources */,
 				BA39F7EC25D544336651AE91 /* TimelyPoller.swift in Sources */,
+				A42BEDAC04B72921BF113A2C /* CryptoViews.swift in Sources */,
+				BA41CE5D1739D3024B4F3214 /* CryptoController.swift in Sources */,
+				F6D1C30750D5232B70F678C1 /* MailViews.swift in Sources */,
+				2B2706A9D900EE525E470A6F /* MailController.swift in Sources */,
+				11363898DA837388E2823E7F /* PillSessionRegistry.swift in Sources */,
 				ABE0CEF17018F1BAD8F7DBFA /* TurnEndPolicy.swift in Sources */,
 				CE0A1BD64DF3E08D200691A6 /* TurnRecorder.swift in Sources */,
 				4D34FF10654B19B69FE1964C /* TurnSnapshot.swift in Sources */,

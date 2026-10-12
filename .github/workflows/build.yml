@@ -33,9 +33,11 @@ jobs:
       - name: Test loopback hosts
         run: bash scripts/test-loopback-host.sh
 
-
       - name: Test relay wire
         run: bash scripts/test-relay-wire.sh
+
+      - name: Test parallel Claude Code sessions
+        run: bash scripts/test-session-registry.sh
 
       - name: Test approval queue
         run: bash scripts/test-approval-queue.sh
