@@ -592,14 +592,14 @@ mod tests {
         let args = |e: &str| Args { agent: String::new(), event: e.into() };
         let env = env_of(&[(TMUX_SESSION, "work-2")]);
         let line = |raw: &str, e: &str| {
-            let ev = prepare(raw.as_bytes(), &args(e), &env, "/w").unwrap();
+            let ev = prepare(raw.as_bytes(), &args(e), &env, "/w", &|_| None).unwrap();
             serde_json::from_str::<Value>(ev.line.trim_end()).unwrap()
         };
         assert_eq!(line(r#"{"hook_event_name":"SessionStart"}"#, "SessionStart")["tmux_session"], "work-2");
         assert_eq!(line(r#"{"hook_event_name":"UserPromptSubmit"}"#, "UserPromptSubmit")["tmux_session"], "work-2");
         assert!(line(r#"{"hook_event_name":"PreToolUse"}"#, "PreToolUse").get("tmux_session").is_none());
         let odd = env_of(&[(TMUX_SESSION, "a b;rm")]);
-        let ev = prepare(br#"{"hook_event_name":"SessionStart"}"#, &args("SessionStart"), &odd, "/w").unwrap();
+        let ev = prepare(br#"{"hook_event_name":"SessionStart"}"#, &args("SessionStart"), &odd, "/w", &|_| None).unwrap();
         assert!(!ev.line.contains("tmux_session"));
     }
 
@@ -608,7 +608,7 @@ mod tests {
         let args = |e: &str| Args { agent: String::new(), event: e.into() };
         let env = env_of(&[("COUCOU_SOCKET", "/h/.coucou/1.sock"), (MACHINE_ID, "0123abcdef"), (HOOK_PPID, "4242")]);
         let line = |raw: &str, e: &str, env: &dyn Fn(&str) -> Option<String>| {
-            let ev = prepare(raw.as_bytes(), &args(e), env, "/w").unwrap();
+            let ev = prepare(raw.as_bytes(), &args(e), env, "/w", &|_| None).unwrap();
             serde_json::from_str::<Value>(ev.line.trim_end()).unwrap()
         };
         let start = line(r#"{"hook_event_name":"SessionStart"}"#, "SessionStart", &env);
@@ -658,9 +658,9 @@ mod tests {
     fn coucous_own_chat_is_tagged() {
         let args = Args { agent: String::new(), event: "PreToolUse".into() };
         let raw = br#"{"hook_event_name":"PreToolUse"}"#;
-        let tagged = prepare(raw, &args, &env_of(&[("COUCOU_CHAT", "1")]), "/p").unwrap();
+        let tagged = prepare(raw, &args, &env_of(&[("COUCOU_CHAT", "1")]), "/p", &|_| None).unwrap();
         assert!(tagged.line.contains(r#""coucou_chat":true"#));
-        let plain = prepare(raw, &args, &env_of(&[]), "/p").unwrap();
+        let plain = prepare(raw, &args, &env_of(&[]), "/p", &|_| None).unwrap();
         assert!(!plain.line.contains("coucou_chat"));
     }
 
@@ -693,7 +693,7 @@ mod tests {
         payload.insert("k".repeat(MAX_LINE).into(), serde_json::json!("v"));
         let raw = serde_json::to_vec(&payload).unwrap();
         let args = Args { agent: String::new(), event: String::new() };
-        let ev = prepare(&raw, &args, &|_| None, "/tmp").expect("forwarded");
+        let ev = prepare(&raw, &args, &|_| None, "/tmp", &|_| None).expect("forwarded");
         assert!(ev.line.len() < MAX_LINE);
         let v: Value = serde_json::from_str(ev.line.trim_end()).unwrap();
         assert_eq!(v["hook_event_name"], "PreToolUse");
@@ -713,7 +713,7 @@ mod tests {
         payload.insert("tool_input".into(), serde_json::json!({ "file_path": "/p/a.rs", "edits": edits }));
         let raw = serde_json::to_vec(&payload).unwrap();
         let args = Args { agent: String::new(), event: String::new() };
-        assert!(prepare(&raw, &args, &|_| None, "/tmp").is_none());
+        assert!(prepare(&raw, &args, &|_| None, "/tmp", &|_| None).is_none());
     }
 
     #[test]
@@ -935,7 +935,7 @@ mod tests {
         for vars in envs {
             for raw in &raws {
                 let got = py.next().unwrap();
-                match prepare(raw.as_bytes(), &args, &env_of(vars), "/home/me/here") {
+                match prepare(raw.as_bytes(), &args, &env_of(vars), "/home/me/here", &|_| None) {
                     None => assert!(got.is_null(), "{raw:.40}"),
                     Some(ev) => {
                         let line: Value = serde_json::from_str(ev.line.trim_end()).unwrap();
