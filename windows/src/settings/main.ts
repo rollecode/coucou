@@ -18,6 +18,8 @@ import {
 import { h, clear } from "../views/dom";
 import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
+import { portfolioSettings } from "./portfolio";
+import { PORTFOLIO_ID } from "../core/portfolio";
 import { colorDot } from "./colors";
 import { renderDiff, statusDot } from "./parts";
 import {
@@ -778,6 +780,8 @@ const INTEGRATIONS: IntegrationDef[] = [
     fields: [{ key: "calcom-api-key", label: N_("API key"), placeholder: "cal_…", secret: true }] },
   // Nothing to enter: Spotify is read over D-Bus (Linux only, see core/pills.ts).
   { id: "integration_spotify", name: "Spotify", color: "#1DB954", fields: [] },
+  // Exchanges and wallets of its own, below (./portfolio.ts).
+  { id: PORTFOLIO_ID, name: "Portfolio", color: "#FFD700", fields: [] },
 ];
 
 const MAX_ACTIVE = MAX_DECLARED;
@@ -848,6 +852,7 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
     }
 
     if (def.hint) rows.append(h("div", { class: "hint", text: t(def.hint) }));
+    if (def.id === PORTFOLIO_ID) rows.append(portfolioSettings(KEY_STORE));
     if (def.id === "integration_spotify") {
       // As on the Mac's row: said only when there is no Spotify to launch.
       const hint = h("div", { class: "hint", style: "padding-top:5px" });

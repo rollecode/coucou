@@ -5,6 +5,7 @@
 import { onEvent, Bridge, type IntegrationUpdate } from "../core/bridge";
 import { gitHubAlert, type GitHubEvent } from "../core/github";
 import { availablePills } from "../core/pills";
+import { PORTFOLIO_ID, hasAnyAccount } from "../core/portfolio";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
 import type { Island } from "./island";
@@ -18,6 +19,7 @@ export function registerIntegrationHandlers(island: Island) {
   void onEvent<GitHubEvent[]>("github-alerts", handleGitHubAlerts);
   void refreshConfigured();
   State.subscribe(refreshGitHubWhenShown);
+  State.subscribe(refreshPortfolioWhenShown);
 }
 
 /**
@@ -46,6 +48,19 @@ function refreshGitHubWhenShown() {
   gitHubShown = shown;
 }
 
+/** Same as GitHub, with the Mac's limit: the Portfolio card refetches when shown on data older than 30 s. */
+const PORTFOLIO_STALE_MS = 30_000;
+let portfolioShown = false;
+
+function refreshPortfolioWhenShown() {
+  const shown = State.mode === "expanded" && State.focusTask?.id === PORTFOLIO_ID;
+  const fetchedAt = Number(State.integrations[PORTFOLIO_ID]?.data.fetchedAt ?? 0);
+  if (shown && !portfolioShown && Date.now() - fetchedAt > PORTFOLIO_STALE_MS) {
+    void Bridge.refreshIntegration(PORTFOLIO_ID);
+  }
+  portfolioShown = shown;
+}
+
 /**
  * Whether each pill is connected, so its idle card can say so: a key in the
  * credential store for a service or a chat provider, the hooks in place for a
@@ -68,6 +83,9 @@ export async function refreshConfigured() {
       case "server":
         // A local model server counts once the chat is connected to it.
         configured = State.settings[def.connect.field] !== "";
+        break;
+      case "portfolio":
+        configured = hasAnyAccount(await Bridge.portfolioStatus());
         break;
       case "none":
         configured = true;

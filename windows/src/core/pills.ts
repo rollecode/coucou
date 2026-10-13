@@ -39,6 +39,8 @@ export type PillConnect =
   | { kind: "key"; key: string }
   /** A model server the chat is connected to (Settings → Local models). */
   | { kind: "server"; field: "ollamaUrl" | "lmstudioUrl" }
+  /** An exchange account or a wallet in Settings → Integrations → Portfolio. */
+  | { kind: "portfolio" }
   /** Nothing to set up. */
   | { kind: "none" };
 
@@ -134,6 +136,9 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
   // Windows has nothing to read it from yet.
   { id: "integration_spotify", name: "Spotify", color: "#1DB954", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "linux", connect: none },
+  // Exchange keys and wallet addresses, polled by src-tauri/src/portfolio.rs.
+  { id: "integration_portfolio", name: "Portfolio", color: "#FFD700", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: { kind: "portfolio" } },
 ];
 
 /** The always-on pill unless the user picks another workspace tool. */

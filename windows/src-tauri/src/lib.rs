@@ -23,6 +23,7 @@ mod pipe;
 mod platform;
 #[cfg(target_os = "linux")]
 mod portal;
+mod portfolio;
 mod recap;
 mod secrets;
 mod session_window;
@@ -104,6 +105,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         settings.phone_relay = current.phone_relay;
         settings.phone_relay_url = current.phone_relay_url.clone();
         settings.phone_chat_models = current.phone_chat_models.clone();
+        settings.portfolio_wallets = current.portfolio_wallets.clone();
         *current = settings;
         (screen_changed, autostart_changed, shortcuts_changed)
     };
@@ -777,6 +779,12 @@ pub fn run() {
             spotify::spotify_control,
             spotify::spotify_open,
             spotify::spotify_installed,
+            portfolio::portfolio_status,
+            portfolio::portfolio_address_plausible,
+            portfolio::portfolio_add_exchange,
+            portfolio::portfolio_remove_exchange,
+            portfolio::portfolio_add_wallet,
+            portfolio::portfolio_remove_wallet,
         ])
         .setup(move |app| {
             let handle = app.handle().clone();

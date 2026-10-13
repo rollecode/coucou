@@ -280,6 +280,17 @@ minute while a CI is running, and as soon as you open the card on data older
 than a minute; contributions every 30 minutes. Nothing is fetched while the pill
 is off or Coucou is paused.
 
+## Portfolio
+
+**Settings… → Integrations → Portfolio** connects exchange accounts (Binance,
+OKX, Bybit, Kraken, Coinbase) with a read-only key, and self-custody wallets
+by their public address on 16 networks. **Test & Save** keeps a key only once
+a real request went through with it; the keys stay in the credential store and
+never reach the interface. The card shows each account's holdings in USD, with
+the 24 h change and a 7-day curve from Coinbase's public prices. Balances are
+read every 2 minutes, and as soon as you open the card on data older than 30
+seconds; nothing is fetched while the pill is off or Coucou is paused.
+
 ## Build it yourself
 
 You need [Rust](https://rustup.rs), [Node 20+](https://nodejs.org), and the
