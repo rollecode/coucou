@@ -11,10 +11,13 @@ import { DEFAULT_SETTINGS } from "../src/core/state.ts";
 const settings = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
 
 test("the ids and key names match the Rust side and the Mac", () => {
-  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "google", "openai", "openrouter", "ollama", "lmstudio", "custom"]);
+  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "ollama", "lmstudio", "custom"]);
   assert.equal(providerDef("google").key, "google-api-key");
   assert.equal(providerDef("openai").key, "openai-api-key");
   assert.equal(providerDef("openrouter").key, "openrouter-api-key");
+  assert.equal(providerDef("deepseek").key, "deepseek-api-key");
+  assert.equal(providerDef("qwen").key, "qwen-api-key");
+  assert.equal(providerDef("moonshot").key, "moonshot-api-key");
   assert.equal(providerDef("ollama").key, null);
   // An unknown id (an older or newer settings.json) falls back to Claude.
   assert.equal(providerDef("nope").id, "anthropic");
@@ -36,9 +39,9 @@ test("Claude's model is the existing setting; the others are kept per provider",
 
 test("model servers show in the picker once connected, or while in use", () => {
   const ids = (s) => visibleProviders(s).map((p) => p.id);
-  assert.deepEqual(ids(settings()), ["anthropic", "google", "openai", "openrouter"]);
-  assert.deepEqual(ids(settings({ ollamaUrl: "http://127.0.0.1:11434" })), ["anthropic", "google", "openai", "openrouter", "ollama"]);
-  assert.deepEqual(ids(settings({ chatProvider: "custom" })), ["anthropic", "google", "openai", "openrouter", "custom"]);
+  assert.deepEqual(ids(settings()), ["anthropic", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot"]);
+  assert.deepEqual(ids(settings({ ollamaUrl: "http://127.0.0.1:11434" })), ["anthropic", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "ollama"]);
+  assert.deepEqual(ids(settings({ chatProvider: "custom" })), ["anthropic", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "custom"]);
 });
 
 test("the saved model is kept when offered, else a sensible one is picked", () => {
