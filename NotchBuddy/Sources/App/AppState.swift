@@ -149,6 +149,15 @@ final class AppState: ObservableObject {
     @Published var claudeCodeDir: String = "" {
         didSet { UserDefaults.standard.set(claudeCodeDir, forKey: "claudeCodeDir") }
     }
+    @Published var deepseekChatModel: String = ChatProvider.deepseek.defaultModel {
+        didSet { UserDefaults.standard.set(deepseekChatModel, forKey: "deepseekChatModel") }
+    }
+    @Published var qwenChatModel: String = ChatProvider.qwen.defaultModel {
+        didSet { UserDefaults.standard.set(qwenChatModel, forKey: "qwenChatModel") }
+    }
+    @Published var moonshotChatModel: String = ChatProvider.moonshot.defaultModel {
+        didSet { UserDefaults.standard.set(moonshotChatModel, forKey: "moonshotChatModel") }
+    }
     @Published var ollamaServerURL: String = "" {
         didSet { UserDefaults.standard.set(ollamaServerURL, forKey: "ollamaServerURL") }
     }
@@ -239,6 +248,9 @@ final class AppState: ObservableObject {
             case .anthropic: models = await ClaudeService.fetchModels(apiKey: apiKey)
             case .google:    models = await ClaudeService.fetchGoogleModels(apiKey: apiKey)
             case .openai:    models = await ClaudeService.fetchOpenAIModels(apiKey: apiKey)
+            case .deepseek:  models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://api.deepseek.com/v1", apiKey: apiKey)
+            case .qwen:      models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: apiKey)
+            case .moonshot:  models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://api.moonshot.cn/v1", apiKey: apiKey)
             case .ollama, .lmstudio, .openwebui, .claudecode: models = []  // handled above
             }
             loadingProviderModels.remove(provider)
@@ -259,6 +271,18 @@ final class AppState: ObservableObject {
                     if !models.contains(where: { $0.id == openAIChatModel }) {
                         openAIChatModel = models.first(where: { $0.id.contains("mini") })?.id ?? models.first!.id
                     }
+                case .deepseek:
+                    if !models.contains(where: { $0.id == deepseekChatModel }) {
+                        deepseekChatModel = models.first!.id
+                    }
+                case .qwen:
+                    if !models.contains(where: { $0.id == qwenChatModel }) {
+                        qwenChatModel = models.first!.id
+                    }
+                case .moonshot:
+                    if !models.contains(where: { $0.id == moonshotChatModel }) {
+                        moonshotChatModel = models.first!.id
+                    }
                 case .ollama, .lmstudio, .openwebui, .claudecode: break
                 }
             }
@@ -275,6 +299,9 @@ final class AppState: ObservableObject {
         case .lmstudio:  return lmstudioChatModel
         case .openwebui: return openWebUIChatModel
         case .claudecode: return claudeCodeChatModel
+        case .deepseek:  return deepseekChatModel
+        case .qwen:      return qwenChatModel
+        case .moonshot:  return moonshotChatModel
         }
     }
 
@@ -729,6 +756,9 @@ final class AppState: ObservableObject {
         if let v = ud.string(forKey: "claudeCodeChatModel"), !v.isEmpty { claudeCodeChatModel = v }
         if let v = ud.string(forKey: "claudeCodeEffort") { claudeCodeEffort = v }
         if let v = ud.string(forKey: "claudeCodeDir") { claudeCodeDir = v }
+        if let v = ud.string(forKey: "deepseekChatModel"), !v.isEmpty { deepseekChatModel = v }
+        if let v = ud.string(forKey: "qwenChatModel"),     !v.isEmpty { qwenChatModel     = v }
+        if let v = ud.string(forKey: "moonshotChatModel"), !v.isEmpty { moonshotChatModel = v }
         if let v = ud.string(forKey: "ollamaServerURL"), !v.isEmpty { ollamaServerURL = v }
         if let v = ud.string(forKey: "lmstudioServerURL"), !v.isEmpty { lmstudioServerURL = v }
         if let v = ud.string(forKey: "openWebUIChatModel"), !v.isEmpty { openWebUIChatModel = v }

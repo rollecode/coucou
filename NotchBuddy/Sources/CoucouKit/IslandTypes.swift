@@ -104,6 +104,9 @@ enum ChatProvider: String, CaseIterable, Codable {
     case ollama    = "ollama"
     case lmstudio  = "lmstudio"
     case openwebui = "openwebui"
+    case deepseek  = "deepseek"
+    case qwen      = "qwen"
+    case moonshot  = "moonshot"
 
     var displayName: String {
         switch self {
@@ -114,6 +117,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .ollama:    "Ollama"
         case .lmstudio:  "LM Studio"
         case .openwebui: "Open WebUI"
+        case .deepseek:  "DeepSeek"
+        case .qwen:      "Qwen"
+        case .moonshot:  "Moonshot"
         }
     }
 
@@ -126,6 +132,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .ollama:    "#FACC15"
         case .lmstudio:  "#A3E635"
         case .openwebui: "#FFFFFF"
+        case .deepseek:  "#5B8FF9"
+        case .qwen:      "#FF6A00"
+        case .moonshot:  "#7C5CFC"
         }
     }
 
@@ -138,6 +147,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .ollama:    "llama3.2"
         case .lmstudio:  "local-model"
         case .openwebui: ""
+        case .deepseek:  "deepseek-chat"
+        case .qwen:      "qwen-max"
+        case .moonshot:  "moonshot-v1-32k"
         }
     }
 
@@ -151,6 +163,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .lmstudio:  ""
         // Bound to its address: OpenWebUI.keychainKey.
         case .openwebui: ""
+        case .deepseek:  "deepseek-api-key"
+        case .qwen:      "qwen-api-key"
+        case .moonshot:  "moonshot-api-key"
         }
     }
 
@@ -167,6 +182,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case .ollama:    "ai_ollama"
         case .lmstudio:  "ai_lmstudio"
         case .openwebui: "ai_openwebui"
+        case .deepseek:  "ai_deepseek"
+        case .qwen:      "ai_qwen"
+        case .moonshot:  "ai_moonshot"
         }
     }
 
@@ -177,6 +195,9 @@ enum ChatProvider: String, CaseIterable, Codable {
         case "ai_openai":    self = .openai
         case "ai_ollama":    self = .ollama
         case "ai_lmstudio":  self = .lmstudio
+        case "ai_deepseek":  self = .deepseek
+        case "ai_qwen":      self = .qwen
+        case "ai_moonshot":  self = .moonshot
         default:             return nil
         }
     }

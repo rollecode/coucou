@@ -647,7 +647,7 @@ mod tests {
     fn headless_runs_are_not_forwarded_unless_watched() {
         let raw = br#"{"hook_event_name":"Stop","session_id":"s"}"#;
         let args = Args { agent: String::new(), event: String::new() };
-        let run = |vars: &'static [(&'static str, &'static str)]| prepare(raw, &args, &env_of(vars), "/p").is_some();
+        let run = |vars: &'static [(&'static str, &'static str)]| prepare(raw, &args, &env_of(vars), "/p", &|_| None).is_some();
         assert!(!run(&[("CLAUDE_CODE_ENTRYPOINT", "sdk-cli")]));
         assert!(!run(&[("CLAUDE_CODE_ENTRYPOINT", "sdk-py")]));
         assert!(run(&[("CLAUDE_CODE_ENTRYPOINT", "sdk-cli"), ("COUCOU_WATCHED", "1")]));
