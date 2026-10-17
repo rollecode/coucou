@@ -11,7 +11,11 @@ pub const KNOWN_KEYS: &[&str] = &[
     "openai-api-key",
     "google-api-key",
     "openrouter-api-key",
+    "deepseek-api-key",
+    "qwen-api-key",
+    "moonshot-api-key",
     "openai-compatible-key",
+    "open-webui-key",
     "n8n-url",
     "n8n-api-key",
     "vercel-token",
@@ -20,6 +24,17 @@ pub const KNOWN_KEYS: &[&str] = &[
     "resend-api-key",
     "notion-api-key",
     "calcom-api-key",
+    "calendar-ical-url",
+    "timely-client-id",
+    "timely-client-secret",
+    "timely-access-token",
+    "timely-refresh-token",
+    "slack-token",
+    "betterstack-token",
+    "betterstack-team",
+    "linear-api-key",
+    // « OK Coucou »'s answers in an ElevenLabs voice.
+    "elevenlabs-api-key",
 ];
 
 fn entry(key: &str) -> Option<Entry> {
@@ -71,9 +86,28 @@ pub const INTERNAL_KEYS: &[&str] = &[
     "phone-relay-access",
 ];
 
+/// The Portfolio pill's exchange keys, also Rust's only: portfolio.rs stores them after Test & Save.
+pub const PORTFOLIO_KEYS: &[&str] = &[
+    "portfolio-binance-key",
+    "portfolio-binance-secret",
+    "portfolio-binance-passphrase",
+    "portfolio-okx-key",
+    "portfolio-okx-secret",
+    "portfolio-okx-passphrase",
+    "portfolio-bybit-key",
+    "portfolio-bybit-secret",
+    "portfolio-bybit-passphrase",
+    "portfolio-kraken-key",
+    "portfolio-kraken-secret",
+    "portfolio-kraken-passphrase",
+    "portfolio-coinbase-key",
+    "portfolio-coinbase-secret",
+    "portfolio-coinbase-passphrase",
+];
+
 /// Whether the keystore would accept this key through `get_internal` / `set_internal`.
 pub fn is_internal(key: &str) -> bool {
-    INTERNAL_KEYS.contains(&key)
+    INTERNAL_KEYS.contains(&key) || PORTFOLIO_KEYS.contains(&key)
 }
 
 fn internal_entry(key: &str) -> Result<Entry, String> {
@@ -107,7 +141,7 @@ mod tests {
     fn the_phone_links_secrets_cannot_be_reached_from_the_island() {
         // The island's commands go through `get`/`set`/`clear`/`present`, which
         // only know KNOWN_KEYS.
-        for key in INTERNAL_KEYS {
+        for key in INTERNAL_KEYS.iter().chain(PORTFOLIO_KEYS) {
             assert!(!KNOWN_KEYS.contains(key), "{key}");
             assert!(entry(key).is_none(), "{key}");
             assert!(set(key, "x").is_err(), "{key}");

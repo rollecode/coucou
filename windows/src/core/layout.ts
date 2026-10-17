@@ -6,6 +6,7 @@ export type IslandMode = "hidden" | "compact" | "expanded";
 
 export type IslandViewName =
   | "overview"
+  | "code"
   | "empty"
   | "approval"
   | "question"
@@ -61,6 +62,25 @@ export const NOTCH_H = 32;
 export const COMPACT_W = 288; // NOTCH_W + 104
 export const EXPANDED_W = 640;
 
+/**
+ * Compact island: the gap from each edge to Mochi's body and to the mini pills
+ * (Settings → General → Padding). The defaults are the shipped layout: Mochi
+ * 30 px in, the pills 25.5 px in, and the 32 px island.
+ */
+export interface CompactPadding {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+export const COMPACT_PADDING: CompactPadding = { top: 6, right: 25.5, bottom: 6, left: 30 };
+export const COMPACT_PADDING_MAX = 40;
+/** Mochi's 20 px body: the compact island's content row. */
+export const COMPACT_ROW = 20;
+export const COMPACT_BOT_HALF = COMPACT_ROW / 2;
+/** Half the width of the compact mini-pill grid. */
+export const MINI_GRID_HALF = 14.5;
+
 export const ROUNDED_CORNER = 14; // hidden / compact
 export const EXPANDED_CORNER = 22;
 
@@ -70,6 +90,8 @@ export const WAKE_STRIP_H = 6;
 
 export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
   overview: { height: 160, botX: 68, botY: null, botDiameter: 58, agentMode: "pills" },
+  // Mochi top-left over the turn's phases, the editor on the right.
+  code: { height: 320, botX: 65, botY: 103, botDiameter: 62, agentMode: "none" },
   empty: { height: 160, botX: 70, botY: null, botDiameter: 62, agentMode: "none" },
   approval: { height: 160, botX: 62, botY: null, botDiameter: 56, agentMode: "column" },
   question: { height: 160, botX: 62, botY: null, botDiameter: 56, agentMode: "column" },
@@ -102,15 +124,20 @@ export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
 /** The question view with options to pick from: room for two rows of them. */
 export const QUESTION_PICKER_H = 200;
 
+/** The chat view's tallest: a long conversation, or the model picker open. */
+export const CHAT_MAX_H = 300;
+
 /** Chat view grows with the conversation — IslandContainer.chatPromptHeight. */
 export function chatPromptHeight(messageCount: number): number {
-  return Math.min(300, 240 + messageCount * 40);
+  return Math.min(CHAT_MAX_H, 240 + messageCount * 40);
 }
 
 export function islandSize(
   mode: IslandMode,
   view: IslandViewName,
   chatCount = 0,
+  pad: CompactPadding = COMPACT_PADDING,
+  compactMinW = 0,
 ): { w: number; h: number } {
   switch (mode) {
     case "hidden":
@@ -118,7 +145,7 @@ export function islandSize(
       // slides into the top edge of the screen instead of sitting there as a bar.
       return { w: NOTCH_W, h: 0 };
     case "compact":
-      return { w: COMPACT_W, h: NOTCH_H };
+      return { w: Math.max(COMPACT_W, compactMinW), h: pad.top + COMPACT_ROW + pad.bottom };
     case "expanded": {
       const h = view === "prompt" ? chatPromptHeight(chatCount) : VIEW_LAYOUTS[view].height;
       return { w: EXPANDED_W, h };
@@ -139,12 +166,13 @@ export function botPosition(
   view: IslandViewName,
   islandH: number,
   uploadProgress = 0,
+  pad: CompactPadding = COMPACT_PADDING,
 ): BotPlacement {
   switch (mode) {
     case "hidden":
       return { cx: 46, cy: 16, diameter: 6, opacity: 0 };
     case "compact":
-      return { cx: 40, cy: 16, diameter: 20, opacity: 1 };
+      return { cx: pad.left + COMPACT_BOT_HALF, cy: pad.top + COMPACT_BOT_HALF, diameter: COMPACT_ROW, opacity: 1 };
     case "expanded": {
       const layout = VIEW_LAYOUTS[view];
       if (view === "uploading") {

@@ -94,6 +94,18 @@ section > h2 {
   flex: 1 1 auto;
 }
 
+/* Settings → General → Padding: top and bottom, then left and right. */
+.padding-grid {
+  display: grid;
+  grid-template-columns: auto 56px auto 56px;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.padding-grid input {
+  width: 56px;
+}
+
 .dot {
   width: 8px;
   height: 8px;
@@ -156,6 +168,15 @@ code,
   background: rgba(255, 255, 255, 0.15);
   flex: 0 0 36px;
   padding: 0;
+}
+
+.switch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.row.sub {
+  padding-left: 20px;
 }
 
 .switch.on {
@@ -335,18 +356,10 @@ select option {
   font-size: 11.5px;
 }
 
-.pill-row.full .name {
-  color: var(--dim-2);
-}
-
 .pill-row .state {
   margin-left: auto;
   font: 400 11.5px var(--font);
   color: var(--dim);
-}
-
-.hint.full {
-  color: var(--amber);
 }
 
 /* Shortcuts section */

@@ -21,6 +21,7 @@
 // one place.
 
 use std::collections::HashMap;
+use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -44,6 +45,11 @@ const DECISION_TIMEOUT: Duration = Duration::from_secs(108);
 /// see for nearly two minutes.
 const ACK_TIMEOUT: Duration = Duration::from_millis(800);
 const MAX_PAYLOAD: usize = 1 << 20;
+/// The relay writes its line at once: 5 s is the Mac's receive timeout too.
+const READ_TIMEOUT: Duration = Duration::from_secs(5);
+/// Connections at once on one remote host's socket: a host can't pile them up.
+#[cfg(target_os = "linux")]
+const MAX_REMOTE_CONNECTIONS: usize = 8;
 
 /// What the island can say about a permission request.
 pub enum Reply {
@@ -61,12 +67,39 @@ pub struct Pending(pub Mutex<HashMap<String, mpsc::Sender<Reply>>>);
 
 static COUNTER: AtomicU64 = AtomicU64::new(1);
 
+/// A process-random salt keeps request ids unguessable: `{pid}-{salt}-{n}` —
+/// anything else in a webview that can enumerate `pid` + a counter starting at
+/// 1 could otherwise drive `approval_*` commands for someone else's request.
+fn next_request_id() -> String {
+    use std::sync::OnceLock;
+    static SALT: OnceLock<u64> = OnceLock::new();
+    let salt = SALT.get_or_init(|| {
+        use std::hash::{BuildHasher, Hasher};
+        std::collections::hash_map::RandomState::new().build_hasher().finish()
+    });
+    format!("{}-{salt:016x}-{}", std::process::id(), COUNTER.fetch_add(1, Ordering::Relaxed))
+}
+
+/// Only the deployed coucou-hook may raise an approval card — any local
+/// process can connect (the surface is intentionally open), but a card that
+/// asks Allow/Deny must come from our relay, not from a lookalike.
+fn trusted_hook_client(pipe: &impl Relay) -> bool {
+    let Some(pid) = pipe.client_pid() else { return false };
+    crate::platform::exe_is_hook(pid)
+}
+
 /// `\\.\pipe\coucou-<sid>` — must match coucou-hook's `pipe_path()` exactly.
 #[cfg(windows)]
 pub fn pipe_name() -> String {
     let key = crate::platform::current_user_sid()
         .unwrap_or_else(|| std::env::var("USERNAME").unwrap_or_else(|_| "user".into()));
     format!(r"\\.\pipe\coucou-{key}")
+}
+
+/// Newlines and other control characters never reach the log: an event name or
+/// a request id is attacker-influenced text, and one `\n` forges a log entry.
+fn clean(text: &str) -> String {
+    text.chars().map(|c| if c.is_control() { ' ' } else { c }).collect()
 }
 
 #[cfg(windows)]
@@ -88,16 +121,19 @@ pub fn start(app: AppHandle) {
                 continue;
             }
             // Hand the connected instance to a task and listen on a fresh one.
+            // A transient failure (an EMFILE spike, a squatter that appeared
+            // late) must not kill the relay for the rest of the session.
             let next = match ServerOptions::new().create(&name) {
                 Ok(s) => s,
                 Err(err) => {
                     log::line(format!("cannot reopen the relay pipe: {err}"));
-                    return;
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    continue;
                 }
             };
             let connected = std::mem::replace(&mut server, next);
             let app = app.clone();
-            tauri::async_runtime::spawn(async move { handle(app, connected).await });
+            tauri::async_runtime::spawn(async move { handle(app, connected, None).await });
         }
     });
 }
@@ -131,24 +167,44 @@ pub fn start(app: AppHandle) {
         };
         // The runtime directory is already 0700; this is belt and braces.
         let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
-        let uid = unsafe { libc::getuid() };
-        loop {
-            let stream = match listener.accept().await {
-                Ok((stream, _)) => stream,
-                Err(_) => {
-                    tokio::time::sleep(Duration::from_millis(200)).await;
-                    continue;
-                }
-            };
-            // Only the relay run by our own user may drive the island.
-            if !matches!(stream.peer_cred(), Ok(c) if c.uid() == uid) {
-                log::line("refused a relay connection from another user");
+        serve(app, listener, None).await;
+    });
+}
+
+/// Accepts relay connections forever. `host` is set for a remote host's socket
+/// (remote.rs), whose events are tagged with it.
+#[cfg(target_os = "linux")]
+pub async fn serve(app: AppHandle, listener: tokio::net::UnixListener, host: Option<String>) {
+    use std::sync::atomic::AtomicUsize;
+    use std::sync::Arc;
+
+    let uid = unsafe { libc::getuid() };
+    let open = Arc::new(AtomicUsize::new(0));
+    loop {
+        let stream = match listener.accept().await {
+            Ok((stream, _)) => stream,
+            Err(_) => {
+                tokio::time::sleep(Duration::from_millis(200)).await;
                 continue;
             }
-            let app = app.clone();
-            tauri::async_runtime::spawn(async move { handle(app, stream).await });
+        };
+        // Only our own user (the relay, or our own ssh for a remote host) may drive the island.
+        if !matches!(stream.peer_cred(), Ok(c) if c.uid() == uid) {
+            log::line("refused a relay connection from another user");
+            continue;
         }
-    });
+        if host.is_some() && open.load(Ordering::Relaxed) >= MAX_REMOTE_CONNECTIONS {
+            continue;
+        }
+        open.fetch_add(1, Ordering::Relaxed);
+        let app = app.clone();
+        let host = host.clone();
+        let open = open.clone();
+        tauri::async_runtime::spawn(async move {
+            handle(app, stream, host).await;
+            open.fetch_sub(1, Ordering::Relaxed);
+        });
+    }
 }
 
 /// One accepted relay connection, whatever carries it.
@@ -182,26 +238,34 @@ impl Relay for tokio::net::UnixStream {
     }
 }
 
-async fn handle(app: AppHandle, mut pipe: impl Relay) {
+/// Reads the first line, without its newline (or up to MAX_PAYLOAD). None: the read failed.
+async fn read_request(pipe: &mut impl Relay) -> Option<Vec<u8>> {
     let mut buf = Vec::new();
     let mut chunk = [0u8; 4096];
     loop {
         match pipe.read(&mut chunk).await {
-            Ok(0) => break,
+            Ok(0) => return Some(buf),
             Ok(n) => {
                 buf.extend_from_slice(&chunk[..n]);
-                if buf.contains(&b'\n') || buf.len() > MAX_PAYLOAD {
-                    break;
+                // Only the freshly read bytes are scanned for the newline: rescanning the
+                // whole buffer per chunk is quadratic for a peer that dribbles bytes.
+                if let Some(i) = chunk[..n].iter().position(|b| *b == b'\n') {
+                    buf.truncate(buf.len() - n + i);
+                    return Some(buf);
+                }
+                if buf.len() > MAX_PAYLOAD {
+                    return Some(buf);
                 }
             }
-            Err(_) => return,
+            Err(_) => return None,
         }
     }
-    let line = match buf.iter().position(|b| *b == b'\n') {
-        Some(i) => &buf[..i],
-        None => &buf[..],
-    };
-    let Ok(mut payload) = serde_json::from_slice::<Value>(line) else { return };
+}
+
+async fn handle(app: AppHandle, mut pipe: impl Relay, host: Option<String>) {
+    // A client that connects and says nothing does not hold the connection forever.
+    let Ok(Some(line)) = tokio::time::timeout(READ_TIMEOUT, read_request(&mut pipe)).await else { return };
+    let Ok(mut payload) = serde_json::from_slice::<Value>(&line) else { return };
     if !payload.is_object() {
         return;
     }
@@ -212,21 +276,46 @@ async fn handle(app: AppHandle, mut pipe: impl Relay) {
         .unwrap_or_default()
         .to_string();
 
-    note_session_window(&pipe, &payload, &event);
+    // The relay surface is open to third-party tooling on purpose (AGENTS.md),
+    // but an Allow/Deny card is not display: a permission request is only
+    // trusted from the deployed coucou-hook binary, not from any process that
+    // can reach the pipe. A remote host's socket is trusted as a whole: only our
+    // own ssh can reach it (remote.rs), and its client is ssh, never the relay.
+    if event == "PermissionRequest" && host.is_none() && !trusted_hook_client(&pipe) {
+        log::line("refused a permission request from a non-relay client");
+        return;
+    }
+
+    match host {
+        // The process on our end is ssh, not the session: nothing local to find.
+        Some(host) => {
+            if !crate::remote::admit(&mut payload, &event, &host) {
+                pipe.finish();
+                return;
+            }
+        }
+        None => {
+            note_session_window(&pipe, &mut payload, &event);
+            // The code view reads only from folders a local hook reported (snippet.rs).
+            if let Some(cwd) = payload.get("cwd").and_then(Value::as_str) {
+                crate::snippet::note_folder(cwd);
+            }
+        }
+    }
     // Counts for the weekly recap — never the command, path or prompt itself.
     crate::recap::observe(&app, &payload);
 
     if event != "PermissionRequest" {
         // The status line relay calls in with every Claude Code update: not log-worthy.
         if event != "StatusLine" {
-            log::line(format!("hook {event}"));
+            log::line(format!("hook {}", clean(&event)));
         }
         let _ = app.emit_to(WINDOW_LABEL, "hook", payload);
         pipe.finish();
         return;
     }
 
-    let id = format!("{}-{}", std::process::id(), COUNTER.fetch_add(1, Ordering::Relaxed));
+    let id = next_request_id();
     let (tx, mut rx) = mpsc::channel::<Reply>(4);
     {
         let pending = app.state::<Pending>();
@@ -237,8 +326,27 @@ async fn handle(app: AppHandle, mut pipe: impl Relay) {
     log::line(format!("hook PermissionRequest id={id}"));
     let _ = app.emit_to(WINDOW_LABEL, "hook", payload);
 
-    let decision = wait_for_decision(&id, &mut rx).await;
+    // The relay hanging up means it was answered elsewhere (another Coucou on the host).
+    let mut byte = [0u8; 1];
+    let outcome = {
+        let mut decided = std::pin::pin!(wait_for_decision(&id, &mut rx));
+        let mut hung_up = std::pin::pin!(pipe.read(&mut byte));
+        std::future::poll_fn(|cx| match decided.as_mut().poll(cx) {
+            std::task::Poll::Ready(d) => std::task::Poll::Ready(Some(d)),
+            std::task::Poll::Pending => hung_up.as_mut().poll(cx).map(|_| None),
+        })
+        .await
+    };
+    let decision = outcome.unwrap_or_else(|| {
+        log::line(format!("hook id={id} released by the relay"));
+        let _ = app.emit_to(WINDOW_LABEL, "hook", json!({ "hook_event_name": "Released", "request_id": id }));
+        None
+    });
     app.state::<Pending>().0.lock().unwrap().remove(&id);
+    // The island never answered — nothing to remember in the recap either.
+    if decision.is_none() {
+        crate::recap::forget_request(&app, &id);
+    }
 
     // No decision: say nothing at all. coucou-hook then writes nothing to stdout
     // and Claude Code asks in the terminal, exactly as if Coucou were closed.
@@ -255,21 +363,25 @@ async fn handle(app: AppHandle, mut pipe: impl Relay) {
 /// every event. The relay must still be running for its parents to be found:
 /// a permission request always is (it waits for us), a quick event may already
 /// have exited, and then a later event of the session tries again.
-fn note_session_window(pipe: &impl Relay, payload: &Value, event: &str) {
-    let Some(session) = payload.get("session_id").and_then(Value::as_str) else { return };
+fn note_session_window(pipe: &impl Relay, payload: &mut Value, event: &str) {
+    let Some(session) = payload.get("session_id").and_then(Value::as_str).map(str::to_string) else { return };
     if event == "SessionEnd" {
-        session_window::forget(session);
+        session_window::forget(&session);
         return;
     }
-    if session_window::known(session) {
-        return;
+    if !session_window::known(&session) {
+        let Some(relay) = pipe.client_pid() else { return };
+        let ancestors = crate::platform::process_ancestors(relay);
+        // No ancestors: the relay was already gone, so try again next time. Some,
+        // but none with a window (a classic console): settled, VS Code it is.
+        if !ancestors.is_empty() {
+            session_window::remember(&session, crate::platform::window_owners(&ancestors));
+        }
     }
-    let Some(relay) = pipe.client_pid() else { return };
-    let ancestors = crate::platform::process_ancestors(relay);
-    // No ancestors: the relay was already gone, so try again next time. Some,
-    // but none with a window (a classic console): settled, VS Code it is.
-    if !ancestors.is_empty() {
-        session_window::remember(session, crate::platform::window_owners(&ancestors));
+    // The session's own process, so the page can tie the event to a pill it
+    // made for that process before the session's first event.
+    if let Some(pid) = session_window::lookup(&session).and_then(|owners| crate::platform::farthest_named(&owners, "claude")) {
+        payload["coucou_claude_pid"] = json!(pid);
     }
 }
 
@@ -293,18 +405,24 @@ async fn wait_for_decision(id: &str, rx: &mut mpsc::Receiver<Reply>) -> Option<S
         }
     }
 
-    match tokio::time::timeout(DECISION_TIMEOUT, rx.recv()).await {
-        Ok(Some(Reply::Decision(d))) => {
-            log::line(format!("hook id={id} answered {}", loggable(&d)));
-            Some(d)
-        }
-        Ok(Some(Reply::Decline)) => {
-            log::line(format!("hook id={id} released without a decision"));
-            None
-        }
-        _ => {
-            log::line(format!("hook id={id} timed out — terminal takes over"));
-            None
+    // A re-ack (a webview that re-rendered the card, a page reload) is not a
+    // decision and must not end the wait — the deadline stays fixed.
+    let deadline = tokio::time::Instant::now() + DECISION_TIMEOUT;
+    loop {
+        match tokio::time::timeout_at(deadline, rx.recv()).await {
+            Ok(Some(Reply::Decision(d))) => {
+                log::line(format!("hook id={id} answered {}", loggable(&d)));
+                return Some(d);
+            }
+            Ok(Some(Reply::Decline)) => {
+                log::line(format!("hook id={id} released without a decision"));
+                return None;
+            }
+            Ok(Some(Reply::Ack)) => continue,
+            _ => {
+                log::line(format!("hook id={id} timed out — terminal takes over"));
+                return None;
+            }
         }
     }
 }
@@ -324,7 +442,7 @@ fn send(app: &AppHandle, request_id: &str, reply: Reply, keep: bool) {
         Some(tx) => {
             let _ = tx.try_send(reply);
         }
-        None => log::line(format!("reply for id={request_id} — no pending request")),
+        None => log::line(format!("reply for id={} — no pending request", clean(request_id))),
     }
 }
 
@@ -335,7 +453,7 @@ pub fn acknowledge(app: &AppHandle, request_id: &str) {
 
 /// Nobody can act on this one — paused, or another card already holds the view.
 pub fn decline(app: &AppHandle, request_id: &str) {
-    log::line(format!("decline id={request_id}"));
+    log::line(format!("decline id={}", clean(request_id)));
     send(app, request_id, Reply::Decline, false);
 }
 
@@ -346,7 +464,7 @@ pub fn answer(app: &AppHandle, request_id: &str, decision: &str) {
         "allow" | "always" => "allow",
         _ => "deny",
     };
-    log::line(format!("decision id={request_id} {word}"));
+    log::line(format!("decision id={} {word}", clean(request_id)));
     send(app, request_id, Reply::Decision(word.to_string()), false);
 }
 
@@ -354,8 +472,75 @@ pub fn answer(app: &AppHandle, request_id: &str, decision: &str) {
 /// maps each question's text to the chosen label, which is the shape
 /// AskUserQuestion takes them in.
 pub fn answer_question(app: &AppHandle, request_id: &str, answers: &HashMap<String, serde_json::Value>) {
-    log::line(format!("decision id={request_id} answered a question"));
+    log::line(format!("decision id={} answered a question", clean(request_id)));
     // One line: the relay reads up to the first newline.
     let line = json!({ "answers": answers }).to_string();
     send(app, request_id, Reply::Decision(line), false);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The wait is async; these run it on tauri's runtime (no tokio macros dep).
+    fn wait(rx: &mut mpsc::Receiver<Reply>) -> Option<String> {
+        tauri::async_runtime::block_on(wait_for_decision("t", rx))
+    }
+
+    #[test]
+    fn an_ack_then_a_click_answers() {
+        let (tx, mut rx) = mpsc::channel::<Reply>(4);
+        tx.try_send(Reply::Ack).unwrap();
+        tx.try_send(Reply::Decision("allow".into())).unwrap();
+        assert_eq!(wait(&mut rx).as_deref(), Some("allow"));
+    }
+
+    #[test]
+    fn a_second_ack_does_not_cancel_the_wait() {
+        // The island re-acking (re-render, webview reload) used to fall into the
+        // catch-all and end the request as a timeout — the click that followed
+        // then went nowhere.
+        let (tx, mut rx) = mpsc::channel::<Reply>(4);
+        tx.try_send(Reply::Ack).unwrap();
+        tx.try_send(Reply::Ack).unwrap();
+        tx.try_send(Reply::Decision("deny".into())).unwrap();
+        assert_eq!(wait(&mut rx).as_deref(), Some("deny"));
+    }
+
+    #[test]
+    fn a_click_that_beats_the_ack_still_counts() {
+        let (tx, mut rx) = mpsc::channel::<Reply>(4);
+        tx.try_send(Reply::Decision("allow".into())).unwrap();
+        assert_eq!(wait(&mut rx).as_deref(), Some("allow"));
+    }
+
+    #[test]
+    fn a_decline_means_the_terminal_asks() {
+        let (tx, mut rx) = mpsc::channel::<Reply>(4);
+        tx.try_send(Reply::Decline).unwrap();
+        assert_eq!(wait(&mut rx), None);
+    }
+
+    #[test]
+    fn no_ack_at_all_means_no_decision() {
+        let (tx, mut rx) = mpsc::channel::<Reply>(4);
+        drop(tx); // the island went away: the sender drops, the wait ends.
+        assert_eq!(wait(&mut rx), None);
+    }
+
+    #[test]
+    fn request_ids_are_unguessable_and_unique() {
+        let a = next_request_id();
+        let b = next_request_id();
+        assert_ne!(a, b);
+        // pid-salt-counter: the salt is not enumerable from the pid alone.
+        assert!(a.contains('-'), "{a}");
+        assert_eq!(a.matches('-').count(), 2);
+    }
+
+    #[test]
+    fn control_characters_stay_out_of_the_log() {
+        assert_eq!(clean("SessionStart\nforged"), "SessionStart forged");
+        assert_eq!(clean("ok\r\nok"), "ok  ok");
+    }
 }

@@ -67,17 +67,6 @@
    "ru": "Ошибка API {code}",
    "id": "Galat API {code}"
   },
-  "API key": {
-   "zh-Hans": "API 密钥",
-   "hi": "API कुंजी",
-   "es": "Clave de API",
-   "ar": "مفتاح API",
-   "fr": "Clé d'API",
-   "bn": "API কী",
-   "pt-BR": "Chave de API",
-   "ru": "API-ключ",
-   "id": "Kunci API"
-  },
   "API key (optional)": {
    "zh-Hans": "API 密钥（可选）",
    "hi": "API कुंजी (वैकल्पिक)",
@@ -198,17 +187,6 @@
    "pt-BR": "Fechar sozinho",
    "ru": "Автозакрытие",
    "id": "Tutup otomatis"
-  },
-  "Back": {
-   "zh-Hans": "返回",
-   "hi": "वापस",
-   "es": "Atrás",
-   "ar": "رجوع",
-   "fr": "Retour",
-   "bn": "ফিরে যান",
-   "pt-BR": "Voltar",
-   "ru": "Назад",
-   "id": "Kembali"
   },
   "Back up and remove": {
    "zh-Hans": "备份并移除",
@@ -364,17 +342,6 @@
    "ru": "Провайдеры чата",
    "id": "Penyedia obrolan"
   },
-  "Chat with Google AI, OpenAI or OpenRouter instead of Claude: add a key here, then click the model name above the chat box to switch provider and model. Keys stay in the system keychain. These providers get no web search and no tools: they can answer, never act on this computer.": {
-   "zh-Hans": "用 Google AI、OpenAI 或 OpenRouter 代替 Claude 聊天：在这里添加密钥，然后点击聊天框上方的模型名称来切换服务商和模型。密钥保存在系统钥匙串中。这些服务商没有网页搜索和工具：它们只能回答，绝不会在这台电脑上执行操作。",
-   "hi": "Claude की जगह Google AI, OpenAI या OpenRouter से चैट करें: यहाँ एक कुंजी जोड़ें, फिर प्रदाता और मॉडल बदलने के लिए चैट बॉक्स के ऊपर मॉडल के नाम पर क्लिक करें। कुंजियाँ सिस्टम कीचेन में रहती हैं। इन प्रदाताओं को न वेब सर्च मिलता है न टूल: वे जवाब दे सकते हैं, इस कंप्यूटर पर कभी कुछ नहीं करते।",
-   "es": "Chatea con Google AI, OpenAI u OpenRouter en lugar de Claude: añade una clave aquí y luego haz clic en el nombre del modelo encima del cuadro de chat para cambiar de proveedor y modelo. Las claves se quedan en el llavero del sistema. Estos proveedores no tienen búsqueda web ni herramientas: pueden responder, nunca actuar en este equipo.",
-   "ar": "دردش مع Google AI أو OpenAI أو OpenRouter بدلًا من Claude: أضف مفتاحًا هنا، ثم انقر على اسم النموذج فوق مربع الدردشة لتبديل المزوّد والنموذج. تبقى المفاتيح في سلسلة مفاتيح النظام. لا يحصل هؤلاء المزوّدون على بحث الويب ولا على الأدوات: يمكنهم الإجابة، ولا يتصرفون أبدًا على هذا الحاسوب.",
-   "fr": "Discute avec Google AI, OpenAI ou OpenRouter à la place de Claude : ajoute une clé ici, puis clique sur le nom du modèle au-dessus de la zone de chat pour changer de fournisseur et de modèle. Les clés restent dans le trousseau du système. Ces fournisseurs n'ont ni recherche web ni outils : ils peuvent répondre, jamais agir sur cet ordinateur.",
-   "bn": "Claude-এর বদলে Google AI, OpenAI বা OpenRouter-এর সঙ্গে চ্যাট করুন: এখানে একটি কী যোগ করুন, তারপর প্রদানকারী ও মডেল বদলাতে চ্যাট বক্সের উপরে মডেলের নামে ক্লিক করুন। কী সিস্টেম কীচেইনে থাকে। এই প্রদানকারীরা ওয়েব সার্চ বা টুল পায় না: তারা উত্তর দিতে পারে, এই কম্পিউটারে কখনো কিছু করে না।",
-   "pt-BR": "Converse com Google AI, OpenAI ou OpenRouter em vez do Claude: adicione uma chave aqui e clique no nome do modelo acima da caixa de chat para trocar de provedor e de modelo. As chaves ficam no chaveiro do sistema. Esses provedores não têm busca na web nem ferramentas: podem responder, nunca agir neste computador.",
-   "ru": "Общайтесь с Google AI, OpenAI или OpenRouter вместо Claude: добавьте ключ здесь, затем нажмите на название модели над полем чата, чтобы сменить провайдера и модель. Ключи хранятся в системной связке ключей. У этих провайдеров нет веб-поиска и инструментов: они могут отвечать, но никогда не действуют на этом компьютере.",
-   "id": "Mengobrol dengan Google AI, OpenAI, atau OpenRouter sebagai ganti Claude: tambahkan kunci di sini, lalu klik nama model di atas kotak obrolan untuk mengganti penyedia dan model. Kunci tetap di keychain sistem. Penyedia ini tidak punya pencarian web maupun alat: mereka bisa menjawab, tidak pernah bertindak di komputer ini."
-  },
   "Chat with a model you run yourself: Ollama or LM Studio (leave the address empty for the usual one on this computer), or any server that speaks the OpenAI API, such as vLLM or llama.cpp. Once connected, pick it above the chat box.": {
    "zh-Hans": "与你自己运行的模型聊天：Ollama 或 LM Studio（地址留空即使用本机的默认地址），或任何兼容 OpenAI API 的服务器，例如 vLLM 或 llama.cpp。连接后，在聊天框上方选择它。",
    "hi": "अपने चलाए मॉडल से चैट करें: Ollama या LM Studio (इस कंप्यूटर के सामान्य पते के लिए पता खाली छोड़ें), या OpenAI API बोलने वाला कोई भी सर्वर, जैसे vLLM या llama.cpp। कनेक्ट होने के बाद, उसे चैट बॉक्स के ऊपर चुनें।",
@@ -452,17 +419,6 @@
    "ru": "Закрыть остров",
    "id": "Tutup pulau"
   },
-  "Code": {
-   "zh-Hans": "代码",
-   "hi": "कोड",
-   "es": "Código",
-   "ar": "شيفرة",
-   "fr": "Code",
-   "bn": "কোড",
-   "pt-BR": "Código",
-   "ru": "Код",
-   "id": "Kode"
-  },
   "Codex plan": {
    "zh-Hans": "Codex 套餐",
    "hi": "Codex प्लान",
@@ -506,17 +462,6 @@
    "pt-BR": "Conecte primeiro o {name} em Configurações → Modelos locais.",
    "ru": "Сначала подключите {name} в «Настройки → Локальные модели».",
    "id": "Hubungkan {name} dulu di Pengaturan → Model lokal."
-  },
-  "Copied": {
-   "zh-Hans": "已复制",
-   "hi": "कॉपी हो गया",
-   "es": "Copiado",
-   "ar": "تم النسخ",
-   "fr": "Copié",
-   "bn": "কপি হয়েছে",
-   "pt-BR": "Copiado",
-   "ru": "Скопировано",
-   "id": "Disalin"
   },
   "Copied — paste it anywhere.": {
    "zh-Hans": "已复制 — 可以粘贴到任何地方。",
@@ -726,17 +671,6 @@
    "pt-BR": "Docs",
    "ru": "Документы",
    "id": "Dokumen"
-  },
-  "Done": {
-   "zh-Hans": "完成",
-   "hi": "हो गया",
-   "es": "Listo",
-   "ar": "تم",
-   "fr": "Valider",
-   "bn": "হয়েছে",
-   "pt-BR": "Concluir",
-   "ru": "Готово",
-   "id": "Selesai"
   },
   "Done.": {
    "zh-Hans": "完成。",
@@ -1332,17 +1266,6 @@
    "ru": "Нет соединения: {error}",
    "id": "Tidak ada koneksi: {error}"
   },
-  "No detail available.": {
-   "zh-Hans": "没有可用的详情。",
-   "hi": "कोई विवरण उपलब्ध नहीं।",
-   "es": "No hay detalles disponibles.",
-   "ar": "لا توجد تفاصيل.",
-   "fr": "Aucun détail disponible.",
-   "bn": "কোনো বিস্তারিত নেই।",
-   "pt-BR": "Nenhum detalhe disponível.",
-   "ru": "Подробностей нет.",
-   "id": "Tidak ada detail."
-  },
   "No display server was found, so global shortcuts are off.": {
    "zh-Hans": "未找到显示服务器，因此全局快捷键已关闭。",
    "hi": "कोई डिस्प्ले सर्वर नहीं मिला, इसलिए ग्लोबल शॉर्टकट बंद हैं।",
@@ -1386,17 +1309,6 @@
    "pt-BR": "Ainda não há modelos. Baixe um no {name} primeiro.",
    "ru": "Моделей пока нет. Сначала загрузите модель в {name}.",
    "id": "Belum ada model. Unduh satu di {name} terlebih dahulu."
-  },
-  "No response text.": {
-   "zh-Hans": "没有回复内容。",
-   "hi": "जवाब में कोई टेक्स्ट नहीं।",
-   "es": "La respuesta no tiene texto.",
-   "ar": "لا يوجد نص في الرد.",
-   "fr": "La réponse ne contient pas de texte.",
-   "bn": "উত্তরে কোনো লেখা নেই।",
-   "pt-BR": "A resposta não tem texto.",
-   "ru": "В ответе нет текста.",
-   "id": "Tidak ada teks balasan."
   },
   "No settings.json yet — nothing to back up.": {
    "zh-Hans": "还没有 settings.json — 无需备份。",
@@ -1508,17 +1420,6 @@
    "ru": "Открыть Claude",
    "id": "Buka Claude"
   },
-  "Open Settings": {
-   "zh-Hans": "打开设置",
-   "hi": "सेटिंग्स खोलें",
-   "es": "Abrir Configuración",
-   "ar": "فتح الإعدادات",
-   "fr": "Ouvrir les réglages",
-   "bn": "সেটিংস খুলুন",
-   "pt-BR": "Abrir Configurações",
-   "ru": "Открыть настройки",
-   "id": "Buka Pengaturan"
-  },
   "Open in VS Code": {
    "zh-Hans": "在 VS Code 中打开",
    "hi": "VS Code में खोलें",
@@ -1629,17 +1530,6 @@
    "ru": "Платёж",
    "id": "Pembayaran"
   },
-  "Pick a model above the chat box first.": {
-   "zh-Hans": "请先在聊天框上方选择一个模型。",
-   "hi": "पहले चैट बॉक्स के ऊपर एक मॉडल चुनें।",
-   "es": "Elige primero un modelo encima del cuadro de chat.",
-   "ar": "اختر نموذجًا فوق مربع الدردشة أولًا.",
-   "fr": "Choisis d'abord un modèle au-dessus de la zone de chat.",
-   "bn": "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।",
-   "pt-BR": "Escolha primeiro um modelo acima da caixa de chat.",
-   "ru": "Сначала выберите модель над полем чата.",
-   "id": "Pilih model di atas kotak obrolan terlebih dahulu."
-  },
   "Pick a {name} model above the chat box.": {
    "zh-Hans": "请在聊天框上方选择一个 {name} 模型。",
    "hi": "चैट बॉक्स के ऊपर {name} का एक मॉडल चुनें।",
@@ -1650,17 +1540,6 @@
    "pt-BR": "Escolha um modelo do {name} acima da caixa de chat.",
    "ru": "Выберите модель {name} над полем чата.",
    "id": "Pilih model {name} di atas kotak obrolan."
-  },
-  "Pick up to {max} pills to show next to Mochi — {used}/{max} in use. Keys are stored in the {store}, never on disk.": {
-   "zh-Hans": "最多选择 {max} 个标签显示在 Mochi 旁边 — 已用 {used}/{max}。密钥保存在 {store} 中，绝不写入磁盘。",
-   "hi": "Mochi के बगल में दिखाने के लिए अधिकतम {max} टैब चुनें — {used}/{max} उपयोग में। कुंजियाँ {store} में रखी जाती हैं, डिस्क पर कभी नहीं।",
-   "es": "Elige hasta {max} pestañas para mostrar junto a Mochi — {used}/{max} en uso. Las claves se guardan en {store}, nunca en el disco.",
-   "ar": "اختر حتى {max} تبويبات لعرضها بجانب Mochi — {used}/{max} مستخدمة. تُحفظ المفاتيح في {store}، ولا تُكتب على القرص أبدًا.",
-   "fr": "Choisis jusqu'à {max} onglets à afficher à côté de Mochi — {used}/{max} utilisés. Les clés sont stockées dans {store}, jamais sur le disque.",
-   "bn": "Mochi-র পাশে দেখাতে সর্বোচ্চ {max}টি ট্যাব বেছে নিন — {used}/{max} ব্যবহৃত। কী {store}-এ রাখা হয়, কখনো ডিস্কে নয়।",
-   "pt-BR": "Escolha até {max} abas para mostrar ao lado do Mochi — {used}/{max} em uso. As chaves ficam em {store}, nunca no disco.",
-   "ru": "Выберите до {max} вкладок рядом с Mochi — занято {used}/{max}. Ключи хранятся в {store}, никогда на диске.",
-   "id": "Pilih hingga {max} tab untuk ditampilkan di samping Mochi — {used}/{max} terpakai. Kunci disimpan di {store}, tidak pernah di disk."
   },
   "Press keys…": {
    "zh-Hans": "请按键…",
@@ -1760,17 +1639,6 @@
    "pt-BR": "Relay",
    "ru": "Ретранслятор",
    "id": "Relay"
-  },
-  "Remove": {
-   "zh-Hans": "移除",
-   "hi": "हटाएँ",
-   "es": "Quitar",
-   "ar": "إزالة",
-   "fr": "Retirer",
-   "bn": "সরান",
-   "pt-BR": "Remover",
-   "ru": "Удалить",
-   "id": "Hapus"
   },
   "Repositories": {
    "zh-Hans": "仓库",
@@ -2003,17 +1871,6 @@
    "ru": "Сервисы",
    "id": "Layanan"
   },
-  "Session stopped on an error.": {
-   "zh-Hans": "会话因错误而停止。",
-   "hi": "सत्र एक त्रुटि पर रुक गया।",
-   "es": "La sesión se detuvo por un error.",
-   "ar": "توقفت الجلسة بسبب خطأ.",
-   "fr": "La session s'est arrêtée sur une erreur.",
-   "bn": "একটি ত্রুটিতে সেশন থেমে গেছে।",
-   "pt-BR": "A sessão parou por um erro.",
-   "ru": "Сессия остановилась из-за ошибки.",
-   "id": "Sesi berhenti karena galat."
-  },
   "Sessions — approvals stay in the agent": {
    "zh-Hans": "会话 — 审批仍在代理中进行",
    "hi": "सत्र — अनुमतियाँ एजेंट में ही रहती हैं",
@@ -2035,17 +1892,6 @@
    "pt-BR": "Sessões, e Permitir / Negar pela ilha",
    "ru": "Сессии и «Разрешить / Отклонить» из острова",
    "id": "Sesi, dan Izinkan / Tolak dari pulau"
-  },
-  "Settings": {
-   "zh-Hans": "设置",
-   "hi": "सेटिंग्स",
-   "es": "Configuración",
-   "ar": "الإعدادات",
-   "fr": "Réglages",
-   "bn": "সেটিংস",
-   "pt-BR": "Configurações",
-   "ru": "Настройки",
-   "id": "Pengaturan"
   },
   "Share your week": {
    "zh-Hans": "分享你的一周",
@@ -2288,17 +2134,6 @@
    "pt-BR": "O relay ainda não está instalado. Reinicie o Coucou.",
    "ru": "Ретранслятор ещё не установлен. Перезапустите Coucou.",
    "id": "Relay belum terpasang. Mulai ulang Coucou."
-  },
-  "The server refused the key. Check it, then connect again.": {
-   "zh-Hans": "服务器拒绝了该密钥。请检查后重新连接。",
-   "hi": "सर्वर ने कुंजी अस्वीकार कर दी। उसे जाँचें, फिर दोबारा कनेक्ट करें।",
-   "es": "El servidor rechazó la clave. Revísala y vuelve a conectar.",
-   "ar": "رفض الخادم المفتاح. تحقّق منه ثم اتصل مجددًا.",
-   "fr": "Le serveur a refusé la clé. Vérifie-la, puis reconnecte-toi.",
-   "bn": "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।",
-   "pt-BR": "O servidor recusou a chave. Verifique-a e conecte de novo.",
-   "ru": "Сервер отклонил ключ. Проверьте его и подключитесь снова.",
-   "id": "Server menolak kunci. Periksa, lalu hubungkan lagi."
   },
   "The server's answer is too large.": {
    "zh-Hans": "服务器的回复过大。",
@@ -3284,17 +3119,6 @@
    "ru": "{total} за год",
    "id": "{total} setahun terakhir"
   },
-  "{used}/{max} slots in use — the main tool doesn't take one.": {
-   "zh-Hans": "已用 {used}/{max} 个位置 — 主要工具不占位置。",
-   "hi": "{used}/{max} स्लॉट उपयोग में — मुख्य टूल कोई स्लॉट नहीं लेता।",
-   "es": "{used}/{max} espacios en uso — la herramienta principal no ocupa ninguno.",
-   "ar": "{used}/{max} من الخانات مستخدمة — الأداة الرئيسية لا تشغل خانة.",
-   "fr": "{used}/{max} emplacements utilisés — l'outil principal n'en prend pas.",
-   "bn": "{used}/{max} স্লট ব্যবহৃত — প্রধান টুল কোনো স্লট নেয় না।",
-   "pt-BR": "{used}/{max} espaços em uso — a ferramenta principal não ocupa nenhum.",
-   "ru": "Занято мест: {used}/{max} — основной инструмент место не занимает.",
-   "id": "{used}/{max} slot terpakai — alat utama tidak memakai slot."
-  },
   "{what} has an unexpected type — Coucou has not touched it.": {
    "zh-Hans": "{what} 的类型不符合预期 — Coucou 没有修改它。",
    "hi": "{what} का प्रकार अपेक्षित नहीं है — Coucou ने इसे नहीं छुआ।",
@@ -3327,17 +3151,6 @@
    "pt-BR": "⚠ falhou",
    "ru": "⚠ ошибка",
    "id": "⚠ gagal"
-  },
-  "A key is only sent over https, or to a server on this computer.": {
-   "zh-Hans": "密钥只会通过 https 发送，或发送到本机上的服务器。",
-   "hi": "कुंजी केवल https पर, या इसी कंप्यूटर के सर्वर को भेजी जाती है।",
-   "es": "La clave solo se envía por https o a un servidor de este ordenador.",
-   "ar": "لا يُرسَل المفتاح إلا عبر https، أو إلى خادم على هذا الحاسوب.",
-   "fr": "La clé n'est envoyée qu'en https, ou à un serveur sur cet ordinateur.",
-   "bn": "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।",
-   "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
-   "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
-   "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini."
   },
   "Only a file dropped on the island can be sent with a question.": {
    "zh-Hans": "只有拖放到岛上的文件才能随问题一起发送。",
@@ -3899,6 +3712,985 @@
    "pt-BR": "Este código também inclui a chave de acesso e a chave de ponta a ponta do relay {host}. «Parear de novo» cria uma chave e uma sala novas.",
    "ru": "Этот код также содержит ключ доступа и сквозной ключ для ретранслятора {host}. «Сопрячь заново» создаёт новый ключ и новую комнату.",
    "id": "Kode ini juga memuat kunci akses dan kunci ujung ke ujung untuk relay {host}. «Sandingkan ulang» membuat kunci dan ruang baru."
+  },
+  "Dictate anywhere on your computer": {
+   "zh-Hans": "在电脑上的任何地方听写",
+   "hi": "अपने कंप्यूटर पर कहीं भी बोलकर लिखें",
+   "es": "Dicta en cualquier parte de tu ordenador",
+   "ar": "أملِ في أي مكان على حاسوبك",
+   "fr": "Dicte partout sur ton ordinateur",
+   "bn": "আপনার কম্পিউটারে যেকোনো জায়গায় ডিক্টেট করুন",
+   "pt-BR": "Dite em qualquer lugar do seu computador",
+   "ru": "Диктуйте где угодно на компьютере",
+   "id": "Dikte di mana saja di komputermu"
+  },
+  "Parakeet, on your computer": {
+   "zh-Hans": "Parakeet，在你的电脑上",
+   "hi": "Parakeet, आपके कंप्यूटर पर",
+   "es": "Parakeet, en tu ordenador",
+   "ar": "Parakeet، على حاسوبك",
+   "fr": "Parakeet, sur ton ordinateur",
+   "bn": "Parakeet, আপনার কম্পিউটারে",
+   "pt-BR": "Parakeet, no seu computador",
+   "ru": "Parakeet на вашем компьютере",
+   "id": "Parakeet, di komputermu"
+  },
+  "The most accurate, offline, 25 languages. Downloaded once (about {0} MB).": {
+   "zh-Hans": "最准确，离线可用，支持 25 种语言。只需下载一次（约 {0} MB）。",
+   "hi": "सबसे सटीक, ऑफ़लाइन, 25 भाषाएँ। एक बार डाउनलोड होता है (लगभग {0} MB)।",
+   "es": "El más preciso, sin conexión, 25 idiomas. Se descarga una vez (unos {0} MB).",
+   "ar": "الأدق، دون اتصال، 25 لغة. يُنزَّل مرة واحدة (نحو {0} ميغابايت).",
+   "fr": "Le plus précis, hors ligne, 25 langues. Téléchargé une fois (environ {0} Mo).",
+   "bn": "সবচেয়ে নির্ভুল, অফলাইন, ২৫টি ভাষা। একবার ডাউনলোড হয় (প্রায় {0} MB)।",
+   "pt-BR": "O mais preciso, offline, 25 idiomas. Baixado uma vez (cerca de {0} MB).",
+   "ru": "Самый точный, офлайн, 25 языков. Скачивается один раз (около {0} МБ).",
+   "id": "Paling akurat, offline, 25 bahasa. Diunduh sekali (sekitar {0} MB)."
+  },
+  "On a keyboard with AltGr, the right Alt types characters: pick another key.": {
+   "zh-Hans": "在带 AltGr 的键盘上，右 Alt 用于输入字符：请选择其他按键。",
+   "hi": "AltGr वाले कीबोर्ड पर दायाँ Alt अक्षर टाइप करता है: कोई दूसरी कुंजी चुनें।",
+   "es": "En un teclado con AltGr, el Alt derecho escribe caracteres: elige otra tecla.",
+   "ar": "في لوحة مفاتيح فيها AltGr، يكتب Alt الأيمن حروفًا: اختر مفتاحًا آخر.",
+   "fr": "Sur un clavier avec AltGr, l'Alt de droite tape des caractères : choisis une autre touche.",
+   "bn": "AltGr থাকা কিবোর্ডে ডান Alt অক্ষর টাইপ করে: অন্য কী বেছে নিন।",
+   "pt-BR": "Em um teclado com AltGr, o Alt direito digita caracteres: escolha outra tecla.",
+   "ru": "На клавиатуре с AltGr правый Alt набирает символы: выберите другую клавишу.",
+   "id": "Pada keyboard dengan AltGr, Alt kanan mengetik karakter: pilih tombol lain."
+  },
+  "Paste again": {
+   "zh-Hans": "再次粘贴",
+   "hi": "फिर से पेस्ट करें",
+   "es": "Pegar de nuevo",
+   "ar": "ألصق مجددًا",
+   "fr": "Coller à nouveau",
+   "bn": "আবার পেস্ট করুন",
+   "pt-BR": "Colar de novo",
+   "ru": "Вставить снова",
+   "id": "Tempel lagi"
+  },
+  "Coucou can't watch the keyboard here: use the pill's microphone to dictate.": {
+   "zh-Hans": "Coucou 在这里无法监听键盘：请用胶囊上的麦克风听写。",
+   "hi": "Coucou यहाँ कीबोर्ड नहीं देख सकता: बोलकर लिखने के लिए पिल का माइक्रोफ़ोन इस्तेमाल करें।",
+   "es": "Coucou no puede vigilar el teclado aquí: usa el micrófono de la píldora para dictar.",
+   "ar": "لا يستطيع Coucou مراقبة لوحة المفاتيح هنا: استخدم ميكروفون الكبسولة للإملاء.",
+   "fr": "Coucou ne peut pas surveiller le clavier ici : utilise le micro de la pilule pour dicter.",
+   "bn": "Coucou এখানে কিবোর্ড দেখতে পারে না: ডিক্টেট করতে পিলের মাইক্রোফোন ব্যবহার করুন।",
+   "pt-BR": "O Coucou não consegue observar o teclado aqui: use o microfone da pílula para ditar.",
+   "ru": "Здесь Coucou не может следить за клавиатурой: диктуйте через микрофон на пилюле.",
+   "id": "Coucou tidak bisa memantau keyboard di sini: gunakan mikrofon pil untuk mendikte."
+  },
+  "Microphone": {
+   "zh-Hans": "麦克风",
+   "hi": "माइक्रोफ़ोन",
+   "es": "Micrófono",
+   "ar": "الميكروفون",
+   "fr": "Micro",
+   "bn": "মাইক্রোফোন",
+   "pt-BR": "Microfone",
+   "ru": "Микрофон",
+   "id": "Mikrofon"
+  },
+  "System default": {
+   "zh-Hans": "系统默认",
+   "hi": "सिस्टम डिफ़ॉल्ट",
+   "es": "Predeterminado del sistema",
+   "ar": "الافتراضي للنظام",
+   "fr": "Celui du système",
+   "bn": "সিস্টেমের ডিফল্ট",
+   "pt-BR": "Padrão do sistema",
+   "ru": "Системный по умолчанию",
+   "id": "Bawaan sistem"
+  },
+  "The one Coucou listens to for dictation and calls.": {
+   "zh-Hans": "Coucou 听写和录制通话时使用的麦克风。",
+   "hi": "वह जिसे Coucou डिक्टेशन और कॉल के लिए सुनता है।",
+   "es": "El que Coucou escucha para dictar y para las llamadas.",
+   "ar": "الذي يستمع إليه Coucou للإملاء والمكالمات.",
+   "fr": "Celui que Coucou écoute pour la dictée et les appels.",
+   "bn": "যেটি Coucou ডিক্টেশন ও কলের জন্য শোনে।",
+   "pt-BR": "O que o Coucou escuta para ditados e chamadas.",
+   "ru": "Тот, который Coucou слушает для диктовки и звонков.",
+   "id": "Yang didengarkan Coucou untuk dikte dan panggilan."
+  },
+  "Your voice never leaves this computer: Parakeet turns it into text here, and the recording is dropped as soon as it is pasted.": {
+   "zh-Hans": "你的声音不会离开这台电脑：Parakeet 在本机把它转成文字，粘贴后录音即被丢弃。",
+   "hi": "आपकी आवाज़ इस कंप्यूटर से बाहर नहीं जाती: Parakeet उसे यहीं टेक्स्ट में बदलता है, और पेस्ट होते ही रिकॉर्डिंग हटा दी जाती है।",
+   "es": "Tu voz nunca sale de este ordenador: Parakeet la convierte en texto aquí y la grabación se descarta en cuanto se pega.",
+   "ar": "لا يغادر صوتك هذا الحاسوب أبدًا: يحوّله Parakeet إلى نص هنا، ويُحذف التسجيل فور لصقه.",
+   "fr": "Ta voix ne quitte jamais cet ordinateur : Parakeet la transforme en texte ici, et l'enregistrement est jeté dès qu'il est collé.",
+   "bn": "আপনার কণ্ঠ এই কম্পিউটার ছেড়ে যায় না: Parakeet এখানেই এটিকে লেখায় রূপান্তর করে, আর পেস্ট হওয়ামাত্র রেকর্ডিং মুছে যায়।",
+   "pt-BR": "Sua voz nunca sai deste computador: o Parakeet a transforma em texto aqui, e a gravação é descartada assim que é colada.",
+   "ru": "Ваш голос не покидает этот компьютер: Parakeet превращает его в текст здесь, а запись удаляется сразу после вставки.",
+   "id": "Suaramu tidak pernah meninggalkan komputer ini: Parakeet mengubahnya menjadi teks di sini, dan rekamannya dibuang begitu ditempel."
+  },
+  "With Claude, the transcript (never the audio) goes to Anthropic with your key from Notch → Chat.": {
+   "zh-Hans": "使用 Claude 时，文字记录（绝不包括音频）会通过你在“Notch → 聊天”中设置的密钥发送给 Anthropic。",
+   "hi": "Claude के साथ, ट्रांसक्रिप्ट (ऑडियो कभी नहीं) Notch → चैट में दी गई आपकी कुंजी के साथ Anthropic को जाता है।",
+   "es": "Con Claude, la transcripción (nunca el audio) va a Anthropic con tu clave de Notch → Chat.",
+   "ar": "مع Claude، يذهب النص المكتوب (لا الصوت أبدًا) إلى Anthropic بمفتاحك من Notch ← الدردشة.",
+   "fr": "Avec Claude, la transcription (jamais l'audio) part chez Anthropic avec ta clé de Notch → Chat.",
+   "bn": "Claude-এ, ট্রান্সক্রিপ্ট (অডিও কখনো নয়) Notch → চ্যাট থেকে আপনার কী দিয়ে Anthropic-এ যায়।",
+   "pt-BR": "Com o Claude, a transcrição (nunca o áudio) vai para a Anthropic com sua chave de Notch → Chat.",
+   "ru": "С Claude расшифровка (но никогда не звук) уходит в Anthropic с вашим ключом из Notch → Чат.",
+   "id": "Dengan Claude, transkrip (tidak pernah audionya) dikirim ke Anthropic dengan kuncimu dari Notch → Obrolan."
+  },
+  "Everything stays on this computer. Tell the people in the call that you are recording.": {
+   "zh-Hans": "所有内容都留在这台电脑上。请告知通话中的人你正在录音。",
+   "hi": "सब कुछ इसी कंप्यूटर पर रहता है। कॉल में मौजूद लोगों को बताएँ कि आप रिकॉर्ड कर रहे हैं।",
+   "es": "Todo se queda en este ordenador. Avisa a las personas de la llamada de que estás grabando.",
+   "ar": "يبقى كل شيء على هذا الحاسوب. أخبر المشاركين في المكالمة أنك تسجّل.",
+   "fr": "Tout reste sur cet ordinateur. Préviens les personnes de l'appel que tu enregistres.",
+   "bn": "সবকিছু এই কম্পিউটারেই থাকে। কলে থাকা মানুষদের জানান যে আপনি রেকর্ড করছেন।",
+   "pt-BR": "Tudo fica neste computador. Avise as pessoas da chamada que você está gravando.",
+   "ru": "Всё остаётся на этом компьютере. Предупредите участников звонка, что вы ведёте запись.",
+   "id": "Semuanya tetap di komputer ini. Beri tahu orang di panggilan bahwa kamu merekam."
+  },
+  "Not when Coucou starts with the computer.": {
+   "zh-Hans": "Coucou 随电脑启动时不会打开。",
+   "hi": "जब Coucou कंप्यूटर के साथ शुरू होता है तब नहीं।",
+   "es": "No cuando Coucou se inicia con el ordenador.",
+   "ar": "ليس عندما يبدأ Coucou مع الحاسوب.",
+   "fr": "Pas quand Coucou démarre avec l'ordinateur.",
+   "bn": "Coucou কম্পিউটারের সাথে চালু হলে নয়।",
+   "pt-BR": "Não quando o Coucou inicia com o computador.",
+   "ru": "Не при запуске Coucou вместе с компьютером.",
+   "id": "Tidak saat Coucou mulai bersama komputer."
+  },
+  "The history, the statistics and your notes stay on this computer, in Coucou's folder. Dictations are never saved as audio; a call's audio is deleted as soon as its transcript is written.": {
+   "zh-Hans": "历史记录、统计数据和你的笔记都留在这台电脑上的 Coucou 文件夹中。听写从不保存为音频；通话的音频在文字记录写好后立即删除。",
+   "hi": "इतिहास, आँकड़े और आपके नोट्स इसी कंप्यूटर पर Coucou के फ़ोल्डर में रहते हैं। डिक्टेशन कभी ऑडियो के रूप में सेव नहीं होते; कॉल का ऑडियो ट्रांसक्रिप्ट लिखे जाते ही हटा दिया जाता है।",
+   "es": "El historial, las estadísticas y tus notas se quedan en este ordenador, en la carpeta de Coucou. Los dictados nunca se guardan como audio; el audio de una llamada se borra en cuanto se escribe su transcripción.",
+   "ar": "يبقى السجل والإحصاءات وملاحظاتك على هذا الحاسوب، في مجلد Coucou. لا تُحفظ الإملاءات أبدًا كصوت؛ ويُحذف صوت المكالمة فور كتابة نصها.",
+   "fr": "L'historique, les statistiques et tes notes restent sur cet ordinateur, dans le dossier de Coucou. Les dictées ne sont jamais gardées en audio ; l'audio d'un appel est supprimé dès que sa transcription est écrite.",
+   "bn": "ইতিহাস, পরিসংখ্যান আর আপনার নোট এই কম্পিউটারে Coucou-র ফোল্ডারেই থাকে। ডিক্টেশন কখনো অডিও হিসেবে সংরক্ষিত হয় না; কলের অডিও ট্রান্সক্রিপ্ট লেখা হলেই মুছে যায়।",
+   "pt-BR": "O histórico, as estatísticas e suas notas ficam neste computador, na pasta do Coucou. Os ditados nunca são salvos como áudio; o áudio de uma chamada é apagado assim que a transcrição é escrita.",
+   "ru": "История, статистика и ваши заметки остаются на этом компьютере, в папке Coucou. Диктовки никогда не сохраняются как звук; звук звонка удаляется сразу после записи расшифровки.",
+   "id": "Riwayat, statistik, dan catatanmu tetap di komputer ini, di folder Coucou. Dikte tidak pernah disimpan sebagai audio; audio panggilan dihapus begitu transkripnya ditulis."
+  },
+  "{0} h {1}": {
+   "zh-Hans": "{0} 小时 {1}",
+   "hi": "{0} घं {1}",
+   "es": "{0} h {1}",
+   "ar": "{0} س {1}",
+   "fr": "{0} h {1}",
+   "bn": "{0} ঘ {1}",
+   "pt-BR": "{0} h {1}",
+   "ru": "{0} ч {1}",
+   "id": "{0} j {1}"
+  },
+  "Counted on this computer, never sent anywhere.": {
+   "zh-Hans": "在这台电脑上统计，从不发送到任何地方。",
+   "hi": "इसी कंप्यूटर पर गिना गया, कहीं भेजा नहीं जाता।",
+   "es": "Contado en este ordenador, nunca se envía a ningún sitio.",
+   "ar": "تُحسب على هذا الحاسوب، ولا تُرسل إلى أي مكان.",
+   "fr": "Compté sur cet ordinateur, jamais envoyé nulle part.",
+   "bn": "এই কম্পিউটারেই গোনা হয়, কোথাও পাঠানো হয় না।",
+   "pt-BR": "Contado neste computador, nunca enviado para lugar nenhum.",
+   "ru": "Считается на этом компьютере и никуда не отправляется.",
+   "id": "Dihitung di komputer ini, tidak pernah dikirim ke mana pun."
+  },
+  "Coucou writes your calls on this computer with Parakeet, and tells the voices apart with a second small model. Both are downloaded once (about {0} MB), then everything works offline.": {
+   "zh-Hans": "Coucou 用 Parakeet 在这台电脑上转写你的通话，并用另一个小模型区分不同的声音。两者只需下载一次（约 {0} MB），之后一切都可离线运行。",
+   "hi": "Coucou आपकी कॉल इसी कंप्यूटर पर Parakeet से लिखता है, और एक दूसरे छोटे मॉडल से आवाज़ें अलग पहचानता है। दोनों एक बार डाउनलोड होते हैं (लगभग {0} MB), फिर सब ऑफ़लाइन चलता है।",
+   "es": "Coucou escribe tus llamadas en este ordenador con Parakeet y distingue las voces con un segundo modelo pequeño. Ambos se descargan una vez (unos {0} MB) y luego todo funciona sin conexión.",
+   "ar": "يكتب Coucou مكالماتك على هذا الحاسوب باستخدام Parakeet، ويميّز الأصوات بنموذج صغير ثانٍ. يُنزَّل كلاهما مرة واحدة (نحو {0} ميغابايت)، ثم يعمل كل شيء دون اتصال.",
+   "fr": "Coucou écrit tes appels sur cet ordinateur avec Parakeet, et distingue les voix avec un second petit modèle. Les deux se téléchargent une fois (environ {0} Mo), puis tout marche hors ligne.",
+   "bn": "Coucou এই কম্পিউটারে Parakeet দিয়ে আপনার কল লেখে, আর দ্বিতীয় একটি ছোট মডেল দিয়ে কণ্ঠগুলো আলাদা করে। দুটোই একবার ডাউনলোড হয় (প্রায় {0} MB), তারপর সবকিছু অফলাইনে চলে।",
+   "pt-BR": "O Coucou escreve suas chamadas neste computador com o Parakeet e distingue as vozes com um segundo modelo pequeno. Os dois são baixados uma vez (cerca de {0} MB) e depois tudo funciona offline.",
+   "ru": "Coucou записывает ваши звонки на этом компьютере с помощью Parakeet и различает голоса второй небольшой моделью. Обе скачиваются один раз (около {0} МБ), дальше всё работает офлайн.",
+   "id": "Coucou menulis panggilanmu di komputer ini dengan Parakeet, dan membedakan suara dengan model kecil kedua. Keduanya diunduh sekali (sekitar {0} MB), lalu semuanya bekerja offline."
+  },
+  "The clean-up uses your Claude key. Add it in Notch → Chat.": {
+   "zh-Hans": "清理功能使用你的 Claude 密钥。请在“Notch → 聊天”中添加。",
+   "hi": "सफ़ाई आपकी Claude कुंजी इस्तेमाल करती है। इसे Notch → चैट में जोड़ें।",
+   "es": "La limpieza usa tu clave de Claude. Añádela en Notch → Chat.",
+   "ar": "يستخدم التنظيف مفتاح Claude الخاص بك. أضفه في Notch ← الدردشة.",
+   "fr": "Le nettoyage utilise ta clé Claude. Ajoute-la dans Notch → Chat.",
+   "bn": "পরিষ্কার করতে আপনার Claude কী লাগে। Notch → চ্যাট-এ যোগ করুন।",
+   "pt-BR": "A limpeza usa sua chave do Claude. Adicione-a em Notch → Chat.",
+   "ru": "Для очистки нужен ваш ключ Claude. Добавьте его в Notch → Чат.",
+   "id": "Pembersihan memakai kunci Claude-mu. Tambahkan di Notch → Obrolan."
+  },
+  "With the clean-up on, the text (never your voice) goes to Anthropic with your Claude key. Off, everything stays on this computer.": {
+   "zh-Hans": "开启清理后，文字（绝不包括你的声音）会通过你的 Claude 密钥发送给 Anthropic。关闭时，一切都留在这台电脑上。",
+   "hi": "सफ़ाई चालू होने पर टेक्स्ट (आपकी आवाज़ कभी नहीं) आपकी Claude कुंजी के साथ Anthropic को जाता है। बंद होने पर सब कुछ इसी कंप्यूटर पर रहता है।",
+   "es": "Con la limpieza activada, el texto (nunca tu voz) va a Anthropic con tu clave de Claude. Desactivada, todo se queda en este ordenador.",
+   "ar": "مع تفعيل التنظيف، يذهب النص (لا صوتك أبدًا) إلى Anthropic بمفتاح Claude الخاص بك. عند إيقافه، يبقى كل شيء على هذا الحاسوب.",
+   "fr": "Nettoyage activé, le texte (jamais ta voix) part chez Anthropic avec ta clé Claude. Désactivé, tout reste sur cet ordinateur.",
+   "bn": "পরিষ্কার চালু থাকলে লেখা (আপনার কণ্ঠ কখনো নয়) আপনার Claude কী দিয়ে Anthropic-এ যায়। বন্ধ থাকলে সবকিছু এই কম্পিউটারেই থাকে।",
+   "pt-BR": "Com a limpeza ligada, o texto (nunca sua voz) vai para a Anthropic com sua chave do Claude. Desligada, tudo fica neste computador.",
+   "ru": "Когда очистка включена, текст (но никогда не голос) уходит в Anthropic с вашим ключом Claude. Когда выключена, всё остаётся на этом компьютере.",
+   "id": "Dengan pembersihan aktif, teks (tidak pernah suaramu) dikirim ke Anthropic dengan kunci Claude-mu. Saat nonaktif, semuanya tetap di komputer ini."
+  },
+  "Mochi, his sounds and how the island behaves.": {
+   "zh-Hans": "Mochi、它的声音以及岛的行为方式。",
+   "hi": "Mochi, उसकी आवाज़ें और आइलैंड कैसे काम करता है।",
+   "es": "Mochi, sus sonidos y cómo se comporta la isla.",
+   "ar": "Mochi وأصواته وطريقة عمل الجزيرة.",
+   "fr": "Mochi, ses sons et le comportement de l'île.",
+   "bn": "Mochi, তার শব্দ আর আইল্যান্ড কেমন আচরণ করে।",
+   "pt-BR": "Mochi, seus sons e como a ilha se comporta.",
+   "ru": "Mochi, его звуки и поведение острова.",
+   "id": "Mochi, suaranya, dan cara pulau berperilaku."
+  },
+  "The pills shown in the island, their order and their colours.": {
+   "zh-Hans": "岛中显示的胶囊、它们的顺序和颜色。",
+   "hi": "आइलैंड में दिखने वाली पिल्स, उनका क्रम और उनके रंग।",
+   "es": "Las píldoras que muestra la isla, su orden y sus colores.",
+   "ar": "الكبسولات المعروضة في الجزيرة وترتيبها وألوانها.",
+   "fr": "Les pilules affichées dans l'île, leur ordre et leurs couleurs.",
+   "bn": "আইল্যান্ডে দেখানো পিলগুলো, তাদের ক্রম আর রং।",
+   "pt-BR": "As pílulas mostradas na ilha, sua ordem e suas cores.",
+   "ru": "Пилюли на острове, их порядок и цвета.",
+   "id": "Pil yang ditampilkan di pulau, urutannya, dan warnanya."
+  },
+  "The AI of the island's chat, with your own keys.": {
+   "zh-Hans": "岛内聊天使用的 AI，用你自己的密钥。",
+   "hi": "आइलैंड की चैट का AI, आपकी अपनी कुंजियों के साथ।",
+   "es": "La IA del chat de la isla, con tus propias claves.",
+   "ar": "ذكاء دردشة الجزيرة الاصطناعي، بمفاتيحك الخاصة.",
+   "fr": "L'IA du chat de l'île, avec tes propres clés.",
+   "bn": "আইল্যান্ডের চ্যাটের AI, আপনার নিজের কী দিয়ে।",
+   "pt-BR": "A IA do chat da ilha, com suas próprias chaves.",
+   "ru": "ИИ чата острова — с вашими собственными ключами.",
+   "id": "AI untuk obrolan pulau, dengan kuncimu sendiri."
+  },
+  "Your agents and their approvals on your Android phone, over your Wi-Fi.": {
+   "zh-Hans": "通过你的 Wi-Fi，在 Android 手机上查看代理并批准请求。",
+   "hi": "आपके Wi-Fi पर, आपके Android फ़ोन पर आपके एजेंट और उनकी मंज़ूरियाँ।",
+   "es": "Tus agentes y sus aprobaciones en tu teléfono Android, por tu Wi-Fi.",
+   "ar": "وكلاؤك وموافقاتهم على هاتف Android، عبر شبكة Wi-Fi لديك.",
+   "fr": "Tes agents et leurs autorisations sur ton téléphone Android, par ton Wi-Fi.",
+   "bn": "আপনার Wi-Fi-তে, আপনার Android ফোনে আপনার এজেন্ট আর তাদের অনুমোদন।",
+   "pt-BR": "Seus agentes e as aprovações deles no seu celular Android, pelo seu Wi-Fi.",
+   "ru": "Ваши агенты и их подтверждения на телефоне Android через ваш Wi-Fi.",
+   "id": "Agenmu dan persetujuannya di ponsel Android, lewat Wi-Fi-mu."
+  },
+  "The keys that open the island and its actions.": {
+   "zh-Hans": "打开岛及其操作的按键。",
+   "hi": "वे कुंजियाँ जो आइलैंड और उसकी क्रियाएँ खोलती हैं।",
+   "es": "Las teclas que abren la isla y sus acciones.",
+   "ar": "المفاتيح التي تفتح الجزيرة وإجراءاتها.",
+   "fr": "Les touches qui ouvrent l'île et ses actions.",
+   "bn": "যে কী-গুলো আইল্যান্ড আর এর কাজগুলো খোলে।",
+   "pt-BR": "As teclas que abrem a ilha e suas ações.",
+   "ru": "Клавиши, открывающие остров и его действия.",
+   "id": "Tombol yang membuka pulau dan tindakannya."
+  },
+  "Downloading the voice model…": {
+   "zh-Hans": "正在下载语音模型…",
+   "hi": "वॉइस मॉडल डाउनलोड हो रहा है…",
+   "es": "Descargando el modelo de voz…",
+   "ar": "جارٍ تنزيل نموذج الصوت…",
+   "fr": "Téléchargement du modèle de voix…",
+   "bn": "ভয়েস মডেল ডাউনলোড হচ্ছে…",
+   "pt-BR": "Baixando o modelo de voz…",
+   "ru": "Скачивается голосовая модель…",
+   "id": "Mengunduh model suara…"
+  },
+  "Download the voice model to dictate": {
+   "zh-Hans": "下载语音模型即可听写",
+   "hi": "डिक्टेट करने के लिए वॉइस मॉडल डाउनलोड करें",
+   "es": "Descarga el modelo de voz para dictar",
+   "ar": "نزّل نموذج الصوت لتملي",
+   "fr": "Télécharge le modèle de voix pour dicter",
+   "bn": "ডিক্টেট করতে ভয়েস মডেল ডাউনলোড করুন",
+   "pt-BR": "Baixe o modelo de voz para ditar",
+   "ru": "Скачайте голосовую модель, чтобы диктовать",
+   "id": "Unduh model suara untuk mendikte"
+  },
+  "Use the pill's microphone to dictate": {
+   "zh-Hans": "用胶囊上的麦克风听写",
+   "hi": "डिक्टेट करने के लिए पिल का माइक्रोफ़ोन इस्तेमाल करें",
+   "es": "Usa el micrófono de la píldora para dictar",
+   "ar": "استخدم ميكروفون الكبسولة للإملاء",
+   "fr": "Utilise le micro de la pilule pour dicter",
+   "bn": "ডিক্টেট করতে পিলের মাইক্রোফোন ব্যবহার করুন",
+   "pt-BR": "Use o microfone da pílula para ditar",
+   "ru": "Диктуйте через микрофон на пилюле",
+   "id": "Gunakan mikrofon pil untuk mendikte"
+  },
+  "Copied · press Ctrl+V to paste": {
+   "zh-Hans": "已复制 · 按 Ctrl+V 粘贴",
+   "hi": "कॉपी हुआ · पेस्ट करने के लिए Ctrl+V दबाएँ",
+   "es": "Copiado · pulsa Ctrl+V para pegar",
+   "ar": "تم النسخ · اضغط Ctrl+V للصق",
+   "fr": "Copié · Ctrl+V pour coller",
+   "bn": "কপি হয়েছে · পেস্ট করতে Ctrl+V চাপুন",
+   "pt-BR": "Copiado · pressione Ctrl+V para colar",
+   "ru": "Скопировано · Ctrl+V, чтобы вставить",
+   "id": "Disalin · tekan Ctrl+V untuk menempel"
+  },
+  "Download the voice model first, in Coucou → Settings → Recognition.": {
+   "zh-Hans": "请先在“Coucou → 设置 → 识别”中下载语音模型。",
+   "hi": "पहले Coucou → सेटिंग्स → पहचान में वॉइस मॉडल डाउनलोड करें।",
+   "es": "Descarga primero el modelo de voz, en Coucou → Ajustes → Reconocimiento.",
+   "ar": "نزّل نموذج الصوت أولًا، في Coucou ← الإعدادات ← التعرّف.",
+   "fr": "Télécharge d'abord le modèle de voix, dans Coucou → Réglages → Reconnaissance.",
+   "bn": "আগে Coucou → সেটিংস → রিকগনিশন-এ ভয়েস মডেল ডাউনলোড করুন।",
+   "pt-BR": "Baixe primeiro o modelo de voz, em Coucou → Ajustes → Reconhecimento.",
+   "ru": "Сначала скачайте голосовую модель: Coucou → Настройки → Распознавание.",
+   "id": "Unduh model suara dulu, di Coucou → Pengaturan → Pengenalan."
+  },
+  "Your words are copied: click where you want them and press Ctrl+V.": {
+   "zh-Hans": "你的文字已复制：点击想放的位置，然后按 Ctrl+V。",
+   "hi": "आपके शब्द कॉपी हो गए: जहाँ चाहिए वहाँ क्लिक करें और Ctrl+V दबाएँ।",
+   "es": "Tus palabras están copiadas: haz clic donde las quieras y pulsa Ctrl+V.",
+   "ar": "نُسخت كلماتك: انقر حيث تريدها واضغط Ctrl+V.",
+   "fr": "Tes mots sont copiés : clique où tu les veux et appuie sur Ctrl+V.",
+   "bn": "আপনার শব্দ কপি হয়েছে: যেখানে চান সেখানে ক্লিক করে Ctrl+V চাপুন।",
+   "pt-BR": "Suas palavras foram copiadas: clique onde quiser e pressione Ctrl+V.",
+   "ru": "Слова скопированы: щёлкните, куда их вставить, и нажмите Ctrl+V.",
+   "id": "Kata-katamu disalin: klik di tempat yang kamu mau lalu tekan Ctrl+V."
+  },
+  "On Wayland, the desktop holds the dictation key for Coucou: Ctrl+Alt+V, or the keys you picked when it asked. The first paste asks once to let Coucou type for you.": {
+   "zh-Hans": "在 Wayland 上，桌面会替 Coucou 管理听写按键：Ctrl+Alt+V，或者它询问时你选的按键。第一次粘贴时会询问一次，是否允许 Coucou 替你输入。",
+   "hi": "Wayland पर डेस्कटॉप Coucou के लिए डिक्टेशन कुंजी संभालता है: Ctrl+Alt+V, या वे कुंजियाँ जो आपने पूछे जाने पर चुनी थीं। पहली बार पेस्ट करते समय यह एक बार पूछता है कि क्या Coucou आपके लिए टाइप कर सकता है।",
+   "es": "En Wayland, el escritorio gestiona la tecla de dictado por Coucou: Ctrl+Alt+V, o las teclas que elegiste cuando te lo preguntó. La primera vez que pegues, te preguntará una sola vez si Coucou puede escribir por ti.",
+   "ar": "على Wayland، يتولى سطح المكتب مفتاح الإملاء نيابةً عن Coucou: ‏Ctrl+Alt+V، أو المفاتيح التي اخترتها عندما سألك. عند أول لصق يسألك مرة واحدة للسماح لـ Coucou بالكتابة نيابةً عنك.",
+   "fr": "Sous Wayland, c'est le bureau qui gère la touche de dictée pour Coucou : Ctrl+Alt+V, ou les touches que tu as choisies quand il te l'a demandé. Au premier collage, il te demande une seule fois de laisser Coucou écrire pour toi.",
+   "bn": "Wayland-এ ডেস্কটপ Coucou-র হয়ে ডিক্টেশন কী সামলায়: Ctrl+Alt+V, অথবা জিজ্ঞেস করার সময় আপনি যে কীগুলো বেছে নিয়েছিলেন। প্রথমবার পেস্ট করার সময় একবার জিজ্ঞেস করা হয় Coucou-কে আপনার হয়ে টাইপ করতে দেবেন কি না।",
+   "pt-BR": "No Wayland, a área de trabalho cuida da tecla de ditado para o Coucou: Ctrl+Alt+V, ou as teclas que você escolheu quando ela perguntou. Na primeira vez que colar, ela pergunta uma única vez se o Coucou pode digitar por você.",
+   "ru": "В Wayland клавишей диктовки для Coucou управляет рабочий стол: Ctrl+Alt+V или клавиши, которые вы выбрали, когда он спросил. При первой вставке он один раз спросит, разрешить ли Coucou печатать за вас.",
+   "id": "Di Wayland, desktop yang memegang tombol dikte untuk Coucou: Ctrl+Alt+V, atau tombol yang kamu pilih saat ditanya. Saat menempel pertama kali, desktop akan bertanya sekali apakah Coucou boleh mengetik untukmu."
+  },
+  "ElevenLabs key": {
+   "zh-Hans": "ElevenLabs 密钥",
+   "hi": "ElevenLabs कुंजी",
+   "es": "Clave de ElevenLabs",
+   "ar": "مفتاح ElevenLabs",
+   "fr": "Clé ElevenLabs",
+   "bn": "ElevenLabs কী",
+   "pt-BR": "Chave do ElevenLabs",
+   "ru": "Ключ ElevenLabs",
+   "id": "Kunci ElevenLabs"
+  },
+  "Say « OK Coucou », then ask anything: add a pill, play music, the weather, an email to prepare.": {
+   "zh-Hans": "说「OK Coucou」，然后随便问：添加一个胶囊、播放音乐、天气、准备一封邮件。",
+   "hi": "« OK Coucou » कहें, फिर कुछ भी पूछें: एक पिल जोड़ें, संगीत चलाएँ, मौसम, कोई ईमेल तैयार करें।",
+   "es": "Di « OK Coucou » y pide lo que quieras: añadir una píldora, poner música, el tiempo, un correo por preparar.",
+   "ar": "قل « OK Coucou »، ثم اطلب أي شيء: إضافة كبسولة، تشغيل الموسيقى، الطقس، بريد إلكتروني لتجهيزه.",
+   "fr": "Dis « OK Coucou », puis demande ce que tu veux : ajouter une pilule, lancer de la musique, la météo, un e-mail à préparer.",
+   "bn": "« OK Coucou » বলুন, তারপর যা খুশি জিজ্ঞেস করুন: একটি পিল যোগ করা, গান চালানো, আবহাওয়া, একটি ইমেল তৈরি করা।",
+   "pt-BR": "Diga « OK Coucou » e peça o que quiser: adicionar uma pílula, tocar música, o clima, um e-mail para preparar.",
+   "ru": "Скажите « OK Coucou » и просите что угодно: добавить плашку, включить музыку, погоду, подготовить письмо.",
+   "id": "Ucapkan « OK Coucou », lalu minta apa saja: tambah pil, putar musik, cuaca, email yang perlu disiapkan."
+  },
+  "Listening": {
+   "zh-Hans": "聆听",
+   "hi": "सुनना",
+   "es": "Escucha",
+   "ar": "الاستماع",
+   "fr": "Écoute",
+   "bn": "শোনা",
+   "pt-BR": "Escuta",
+   "ru": "Прослушивание",
+   "id": "Mendengarkan"
+  },
+  "Listen for « OK Coucou »": {
+   "zh-Hans": "聆听「OK Coucou」",
+   "hi": "« OK Coucou » के लिए सुनें",
+   "es": "Escuchar « OK Coucou »",
+   "ar": "الاستماع إلى « OK Coucou »",
+   "fr": "Écouter « OK Coucou »",
+   "bn": "« OK Coucou »-এর জন্য শুনুন",
+   "pt-BR": "Escutar « OK Coucou »",
+   "ru": "Слушать « OK Coucou »",
+   "id": "Dengarkan « OK Coucou »"
+  },
+  "The microphone stays open; only what follows « OK Coucou » goes further.": {
+   "zh-Hans": "麦克风保持开启；只有「OK Coucou」之后的内容才会被进一步处理。",
+   "hi": "माइक्रोफ़ोन खुला रहता है; केवल « OK Coucou » के बाद कही गई बात ही आगे जाती है।",
+   "es": "El micrófono sigue abierto; solo lo que va después de « OK Coucou » llega más lejos.",
+   "ar": "يبقى الميكروفون مفتوحًا؛ ولا يتجاوز الحاسوب إلا ما يأتي بعد « OK Coucou ».",
+   "fr": "Le micro reste ouvert ; seul ce qui suit « OK Coucou » va plus loin.",
+   "bn": "মাইক্রোফোন খোলা থাকে; কেবল « OK Coucou »-এর পরে যা বলা হয় সেটুকুই আরও এগোয়।",
+   "pt-BR": "O microfone fica aberto; só o que vem depois de « OK Coucou » vai adiante.",
+   "ru": "Микрофон остаётся включённым; дальше уходит только то, что сказано после « OK Coucou ».",
+   "id": "Mikrofon tetap terbuka; hanya yang diucapkan setelah « OK Coucou » yang diteruskan."
+  },
+  "Hears « OK Coucou » here, without the internet.": {
+   "zh-Hans": "在这台电脑上听到「OK Coucou」，无需联网。",
+   "hi": "« OK Coucou » यहीं सुनता है, इंटरनेट के बिना।",
+   "es": "Oye « OK Coucou » aquí, sin internet.",
+   "ar": "يسمع « OK Coucou » هنا، دون إنترنت.",
+   "fr": "Entend « OK Coucou » ici, sans internet.",
+   "bn": "« OK Coucou » এখানেই শোনে, ইন্টারনেট ছাড়াই।",
+   "pt-BR": "Ouve « OK Coucou » aqui, sem internet.",
+   "ru": "Слышит « OK Coucou » прямо здесь, без интернета.",
+   "id": "Mendengar « OK Coucou » di sini, tanpa internet."
+  },
+  "Coucou answers with Claude: add your Claude key in Notch → Chat.": {
+   "zh-Hans": "Coucou 用 Claude 回答：请在 Notch → 聊天 中添加你的 Claude 密钥。",
+   "hi": "Coucou Claude से जवाब देता है: Notch → चैट में अपनी Claude कुंजी जोड़ें।",
+   "es": "Coucou responde con Claude: añade tu clave de Claude en Notch → Chat.",
+   "ar": "يجيب Coucou باستخدام Claude: أضف مفتاح Claude الخاص بك في Notch ← الدردشة.",
+   "fr": "Coucou répond avec Claude : ajoute ta clé Claude dans Notch → Chat.",
+   "bn": "Coucou Claude দিয়ে উত্তর দেয়: Notch → চ্যাট-এ আপনার Claude কী যোগ করুন।",
+   "pt-BR": "O Coucou responde com o Claude: adicione sua chave do Claude em Notch → Chat.",
+   "ru": "Coucou отвечает с помощью Claude: добавьте свой ключ Claude в Notch → Чат.",
+   "id": "Coucou menjawab dengan Claude: tambahkan kunci Claude-mu di Notch → Obrolan."
+  },
+  "Download the voice model so Coucou can hear you.": {
+   "zh-Hans": "下载语音模型，Coucou 才能听到你。",
+   "hi": "आवाज़ मॉडल डाउनलोड करें ताकि Coucou आपको सुन सके।",
+   "es": "Descarga el modelo de voz para que Coucou pueda oírte.",
+   "ar": "نزّل نموذج الصوت حتى يتمكن Coucou من سماعك.",
+   "fr": "Télécharge le modèle vocal pour que Coucou puisse t'entendre.",
+   "bn": "ভয়েস মডেল ডাউনলোড করুন যাতে Coucou আপনাকে শুনতে পায়।",
+   "pt-BR": "Baixe o modelo de voz para o Coucou poder ouvir você.",
+   "ru": "Скачайте голосовую модель, чтобы Coucou мог вас слышать.",
+   "id": "Unduh model suara agar Coucou bisa mendengarmu."
+  },
+  "Answers": {
+   "zh-Hans": "回答",
+   "hi": "जवाब",
+   "es": "Respuestas",
+   "ar": "الإجابات",
+   "fr": "Réponses",
+   "bn": "উত্তর",
+   "pt-BR": "Respostas",
+   "ru": "Ответы",
+   "id": "Jawaban"
+  },
+  "System voice": {
+   "zh-Hans": "系统语音",
+   "hi": "सिस्टम की आवाज़",
+   "es": "Voz del sistema",
+   "ar": "صوت النظام",
+   "fr": "Voix du système",
+   "bn": "সিস্টেমের কণ্ঠ",
+   "pt-BR": "Voz do sistema",
+   "ru": "Системный голос",
+   "id": "Suara sistem"
+  },
+  "Text only": {
+   "zh-Hans": "仅文字",
+   "hi": "केवल टेक्स्ट",
+   "es": "Solo texto",
+   "ar": "نص فقط",
+   "fr": "Texte seul",
+   "bn": "শুধু টেক্সট",
+   "pt-BR": "Só texto",
+   "ru": "Только текст",
+   "id": "Teks saja"
+  },
+  "Coucou answers out loud": {
+   "zh-Hans": "Coucou 大声回答",
+   "hi": "Coucou ज़ोर से जवाब देता है",
+   "es": "Coucou responde en voz alta",
+   "ar": "يجيب Coucou بصوت عالٍ",
+   "fr": "Coucou répond à voix haute",
+   "bn": "Coucou জোরে উত্তর দেয়",
+   "pt-BR": "O Coucou responde em voz alta",
+   "ru": "Coucou отвечает вслух",
+   "id": "Coucou menjawab dengan suara"
+  },
+  "Female": {
+   "zh-Hans": "女声",
+   "hi": "महिला",
+   "es": "Femenina",
+   "ar": "أنثى",
+   "fr": "Féminine",
+   "bn": "নারী",
+   "pt-BR": "Feminina",
+   "ru": "Женский",
+   "id": "Perempuan"
+  },
+  "Male": {
+   "zh-Hans": "男声",
+   "hi": "पुरुष",
+   "es": "Masculina",
+   "ar": "ذكر",
+   "fr": "Masculine",
+   "bn": "পুরুষ",
+   "pt-BR": "Masculina",
+   "ru": "Мужской",
+   "id": "Laki-laki"
+  },
+  "Your voice never leaves this computer: Parakeet turns it into text here. Only the words after « OK Coucou » go to Anthropic with your Claude key, and to ElevenLabs if you picked it for the answers.": {
+   "zh-Hans": "你的声音永远不会离开这台电脑：Parakeet 在本机把它转成文字。只有「OK Coucou」之后的文字会用你的 Claude 密钥发送给 Anthropic；如果你选了 ElevenLabs 来朗读回答，也会发送给 ElevenLabs。",
+   "hi": "आपकी आवाज़ कभी इस कंप्यूटर से बाहर नहीं जाती: Parakeet उसे यहीं टेक्स्ट में बदलता है। केवल « OK Coucou » के बाद के शब्द आपकी Claude कुंजी के साथ Anthropic को जाते हैं, और अगर आपने जवाबों के लिए ElevenLabs चुना है तो ElevenLabs को भी।",
+   "es": "Tu voz nunca sale de este ordenador: Parakeet la convierte en texto aquí. Solo las palabras después de « OK Coucou » van a Anthropic con tu clave de Claude, y a ElevenLabs si lo elegiste para las respuestas.",
+   "ar": "لا يغادر صوتك هذا الحاسوب أبدًا: يحوّله Parakeet إلى نص هنا. لا تذهب إلا الكلمات التي تلي « OK Coucou » إلى Anthropic بمفتاح Claude الخاص بك، وإلى ElevenLabs إن اخترته للإجابات.",
+   "fr": "Ta voix ne quitte jamais cet ordinateur : Parakeet la transforme en texte ici. Seuls les mots qui suivent « OK Coucou » partent chez Anthropic avec ta clé Claude, et chez ElevenLabs si tu l'as choisi pour les réponses.",
+   "bn": "আপনার কণ্ঠ কখনো এই কম্পিউটার ছেড়ে যায় না: Parakeet এখানেই একে টেক্সটে রূপান্তর করে। কেবল « OK Coucou »-এর পরের শব্দগুলো আপনার Claude কী দিয়ে Anthropic-এ যায়, আর উত্তরের জন্য ElevenLabs বেছে নিলে ElevenLabs-এও।",
+   "pt-BR": "Sua voz nunca sai deste computador: o Parakeet a transforma em texto aqui. Só as palavras depois de « OK Coucou » vão para a Anthropic com sua chave do Claude, e para a ElevenLabs se você a escolheu para as respostas.",
+   "ru": "Ваш голос никогда не покидает этот компьютер: Parakeet превращает его в текст здесь. Только слова после « OK Coucou » уходят в Anthropic с вашим ключом Claude и в ElevenLabs, если вы выбрали его для ответов.",
+   "id": "Suaramu tidak pernah keluar dari komputer ini: Parakeet mengubahnya menjadi teks di sini. Hanya kata-kata setelah « OK Coucou » yang dikirim ke Anthropic dengan kunci Claude-mu, dan ke ElevenLabs jika kamu memilihnya untuk jawaban."
+  },
+  "An email is never sent by Coucou: your mail app opens with it written, and you send it.": {
+   "zh-Hans": "Coucou 从不发送邮件：你的邮件应用会打开并填好内容，由你来发送。",
+   "hi": "Coucou कभी ईमेल नहीं भेजता: आपका मेल ऐप उसे लिखा हुआ खोलता है, और भेजते आप हैं।",
+   "es": "Coucou nunca envía un correo: tu app de correo se abre con él escrito, y lo envías tú.",
+   "ar": "لا يرسل Coucou أي بريد إلكتروني أبدًا: يُفتح تطبيق البريد لديك والرسالة مكتوبة، وأنت من يرسلها.",
+   "fr": "Coucou n'envoie jamais d'e-mail : ton app de mail s'ouvre avec le message écrit, et c'est toi qui l'envoies.",
+   "bn": "Coucou কখনো ইমেল পাঠায় না: আপনার মেল অ্যাপ লেখা ইমেলসহ খোলে, আর পাঠান আপনি।",
+   "pt-BR": "O Coucou nunca envia um e-mail: seu app de e-mail abre com ele escrito, e quem envia é você.",
+   "ru": "Coucou никогда не отправляет письма: ваше почтовое приложение откроется с готовым текстом, а отправите его вы.",
+   "id": "Coucou tidak pernah mengirim email: aplikasi email-mu terbuka dengan email yang sudah ditulis, dan kamu yang mengirimnya."
+  },
+  "Coucou couldn't answer: check your Claude key in Notch → Chat.": {
+   "zh-Hans": "Coucou 无法回答：请检查 Notch → 聊天 中的 Claude 密钥。",
+   "hi": "Coucou जवाब नहीं दे सका: Notch → चैट में अपनी Claude कुंजी जाँचें।",
+   "es": "Coucou no pudo responder: revisa tu clave de Claude en Notch → Chat.",
+   "ar": "تعذّر على Coucou الإجابة: تحقّق من مفتاح Claude في Notch ← الدردشة.",
+   "fr": "Coucou n'a pas pu répondre : vérifie ta clé Claude dans Notch → Chat.",
+   "bn": "Coucou উত্তর দিতে পারেনি: Notch → চ্যাট-এ আপনার Claude কী যাচাই করুন।",
+   "pt-BR": "O Coucou não conseguiu responder: verifique sua chave do Claude em Notch → Chat.",
+   "ru": "Coucou не смог ответить: проверьте ключ Claude в Notch → Чат.",
+   "id": "Coucou tidak bisa menjawab: periksa kunci Claude-mu di Notch → Obrolan."
+  },
+  "Chat with Google AI, OpenAI, OpenRouter, DeepSeek, Qwen or Moonshot instead of Claude: add a key here, then click the model name above the chat box to switch provider and model. Keys stay in the system keychain. These providers get no web search and no tools: they can answer, never act on this computer.": {
+   "zh-Hans": "用 Google AI、OpenAI、OpenRouter、DeepSeek、Qwen 或 Moonshot 代替 Claude 聊天：在这里添加密钥，然后点击聊天框上方的模型名称来切换服务商和模型。密钥保存在系统钥匙串中。这些服务商没有网页搜索和工具：它们只能回答，绝不会在这台电脑上执行操作。",
+   "hi": "Claude की जगह Google AI, OpenAI, OpenRouter, DeepSeek, Qwen या Moonshot से चैट करें: यहाँ एक कुंजी जोड़ें, फिर प्रदाता और मॉडल बदलने के लिए चैट बॉक्स के ऊपर मॉडल के नाम पर क्लिक करें। कुंजियाँ सिस्टम कीचेन में रहती हैं। इन प्रदाताओं को न वेब सर्च मिलता है न टूल: वे जवाब दे सकते हैं, इस कंप्यूटर पर कभी कुछ नहीं करते।",
+   "es": "Chatea con Google AI, OpenAI, OpenRouter, DeepSeek, Qwen o Moonshot en lugar de Claude: añade una clave aquí y luego haz clic en el nombre del modelo encima del cuadro de chat para cambiar de proveedor y modelo. Las claves se quedan en el llavero del sistema. Estos proveedores no tienen búsqueda web ni herramientas: pueden responder, nunca actuar en este equipo.",
+   "ar": "دردش مع Google AI أو OpenAI أو OpenRouter أو DeepSeek أو Qwen أو Moonshot بدلًا من Claude: أضف مفتاحًا هنا، ثم انقر على اسم النموذج فوق مربع الدردشة لتبديل المزوّد والنموذج. تبقى المفاتيح في سلسلة مفاتيح النظام. لا يحصل هؤلاء المزوّدون على بحث الويب ولا على الأدوات: يمكنهم الإجابة، ولا يتصرفون أبدًا على هذا الحاسوب.",
+   "fr": "Discute avec Google AI, OpenAI, OpenRouter, DeepSeek, Qwen ou Moonshot à la place de Claude : ajoute une clé ici, puis clique sur le nom du modèle au-dessus de la zone de chat pour changer de fournisseur et de modèle. Les clés restent dans le trousseau du système. Ces fournisseurs n'ont ni recherche web ni outils : ils peuvent répondre, jamais agir sur cet ordinateur.",
+   "bn": "Claude-এর বদলে Google AI, OpenAI, OpenRouter, DeepSeek, Qwen বা Moonshot-এর সঙ্গে চ্যাট করুন: এখানে একটি কী যোগ করুন, তারপর প্রদানকারী ও মডেল বদলাতে চ্যাট বক্সের উপরে মডেলের নামে ক্লিক করুন। কী সিস্টেম কীচেইনে থাকে। এই প্রদানকারীরা ওয়েব সার্চ বা টুল পায় না: তারা উত্তর দিতে পারে, এই কম্পিউটারে কখনো কিছু করে না।",
+   "pt-BR": "Converse com Google AI, OpenAI, OpenRouter, DeepSeek, Qwen ou Moonshot em vez do Claude: adicione uma chave aqui e clique no nome do modelo acima da caixa de chat para trocar de provedor e de modelo. As chaves ficam no chaveiro do sistema. Esses provedores não têm busca na web nem ferramentas: podem responder, nunca agir neste computador.",
+   "ru": "Общайтесь с Google AI, OpenAI, OpenRouter, DeepSeek, Qwen или Moonshot вместо Claude: добавьте ключ здесь, затем нажмите на название модели над полем чата, чтобы сменить провайдера и модель. Ключи хранятся в системной связке ключей. У этих провайдеров нет веб-поиска и инструментов: они могут отвечать, но никогда не действуют на этом компьютере.",
+   "id": "Mengobrol dengan Google AI, OpenAI, OpenRouter, DeepSeek, Qwen, atau Moonshot sebagai ganti Claude: tambahkan kunci di sini, lalu klik nama model di atas kotak obrolan untuk mengganti penyedia dan model. Kunci tetap di keychain sistem. Penyedia ini tidak punya pencarian web maupun alat: mereka bisa menjawab, tidak pernah bertindak di komputer ini."
+  },
+  "Google Calendar → Settings → your calendar → Integrate calendar. Any iCal link works: Outlook, iCloud, Fastmail.": {
+   "zh-Hans": "Google 日历 → 设置 → 你的日历 → 集成日历。任何 iCal 链接都可以：Outlook、iCloud、Fastmail。",
+   "hi": "Google Calendar → सेटिंग्स → आपका कैलेंडर → कैलेंडर इंटीग्रेट करें। कोई भी iCal लिंक चलेगा: Outlook, iCloud, Fastmail।",
+   "es": "Google Calendar → Configuración → tu calendario → Integrar el calendario. Sirve cualquier enlace iCal: Outlook, iCloud, Fastmail.",
+   "ar": "تقويم Google ← الإعدادات ← تقويمك ← دمج التقويم. يصلح أي رابط iCal: Outlook وiCloud وFastmail.",
+   "fr": "Google Agenda → Paramètres → votre agenda → Intégrer l'agenda. Tout lien iCal convient : Outlook, iCloud, Fastmail.",
+   "bn": "Google Calendar → সেটিংস → আপনার ক্যালেন্ডার → ক্যালেন্ডার ইন্টিগ্রেট করুন। যেকোনো iCal লিংক চলবে: Outlook, iCloud, Fastmail।",
+   "pt-BR": "Google Agenda → Configurações → sua agenda → Integrar agenda. Qualquer link iCal funciona: Outlook, iCloud, Fastmail.",
+   "ru": "Google Календарь → Настройки → ваш календарь → Интеграция календаря. Подойдёт любая ссылка iCal: Outlook, iCloud, Fastmail.",
+   "id": "Google Kalender → Setelan → kalender Anda → Integrasikan kalender. Tautan iCal apa pun bisa: Outlook, iCloud, Fastmail."
+  },
+  "Keys are stored in the {store}, never on disk.": {
+   "zh-Hans": "密钥保存在 {store} 中，绝不写入磁盘。",
+   "hi": "कुंजियाँ {store} में रखी जाती हैं, डिस्क पर कभी नहीं।",
+   "es": "Las claves se guardan en {store}, nunca en el disco.",
+   "ar": "تُحفظ المفاتيح في {store}، ولا تُكتب على القرص أبدًا.",
+   "fr": "Les clés sont stockées dans {store}, jamais sur le disque.",
+   "bn": "কী {store}-এ রাখা হয়, কখনো ডিস্কে নয়।",
+   "pt-BR": "As chaves ficam em {store}, nunca no disco.",
+   "ru": "Ключи хранятся в {store}, никогда на диске.",
+   "id": "Kunci disimpan di {store}, tidak pernah di disk."
+  },
+  "No answer came within two minutes. Try again.": {
+   "zh-Hans": "两分钟内没有回复，请重试。",
+   "hi": "दो मिनट में कोई जवाब नहीं आया। फिर कोशिश करें।",
+   "es": "No llegó ninguna respuesta en dos minutos. Inténtalo de nuevo.",
+   "ar": "لم يصل أي رد خلال دقيقتين. حاول مجددًا.",
+   "fr": "Aucune réponse en deux minutes. Réessaie.",
+   "bn": "দুই মিনিটে কোনো উত্তর আসেনি। আবার চেষ্টা করুন।",
+   "pt-BR": "Nenhuma resposta em dois minutos. Tente de novo.",
+   "ru": "Ответа не было две минуты. Попробуйте ещё раз.",
+   "id": "Tidak ada jawaban dalam dua menit. Coba lagi."
+  },
+  "Secret address in iCal format": {
+   "zh-Hans": "iCal 格式的私密地址",
+   "hi": "iCal फ़ॉर्मेट में गुप्त पता",
+   "es": "Dirección secreta en formato iCal",
+   "ar": "العنوان السري بتنسيق iCal",
+   "fr": "Adresse secrète au format iCal",
+   "bn": "iCal ফরম্যাটে গোপন ঠিকানা",
+   "pt-BR": "Endereço secreto no formato iCal",
+   "ru": "Секретный адрес в формате iCal",
+   "id": "Alamat rahasia dalam format iCal"
+  },
+  "Stopped.": {
+   "zh-Hans": "已停止。",
+   "hi": "रोक दिया गया।",
+   "es": "Detenido.",
+   "ar": "تم الإيقاف.",
+   "fr": "Arrêté.",
+   "bn": "থামানো হয়েছে।",
+   "pt-BR": "Interrompido.",
+   "ru": "Остановлено.",
+   "id": "Dihentikan."
+  },
+  "The calendar address must start with https:// or webcal://.": {
+   "zh-Hans": "日历地址必须以 https:// 或 webcal:// 开头。",
+   "hi": "कैलेंडर का पता https:// या webcal:// से शुरू होना चाहिए।",
+   "es": "La dirección del calendario debe empezar por https:// o webcal://.",
+   "ar": "يجب أن يبدأ عنوان التقويم بـ https:// أو webcal://.",
+   "fr": "L'adresse du calendrier doit commencer par https:// ou webcal://.",
+   "bn": "ক্যালেন্ডারের ঠিকানা https:// অথবা webcal:// দিয়ে শুরু হতে হবে।",
+   "pt-BR": "O endereço do calendário deve começar com https:// ou webcal://.",
+   "ru": "Адрес календаря должен начинаться с https:// или webcal://.",
+   "id": "Alamat kalender harus diawali https:// atau webcal://."
+  },
+  "The files differ.": {
+   "zh-Hans": "文件内容不同。",
+   "hi": "फ़ाइलें अलग हैं।",
+   "es": "Los archivos difieren.",
+   "ar": "الملفات مختلفة.",
+   "fr": "Les fichiers diffèrent.",
+   "bn": "ফাইলগুলো আলাদা।",
+   "pt-BR": "Os arquivos são diferentes.",
+   "ru": "Файлы различаются.",
+   "id": "File berbeda."
+  },
+  "The island hides and goes silent while one of these is in use.": {
+   "zh-Hans": "其中任何一项使用时，岛会隐藏并保持静音。",
+   "hi": "इनमें से कोई भी उपयोग में होने पर आइलैंड छिप जाता है और शांत रहता है।",
+   "es": "La isla se oculta y queda en silencio mientras uno de estos está en uso.",
+   "ar": "تختفي الجزيرة وتصمت أثناء استخدام أي من هذه.",
+   "fr": "L'île se cache et se tait tant que l'un de ces éléments est utilisé.",
+   "bn": "এগুলোর কোনোটি ব্যবহৃত হলে আইল্যান্ড লুকিয়ে থাকে এবং নীরব থাকে।",
+   "pt-BR": "A ilha se esconde e fica em silêncio enquanto um destes está em uso.",
+   "ru": "Остров скрывается и молчит, пока что-то из этого используется.",
+   "id": "Pulau bersembunyi dan diam selama salah satunya digunakan."
+  },
+  "Unexpected response": {
+   "zh-Hans": "意外的响应",
+   "hi": "अप्रत्याशित जवाब",
+   "es": "Respuesta inesperada",
+   "ar": "استجابة غير متوقعة",
+   "fr": "Réponse inattendue",
+   "bn": "অপ্রত্যাশিত উত্তর",
+   "pt-BR": "Resposta inesperada",
+   "ru": "Неожиданный ответ",
+   "id": "Respons tak terduga"
+  },
+  "{count} hooks of other Coucou installs stay as they are: this host's own Coucou, other computers, or an older install.": {
+   "zh-Hans": "其他 Coucou 安装的 {count} 个 hook 保持不变：这台主机自己的 Coucou、其他电脑，或较旧的安装。",
+   "hi": "दूसरे Coucou इंस्टॉल के {count} hooks जैसे हैं वैसे ही रहते हैं: इस होस्ट का अपना Coucou, दूसरे कंप्यूटर, या कोई पुराना इंस्टॉल।",
+   "es": "{count} hooks de otras instalaciones de Coucou se quedan como están: el Coucou de este host, otros ordenadores o una instalación anterior.",
+   "ar": "تبقى {count} من hooks تثبيتات Coucou الأخرى كما هي: Coucou الخاص بهذا الجهاز، أو أجهزة كمبيوتر أخرى، أو تثبيت أقدم.",
+   "fr": "{count} hooks d'autres installations de Coucou restent tels quels : le Coucou de cet hôte, d'autres ordinateurs ou une ancienne installation.",
+   "bn": "অন্য Coucou ইনস্টলের {count}টি hook যেমন আছে তেমনই থাকে: এই হোস্টের নিজের Coucou, অন্য কম্পিউটার, বা কোনো পুরোনো ইনস্টল।",
+   "pt-BR": "{count} hooks de outras instalações do Coucou continuam como estão: o Coucou deste host, outros computadores ou uma instalação antiga.",
+   "ru": "{count} hooks других установок Coucou остаются как есть: собственный Coucou этого хоста, другие компьютеры или старая установка.",
+   "id": "{count} hook dari instalasi Coucou lain tetap seperti adanya: Coucou milik host ini, komputer lain, atau instalasi lama."
+  },
+  "{index} of {total}": {
+   "zh-Hans": "第 {index} 个，共 {total} 个",
+   "hi": "{total} में से {index}",
+   "es": "{index} de {total}",
+   "ar": "{index} من {total}",
+   "fr": "{index} sur {total}",
+   "bn": "{total}টির মধ্যে {index}",
+   "pt-BR": "{index} de {total}",
+   "ru": "{index} из {total}",
+   "id": "{index} dari {total}"
+  },
+  "{path} is not a folder.": {
+   "zh-Hans": "{path} 不是文件夹。",
+   "hi": "{path} फ़ोल्डर नहीं है।",
+   "es": "{path} no es una carpeta.",
+   "ar": "{path} ليس مجلدًا.",
+   "fr": "{path} n'est pas un dossier.",
+   "bn": "{path} কোনো ফোল্ডার নয়।",
+   "pt-BR": "{path} não é uma pasta.",
+   "ru": "{path} не является папкой.",
+   "id": "{path} bukan folder."
+  },
+  "API secret": {
+   "zh-Hans": "API 密钥",
+   "hi": "API सीक्रेट",
+   "es": "Secreto de API",
+   "ar": "سر API",
+   "fr": "Secret d'API",
+   "bn": "API সিক্রেট",
+   "pt-BR": "Segredo da API",
+   "ru": "Секрет API",
+   "id": "Rahasia API"
+  },
+  "Key name": {
+   "zh-Hans": "密钥名称",
+   "hi": "की का नाम",
+   "es": "Nombre de la clave",
+   "ar": "اسم المفتاح",
+   "fr": "Nom de la clé",
+   "bn": "কী-এর নাম",
+   "pt-BR": "Nome da chave",
+   "ru": "Имя ключа",
+   "id": "Nama kunci"
+  },
+  "Private key": {
+   "zh-Hans": "私钥",
+   "hi": "प्राइवेट की",
+   "es": "Clave privada",
+   "ar": "المفتاح الخاص",
+   "fr": "Clé privée",
+   "bn": "প্রাইভেট কী",
+   "pt-BR": "Chave privada",
+   "ru": "Закрытый ключ",
+   "id": "Kunci privat"
+  },
+  "Passphrase": {
+   "zh-Hans": "密码短语",
+   "hi": "पासफ़्रेज़",
+   "es": "Frase de contraseña",
+   "ar": "عبارة المرور",
+   "fr": "Phrase secrète",
+   "bn": "পাসফ্রেজ",
+   "pt-BR": "Frase secreta",
+   "ru": "Кодовая фраза",
+   "id": "Frasa sandi"
+  },
+  "Address": {
+   "zh-Hans": "地址",
+   "hi": "पता",
+   "es": "Dirección",
+   "ar": "العنوان",
+   "fr": "Adresse",
+   "bn": "ঠিকানা",
+   "pt-BR": "Endereço",
+   "ru": "Адрес",
+   "id": "Alamat"
+  },
+  "My wallet": {
+   "zh-Hans": "我的钱包",
+   "hi": "मेरा वॉलेट",
+   "es": "Mi billetera",
+   "ar": "محفظتي",
+   "fr": "Mon portefeuille",
+   "bn": "আমার ওয়ালেট",
+   "pt-BR": "Minha carteira",
+   "ru": "Мой кошелёк",
+   "id": "Dompet saya"
+  },
+  "Network": {
+   "zh-Hans": "网络",
+   "hi": "नेटवर्क",
+   "es": "Red",
+   "ar": "شبكة",
+   "fr": "Réseau",
+   "bn": "নেটওয়ার্ক",
+   "pt-BR": "Rede",
+   "ru": "Сеть",
+   "id": "Jaringan"
+  },
+  "Add exchange": {
+   "zh-Hans": "添加交易所",
+   "hi": "एक्सचेंज जोड़ें",
+   "es": "Agregar exchange",
+   "ar": "إضافة منصة",
+   "fr": "Ajouter une plateforme",
+   "bn": "এক্সচেঞ্জ যোগ করুন",
+   "pt-BR": "Adicionar exchange",
+   "ru": "Добавить биржу",
+   "id": "Tambah bursa"
+  },
+  "Add wallet": {
+   "zh-Hans": "添加钱包",
+   "hi": "वॉलेट जोड़ें",
+   "es": "Agregar billetera",
+   "ar": "إضافة محفظة",
+   "fr": "Ajouter un portefeuille",
+   "bn": "ওয়ালেট যোগ করুন",
+   "pt-BR": "Adicionar carteira",
+   "ru": "Добавить кошелёк",
+   "id": "Tambah dompet"
+  },
+  "Invalid address format.": {
+   "zh-Hans": "地址格式无效。",
+   "hi": "अमान्य पता प्रारूप।",
+   "es": "Formato de dirección no válido.",
+   "ar": "تنسيق العنوان غير صالح.",
+   "fr": "Format d'adresse invalide.",
+   "bn": "অবৈধ ঠিকানা ফরম্যাট।",
+   "pt-BR": "Formato de endereço inválido.",
+   "ru": "Неверный формат адреса.",
+   "id": "Format alamat tidak valid."
+  },
+  "Network error. Check your connection.": {
+   "zh-Hans": "网络错误。请检查您的连接。",
+   "hi": "नेटवर्क त्रुटि। अपना कनेक्शन जांचें।",
+   "es": "Error de red. Comprueba tu conexión.",
+   "ar": "خطأ في الشبكة. تحقق من اتصالك.",
+   "fr": "Erreur réseau. Vérifiez votre connexion.",
+   "bn": "নেটওয়ার্ক ত্রুটি। সংযোগ পরীক্ষা করুন।",
+   "pt-BR": "Erro de rede. Verifique sua conexão.",
+   "ru": "Ошибка сети. Проверьте подключение.",
+   "id": "Kesalahan jaringan. Periksa koneksi Anda."
+  },
+  "No credentials found. Add them in Settings.": {
+   "zh-Hans": "未找到凭据。在设置中添加。",
+   "hi": "कोई क्रेडेंशियल नहीं मिले। सेटिंग्स में जोड़ें।",
+   "es": "No se encontraron credenciales. Agrégalas en Ajustes.",
+   "ar": "لم يتم العثور على بيانات اعتماد. أضفها في الإعدادات.",
+   "fr": "Aucune clé trouvée. Ajoutez-les dans Réglages.",
+   "bn": "কোনো ক্রিডেনশিয়াল পাওয়া যায়নি। সেটিংসে যোগ করুন।",
+   "pt-BR": "Nenhuma credencial encontrada. Adicione nas Configurações.",
+   "ru": "Ключи не найдены. Добавьте их в настройках.",
+   "id": "Kredensial tidak ditemukan. Tambahkan di Pengaturan."
+  },
+  "Unexpected response from the exchange.": {
+   "zh-Hans": "来自交易所的意外响应。",
+   "hi": "एक्सचेंज से अप्रत्याशित प्रतिक्रिया।",
+   "es": "Respuesta inesperada del exchange.",
+   "ar": "استجابة غير متوقعة من المنصة.",
+   "fr": "Réponse inattendue de la plateforme.",
+   "bn": "এক্সচেঞ্জ থেকে অপ্রত্যাশিত প্রতিক্রিয়া।",
+   "pt-BR": "Resposta inesperada da exchange.",
+   "ru": "Неожиданный ответ от биржи.",
+   "id": "Respons tak terduga dari bursa."
+  },
+  "Read-only access only. Keys stored in the {store}, never sent anywhere.": {
+   "zh-Hans": "仅读取权限。密钥存储在 {store}，不会发送到任何地方。",
+   "hi": "केवल पढ़ने की पहुंच। कीज़ {store} में, कहीं नहीं भेजी जातीं।",
+   "es": "Solo acceso de lectura. Claves en {store}, nunca enviadas.",
+   "ar": "وصول للقراءة فقط. المفاتيح في {store}، لا تُرسل أبداً.",
+   "fr": "Accès en lecture seule. Clés dans {store}, jamais envoyées ailleurs.",
+   "bn": "শুধু পড়ার অ্যাক্সেস। কীগুলি {store}-এ, কোথাও পাঠানো হয় না।",
+   "pt-BR": "Somente leitura. Chaves no {store}, nunca enviadas.",
+   "ru": "Только чтение. Ключи хранятся в {store} и никуда не отправляются.",
+   "id": "Akses baca saja. Kunci disimpan di {store}, tidak dikirim ke mana pun."
+  },
+  "No accounts connected — add one in Settings → Integrations.": {
+   "zh-Hans": "未连接账户 — 在设置 → 集成中添加。",
+   "hi": "कोई खाता जुड़ा नहीं — सेटिंग्स → एकीकरण में एक जोड़ें।",
+   "es": "No hay cuentas conectadas — agrega una en Ajustes → Integraciones.",
+   "ar": "لا توجد حسابات متصلة — أضف حساباً في الإعدادات → التكاملات.",
+   "fr": "Aucun compte connecté — ajoutez-en un dans Réglages → Intégrations.",
+   "bn": "কোনো অ্যাকাউন্ট সংযুক্ত নেই — সেটিংস → ইন্টিগ্রেশনে একটি যোগ করুন।",
+   "pt-BR": "Nenhuma conta conectada — adicione uma em Ajustes → Integrações.",
+   "ru": "Нет подключённых счетов — добавьте счёт в Настройки → Интеграции.",
+   "id": "Tidak ada akun terhubung — tambahkan di Pengaturan → Integrasi."
+  },
+  "read-only": {
+   "zh-Hans": "只读",
+   "hi": "केवल पढ़ें",
+   "es": "solo lectura",
+   "ar": "للقراءة فقط",
+   "fr": "lecture seule",
+   "bn": "শুধু পড়া",
+   "pt-BR": "somente leitura",
+   "ru": "только чтение",
+   "id": "baca saja"
+  },
+  "Remove {name}?": {
+   "zh-Hans": "移除 {name}？",
+   "hi": "{name} हटाएं?",
+   "es": "¿Eliminar {name}?",
+   "ar": "إزالة {name}؟",
+   "fr": "Supprimer {name} ?",
+   "bn": "{name} সরান?",
+   "pt-BR": "Remover {name}?",
+   "ru": "Удалить {name}?",
+   "id": "Hapus {name}?"
+  },
+  "Test & Save": {
+   "zh-Hans": "测试并保存",
+   "hi": "परीक्षण करें और सहेजें",
+   "es": "Probar y guardar",
+   "ar": "اختبار وحفظ",
+   "fr": "Tester & Enregistrer",
+   "bn": "পরীক্ষা ও সংরক্ষণ",
+   "pt-BR": "Testar e Salvar",
+   "ru": "Проверить и сохранить",
+   "id": "Uji & Simpan"
+  },
+  "Testing…": {
+   "zh-Hans": "正在测试…",
+   "hi": "परीक्षण हो रहा है…",
+   "es": "Probando…",
+   "ar": "جارٍ الاختبار…",
+   "fr": "Test en cours…",
+   "bn": "পরীক্ষা চলছে…",
+   "pt-BR": "Testando…",
+   "ru": "Проверка…",
+   "id": "Menguji…"
+  },
+  "Verify & Save": {
+   "zh-Hans": "验证并保存",
+   "hi": "सत्यापित करें और सहेजें",
+   "es": "Verificar y guardar",
+   "ar": "تحقق وحفظ",
+   "fr": "Vérifier & Enregistrer",
+   "bn": "যাচাই ও সংরক্ষণ",
+   "pt-BR": "Verificar e Salvar",
+   "ru": "Проверить и сохранить",
+   "id": "Verifikasi & Simpan"
+  },
+  "Public address only. Coucou never touches your private keys.": {
+   "zh-Hans": "仅公开地址。Coucou 从不接触您的私钥。",
+   "hi": "केवल सार्वजनिक पता। Coucou आपकी प्राइवेट कीज़ को कभी नहीं छूता।",
+   "es": "Solo dirección pública. Coucou nunca toca tus claves privadas.",
+   "ar": "العنوان العام فقط. لا تمس Coucou مفاتيحك الخاصة أبداً.",
+   "fr": "Adresse publique uniquement. Coucou ne touche jamais vos clés privées.",
+   "bn": "শুধুমাত্র পাবলিক ঠিকানা। Coucou কখনো আপনার প্রাইভেট কী স্পর্শ করে না।",
+   "pt-BR": "Apenas endereço público. Coucou nunca toca suas chaves privadas.",
+   "ru": "Только публичный адрес. Coucou никогда не касается ваших закрытых ключей.",
+   "id": "Hanya alamat publik. Coucou tidak pernah menyentuh kunci privat Anda."
+  },
+  "Label (optional)": {
+   "zh-Hans": "标签（可选）",
+   "hi": "लेबल (वैकल्पिक)",
+   "es": "Etiqueta (opcional)",
+   "ar": "تسمية (اختياري)",
+   "fr": "Nom (optionnel)",
+   "bn": "লেবেল (ঐচ্ছিক)",
+   "pt-BR": "Rótulo (opcional)",
+   "ru": "Название (необязательно)",
+   "id": "Label (opsional)"
+  },
+  "In Binance → API Management, create a key with Read Info permission only. Do not enable Spot Trading or Withdrawals.": {
+   "zh-Hans": "在 Binance → API 管理中，创建一个仅有“读取信息”权限的密钥。不要启用现货交易或提现。",
+   "hi": "Binance → API Management में केवल Read Info अनुमति वाली की बनाएं। Spot Trading या Withdrawals चालू न करें।",
+   "es": "En Binance → Gestión de API, crea una clave solo con el permiso Read Info. No actives Spot Trading ni Withdrawals.",
+   "ar": "في Binance ← إدارة API، أنشئ مفتاحاً بصلاحية Read Info فقط. لا تفعّل Spot Trading أو Withdrawals.",
+   "fr": "Dans Binance → Gestion des API, créez une clé avec la permission Lire uniquement. N'activez pas le trading ni les retraits.",
+   "bn": "Binance → API Management-এ শুধু Read Info অনুমতি দিয়ে একটি কী তৈরি করুন। Spot Trading বা Withdrawals চালু করবেন না।",
+   "pt-BR": "No Binance → Gerenciamento de API, crie uma chave apenas com a permissão Read Info. Não ative Spot Trading nem Withdrawals.",
+   "ru": "В Binance → API Management создайте ключ только с разрешением Read Info. Не включайте Spot Trading и Withdrawals.",
+   "id": "Di Binance → API Management, buat kunci dengan izin Read Info saja. Jangan aktifkan Spot Trading atau Withdrawals."
+  },
+  "In OKX → API → Create V5 API Key. Set permission to Read only. Note your passphrase — it is shown only once.": {
+   "zh-Hans": "在 OKX → API → 创建 V5 API 密钥。将权限设为“只读”。记下您的密码短语 — 它只显示一次。",
+   "hi": "OKX → API → Create V5 API Key में जाएं। अनुमति Read only रखें। अपना पासफ़्रेज़ नोट कर लें — यह केवल एक बार दिखता है।",
+   "es": "En OKX → API → Create V5 API Key. Pon el permiso en Read only. Anota tu frase de contraseña — solo se muestra una vez.",
+   "ar": "في OKX ← API ← Create V5 API Key. اضبط الصلاحية على Read only. دوّن عبارة المرور — تظهر مرة واحدة فقط.",
+   "fr": "Dans OKX → API → Créer clé API V5. Permissions : Lecture seule. Notez votre passphrase — elle n'est affichée qu'une fois.",
+   "bn": "OKX → API → Create V5 API Key-এ যান। অনুমতি Read only দিন। পাসফ্রেজটি লিখে রাখুন — এটি মাত্র একবার দেখানো হয়।",
+   "pt-BR": "No OKX → API → Create V5 API Key. Defina a permissão como Read only. Anote sua frase secreta — ela aparece só uma vez.",
+   "ru": "В OKX → API → Create V5 API Key. Укажите разрешение Read only. Запишите кодовую фразу — она показывается только один раз.",
+   "id": "Di OKX → API → Create V5 API Key. Atur izin ke Read only. Catat frasa sandi Anda — hanya ditampilkan sekali."
+  },
+  "In Bybit → API Management, create a key with Read Only permissions. Uncheck all other scopes.": {
+   "zh-Hans": "在 Bybit → API 管理中，创建一个具有“只读”权限的密钥。取消勾选所有其他范围。",
+   "hi": "Bybit → API Management में Read Only अनुमति वाली की बनाएं। बाकी सभी स्कोप हटा दें।",
+   "es": "En Bybit → Gestión de API, crea una clave con permisos Read Only. Desmarca todos los demás ámbitos.",
+   "ar": "في Bybit ← إدارة API، أنشئ مفتاحاً بصلاحيات Read Only. ألغِ تحديد كل النطاقات الأخرى.",
+   "fr": "Dans Bybit → Gestion API, créez une clé avec les permissions En lecture seule uniquement. Décochez tous les autres droits.",
+   "bn": "Bybit → API Management-এ Read Only অনুমতি দিয়ে একটি কী তৈরি করুন। বাকি সব স্কোপ বাদ দিন।",
+   "pt-BR": "No Bybit → Gerenciamento de API, crie uma chave com permissões Read Only. Desmarque todos os outros escopos.",
+   "ru": "В Bybit → API Management создайте ключ с правами Read Only. Снимите все остальные отметки.",
+   "id": "Di Bybit → API Management, buat kunci dengan izin Read Only. Hapus centang semua cakupan lain."
+  },
+  "In Kraken → Security → API, create a key with Query Funds permission only. Paste the Private Key (base64) as the secret.": {
+   "zh-Hans": "在 Kraken → Security → API 中，创建一个仅有 Query Funds 权限的密钥。将私钥（base64）粘贴为密钥。",
+   "hi": "Kraken → Security → API में केवल Query Funds अनुमति वाली की बनाएं। Private Key (base64) को सीक्रेट के रूप में पेस्ट करें।",
+   "es": "En Kraken → Security → API, crea una clave solo con el permiso Query Funds. Pega la Private Key (base64) como secreto.",
+   "ar": "في Kraken ← Security ← API، أنشئ مفتاحاً بصلاحية Query Funds فقط. الصق Private Key (base64) كسرّ.",
+   "fr": "Dans Kraken → Sécurité → API, créez une clé avec la permission Consulter les fonds uniquement. Collez la clé privée (base64) comme secret.",
+   "bn": "Kraken → Security → API-তে শুধু Query Funds অনুমতি দিয়ে একটি কী তৈরি করুন। Private Key (base64) সিক্রেট হিসেবে পেস্ট করুন।",
+   "pt-BR": "No Kraken → Security → API, crie uma chave apenas com a permissão Query Funds. Cole a Private Key (base64) como segredo.",
+   "ru": "В Kraken → Security → API создайте ключ только с разрешением Query Funds. Вставьте Private Key (base64) как секрет.",
+   "id": "Di Kraken → Security → API, buat kunci dengan izin Query Funds saja. Tempel Private Key (base64) sebagai rahasia."
+  },
+  "On coinbase.com → Settings → API (CDP) → Create API key, signature ECDSA, permission View only. Paste the key name (organizations/…/apiKeys/…) and the whole private key (BEGIN EC PRIVATE KEY…).": {
+   "zh-Hans": "在 coinbase.com → 设置 → API (CDP) → 创建 API 密钥，签名选 ECDSA，权限仅 View。粘贴密钥名称（organizations/…/apiKeys/…）和完整私钥（BEGIN EC PRIVATE KEY…）。",
+   "hi": "coinbase.com → Settings → API (CDP) → Create API key पर जाएं, signature ECDSA, अनुमति केवल View। की का नाम (organizations/…/apiKeys/…) और पूरी प्राइवेट की (BEGIN EC PRIVATE KEY…) पेस्ट करें।",
+   "es": "En coinbase.com → Ajustes → API (CDP) → Crear clave de API, firma ECDSA, permiso solo View. Pega el nombre de la clave (organizations/…/apiKeys/…) y la clave privada completa (BEGIN EC PRIVATE KEY…).",
+   "ar": "في coinbase.com ← الإعدادات ← API (CDP) ← إنشاء مفتاح API، التوقيع ECDSA، الصلاحية View فقط. الصق اسم المفتاح (organizations/…/apiKeys/…) والمفتاح الخاص كاملاً (BEGIN EC PRIVATE KEY…).",
+   "fr": "Sur coinbase.com → Paramètres → API (CDP) → Créer une clé API, signature ECDSA, permission Lecture (View) uniquement. Colle le nom de la clé (organizations/…/apiKeys/…) et toute la clé privée (BEGIN EC PRIVATE KEY…).",
+   "bn": "coinbase.com → Settings → API (CDP) → Create API key-এ যান, signature ECDSA, অনুমতি শুধু View। কী-এর নাম (organizations/…/apiKeys/…) এবং পুরো প্রাইভেট কী (BEGIN EC PRIVATE KEY…) পেস্ট করুন।",
+   "pt-BR": "Em coinbase.com → Configurações → API (CDP) → Criar chave de API, assinatura ECDSA, permissão apenas View. Cole o nome da chave (organizations/…/apiKeys/…) e a chave privada inteira (BEGIN EC PRIVATE KEY…).",
+   "ru": "На coinbase.com → Settings → API (CDP) → Create API key, подпись ECDSA, разрешение только View. Вставьте имя ключа (organizations/…/apiKeys/…) и весь закрытый ключ (BEGIN EC PRIVATE KEY…).",
+   "id": "Di coinbase.com → Settings → API (CDP) → Create API key, tanda tangan ECDSA, izin View saja. Tempel nama kunci (organizations/…/apiKeys/…) dan seluruh kunci privat (BEGIN EC PRIVATE KEY…)."
+  },
+  "This private key can't be read. Paste the whole key, from BEGIN EC PRIVATE KEY to END EC PRIVATE KEY (ECDSA key).": {
+   "zh-Hans": "无法读取此私钥。请粘贴完整密钥，从 BEGIN EC PRIVATE KEY 到 END EC PRIVATE KEY（ECDSA 密钥）。",
+   "hi": "यह प्राइवेट की पढ़ी नहीं जा सकती। पूरी की पेस्ट करें, BEGIN EC PRIVATE KEY से END EC PRIVATE KEY तक (ECDSA की)।",
+   "es": "No se puede leer esta clave privada. Pega la clave completa, de BEGIN EC PRIVATE KEY a END EC PRIVATE KEY (clave ECDSA).",
+   "ar": "تعذّرت قراءة هذا المفتاح الخاص. الصق المفتاح كاملاً، من BEGIN EC PRIVATE KEY إلى END EC PRIVATE KEY (مفتاح ECDSA).",
+   "fr": "Cette clé privée est illisible. Colle toute la clé, de BEGIN EC PRIVATE KEY à END EC PRIVATE KEY (clé ECDSA).",
+   "bn": "এই প্রাইভেট কী পড়া যাচ্ছে না। পুরো কী পেস্ট করুন, BEGIN EC PRIVATE KEY থেকে END EC PRIVATE KEY পর্যন্ত (ECDSA কী)।",
+   "pt-BR": "Não foi possível ler esta chave privada. Cole a chave inteira, de BEGIN EC PRIVATE KEY a END EC PRIVATE KEY (chave ECDSA).",
+   "ru": "Не удаётся прочитать этот закрытый ключ. Вставьте ключ целиком, от BEGIN EC PRIVATE KEY до END EC PRIVATE KEY (ключ ECDSA).",
+   "id": "Kunci privat ini tidak dapat dibaca. Tempel seluruh kunci, dari BEGIN EC PRIVATE KEY sampai END EC PRIVATE KEY (kunci ECDSA)."
   }
  }
 }

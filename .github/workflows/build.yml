@@ -27,11 +27,34 @@ jobs:
       - name: Test display choice
         run: bash scripts/test-display-choice.sh
 
+      - name: Test session pill IDs
+        run: bash scripts/test-session-pill-id.sh
+
+      - name: Test loopback hosts
+        run: bash scripts/test-loopback-host.sh
+
+      - name: Test relay wire
+        run: bash scripts/test-relay-wire.sh
+
       - name: Test parallel Claude Code sessions
         run: bash scripts/test-session-registry.sh
 
       - name: Test approval queue
         run: bash scripts/test-approval-queue.sh
+
+      - name: Test tied process
+        run: bash scripts/test-tied-process.sh
+
+      - name: Test remote trust
+        run: bash scripts/test-remote-trust.sh
+      - name: Test Flow dictation keys
+        run: bash scripts/test-flow-keys.sh
+
+      - name: Test Flow text (snippets, dictionary, numbers)
+        run: bash scripts/test-flow-text.sh
+
+      - name: Test Notetaker transcript (speakers, echo, summary, Markdown)
+        run: bash scripts/test-notetaker.sh
 
       - name: Desktop Mochi and gaze tests
         run: bash scripts/test-desktop-mochi.sh
@@ -41,6 +64,9 @@ jobs:
 
       - name: Test open on hover
         run: bash scripts/test-island-hover.sh
+
+      - name: Test call sensors
+        run: bash scripts/test-call-sensors.sh
 
       - name: Wake phrase tests
         run: bash scripts/test-voice-wake.sh
@@ -74,14 +100,30 @@ jobs:
       - name: Test terminal target
         run: bash scripts/test-terminal-target.sh
 
+      - name: Test SSH destinations
+        run: bash scripts/test-ssh-destination.sh
+      - name: Test code view
+        run: bash scripts/test-code-view.sh
+
+      - name: Test local ssh lookup
+        run: bash scripts/test-local-ssh.sh
+
       - name: Test link filter
         run: bash scripts/test-safe-links.sh
+
+      - name: Test calendar join links
+        run: bash scripts/test-calendar-join-link.sh
 
       - name: Test Claude response text
         run: bash scripts/test-claude-response.sh
 
       - name: Test chat parsing
         run: bash scripts/test-chat-parsing.sh
+
+      - name: Test Open WebUI
+        run: bash scripts/test-open-webui.sh
+      - name: Test Claude Code chat
+        run: bash scripts/test-claude-code-chat.sh
 
       - name: Test plan gauge
         run: bash scripts/test-plan-gauge.sh
@@ -98,6 +140,9 @@ jobs:
       - name: GitHub activity tests
         run: bash scripts/test-github-activity.sh
 
+      - name: Slack parsing tests
+        run: bash scripts/test-slack.sh
+
       - name: Wardrobe tests
         run: bash scripts/test-wardrobe.sh
 
@@ -109,6 +154,12 @@ jobs:
 
       - name: Turn end policy tests
         run: bash scripts/test-turn-end-policy.sh
+
+      - name: Live edits tests
+        run: bash scripts/test-live-edits.sh
+
+      - name: Test live edit reveal
+        run: bash scripts/test-live-reveal.sh
 
       - name: Voice spotter generation tests
         run: bash scripts/test-voice-spotter-gen.sh

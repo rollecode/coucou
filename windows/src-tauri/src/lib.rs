@@ -2,35 +2,49 @@
 
 mod agent_hooks;
 mod agents;
+mod betterstack;
+mod calls;
 mod chat;
 mod claude;
+mod claude_code;
 mod codex_plan;
 mod config_file;
 mod desktop;
 mod files;
+mod flow;
 mod github;
 mod hooks;
 mod i18n;
 mod identity;
 mod integrations;
 mod island;
+mod linear;
 mod local_chat;
 mod log;
 mod net;
+mod open_webui;
+mod notes;
 mod openai_compat;
 mod phone_link;
 mod pipe;
 mod platform;
 #[cfg(target_os = "linux")]
 mod portal;
+mod portfolio;
 mod recap;
+mod remote;
 mod secrets;
 mod session_window;
 mod settings;
 mod shortcuts;
+mod slack;
+mod snippet;
 mod sounds;
+mod speech;
 mod spotify;
+mod timely;
 mod tray;
+mod voice;
 #[cfg(windows)]
 mod webview_drop;
 
@@ -85,14 +99,17 @@ fn boot(app: AppHandle, shared: State<Shared>) -> BootInfo {
 
 #[tauri::command]
 fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
-    let (screen_changed, autostart_changed, shortcuts_changed) = {
+    let (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed) = {
         let mut current = shared.settings.lock().unwrap();
         let screen_changed = current.screen != settings.screen;
+        let full_screen_changed = current.hide_in_full_screen != settings.hide_in_full_screen;
         let autostart_changed = current.autostart != settings.autostart;
         let shortcuts_changed = current.shortcuts != settings.shortcuts;
         // Where Mochi sits on the desktop is desktop.rs's to say, not a webview's.
         let mut settings = settings.clone();
         settings.desktop_mochi = current.desktop_mochi.clone();
+        // A new id would orphan this install's hooks on every remote host.
+        settings.remote_client_id = current.remote_client_id.clone();
         // Same for the phone link: only its own commands turn it on or off.
         settings.phone_link = current.phone_link;
         settings.phone_chat = current.phone_chat;
@@ -104,8 +121,9 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         settings.phone_relay = current.phone_relay;
         settings.phone_relay_url = current.phone_relay_url.clone();
         settings.phone_chat_models = current.phone_chat_models.clone();
+        settings.portfolio_wallets = current.portfolio_wallets.clone();
         *current = settings;
-        (screen_changed, autostart_changed, shortcuts_changed)
+        (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed)
     };
     let settings = shared.settings.lock().unwrap().clone();
     if let Err(err) = settings::save(&settings) {
@@ -118,12 +136,17 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
             eprintln!("[coucou] autostart: {err}");
         }
     }
+    if full_screen_changed {
+        let (handle, on) = (app.clone(), settings.hide_in_full_screen);
+        let _ = app.run_on_main_thread(move || platform::hide_in_full_screen(&handle, on));
+    }
     if screen_changed {
         let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
         island::apply_geometry(&app, &settings.screen, collapsed);
     }
     integrations::settings_saved(&app, &settings.active_integrations);
     spotify::sync(&app, &settings.active_integrations);
+    remote::sync(&app, &settings.remote_hosts, &settings.remote_client_id);
     if shortcuts_changed {
         shortcuts::apply(&app, &settings.shortcuts);
     }
@@ -147,8 +170,8 @@ fn set_system_languages(app: AppHandle, languages: Vec<String>) {
 /// settings window's title. The webviews switch on their own.
 fn language_changed(app: &AppHandle) {
     tray::retitle(app);
-    if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.set_title(&i18n::t("Settings — Coucou"));
+    if let Some(window) = app.get_webview_window(HUB_LABEL) {
+        let _ = window.set_title("Coucou");
     }
 }
 
@@ -178,18 +201,49 @@ fn set_island_rect(app: AppHandle, shared: State<Shared>, x: f64, y: f64, width:
 #[tauri::command]
 fn focus_window(app: AppHandle, focused: bool) {
     let Some(win) = island::window(&app) else { return };
-    platform::set_activating(&win, focused);
-    if focused {
-        let _ = win.set_focus();
-    }
+    // `set_activating` touches raw GTK FFI, which Tauri documents as
+    // main-thread-only; this command runs on a Tokio worker thread, so the
+    // GTK call (and the `set_focus` that follows it) must be dispatched back
+    // to the main thread rather than made directly here.
+    let _ = app.run_on_main_thread(move || {
+        platform::set_activating(&win, focused);
+        if focused {
+            let _ = win.set_focus();
+        }
+    });
 }
 
 #[tauri::command]
-fn reposition(app: AppHandle, shared: State<Shared>) {
+fn reposition(app: AppHandle) {
+    place_island(&app);
+}
+
+fn place_island(app: &AppHandle) {
+    let Some(shared) = app.try_state::<Shared>() else { return };
     let pref = shared.settings.lock().unwrap().screen.clone();
     let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
-    island::apply_geometry(&app, &pref, collapsed);
+    island::apply_geometry(app, &pref, collapsed);
 }
+
+/// The panel is laid out in CSS px against the window's own scale. If the webview
+/// reports a different devicePixelRatio (it ends up bigger than the window and gets
+/// cut), correct its zoom so one CSS px is one logical px again.
+#[tauri::command]
+fn fit_zoom(app: AppHandle, dpr: f64) -> bool {
+    let Some(win) = island::window(&app) else { return false };
+    let scale = win.scale_factor().unwrap_or(1.0);
+    static ZOOM: std::sync::Mutex<f64> = std::sync::Mutex::new(1.0);
+    let mut zoom = ZOOM.lock().unwrap();
+    if let Some(new_zoom) = island::calculate_zoom_correction(*zoom, scale, dpr) {
+        *zoom = new_zoom;
+        log::line(format!("webview dpr {dpr} != window scale {scale} — setting zoom {new_zoom:.3}"));
+        let _ = win.set_zoom(new_zoom);
+        true
+    } else {
+        false
+    }
+}
+
 
 /// The displays the island can be pinned to, for Settings.
 #[tauri::command]
@@ -203,6 +257,16 @@ fn open_url(url: String) {
         return;
     }
     platform::open_url(&url);
+}
+
+/// The lines around an edit, for the code view (see snippet.rs). Off the main
+/// thread: a slow disk must not freeze the island.
+#[tauri::command]
+async fn file_snippet(cwd: String, path: String, find: String, context: usize) -> Option<snippet::Snippet> {
+    tauri::async_runtime::spawn_blocking(move || snippet::for_session(&cwd, &path, &find, context))
+        .await
+        .ok()
+        .flatten()
 }
 
 /// "Open terminal" opens the working folder in VS Code when `code` is on PATH,
@@ -223,7 +287,8 @@ fn open_in_vscode(path: Option<String>) -> bool {
             return false;
         }
     }
-    if let Some(code) = platform::find_on_path("code") {
+    // VSCodium is the same editor under another name.
+    if let Some(code) = platform::find_on_path("code").or_else(|| platform::find_on_path("codium")) {
         let mut cmd = Command::new(code);
         if let Some(p) = path.as_deref() {
             cmd.arg(p);
@@ -238,17 +303,72 @@ fn open_in_vscode(path: Option<String>) -> bool {
     false
 }
 
+/// A Claude Code session found running, before any hook event of its own.
+#[derive(Serialize)]
+struct ClaudeProcess {
+    pid: u32,
+    cwd: String,
+    /// What to call it: its Claude Code name, else the tmux session the user named, else its folder.
+    name: String,
+}
+
+/// The Claude Code sessions running now, so each has its pill from the start
+/// rather than from its next event. Each is remembered by `pid-<pid>` for
+/// "Open terminal" until its hook names its session.
+#[tauri::command]
+async fn claude_sessions() -> Vec<ClaudeProcess> {
+    // Off the main thread: each tmux question can take up to 2 s.
+    tauri::async_runtime::spawn_blocking(|| {
+        platform::claude_processes()
+            .into_iter()
+            .map(|(pid, cwd)| {
+                let mut owners = vec![pid];
+                owners.extend(platform::window_owners(&platform::process_ancestors(pid)));
+                session_window::remember(&format!("pid-{pid}"), owners);
+                let name = claude_session_name(pid)
+                    .or_else(|| platform::tmux_session_name(pid))
+                    .unwrap_or_else(|| session_window::folder_name(&cwd).to_string());
+                ClaudeProcess { pid, cwd, name }
+            })
+            .collect()
+    })
+    .await
+    .unwrap_or_default()
+}
+
+/// The name `/rename` gave the session, from Claude Code's own `~/.claude/sessions/<pid>.json`.
+fn claude_session_name(pid: u32) -> Option<String> {
+    let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).ok()?;
+    let path = std::path::Path::new(&home).join(".claude").join("sessions").join(format!("{pid}.json"));
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
+    v.get("name").and_then(|n| n.as_str()).filter(|n| !n.is_empty()).map(str::to_string)
+}
+
+/// How long the compositor gets to take the keyboard back from the island before a window is raised.
+const KEYBOARD_HANDOVER: std::time::Duration = std::time::Duration::from_millis(60);
+
 /// "Open terminal": brings forward the terminal or editor window the session
 /// runs in, when it was found (see session_window.rs); otherwise opens the
 /// folder in VS Code, as before.
 #[tauri::command]
-fn open_session(session_id: Option<String>, path: Option<String>) -> bool {
+fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>) -> bool {
+    // On another machine: the local terminal ssh'd into it, else a new one. Off the UI thread, as below.
+    if let Some(id) = session_id.clone().filter(|id| remote::is_remote_session(id)) {
+        #[cfg(target_os = "linux")]
+        focus_window(app, false);
+        std::thread::spawn(move || {
+            std::thread::sleep(KEYBOARD_HANDOVER);
+            remote::open_terminal(&id);
+        });
+        return true;
+    }
     let Some(owners) = session_id.as_deref().and_then(session_window::lookup) else {
         return open_in_vscode(path);
     };
     let folder = path.as_deref().map(session_window::folder_name).unwrap_or_default().to_string();
     #[cfg(windows)]
     {
+        let _ = app;
         if platform::focus_session_window(&owners, &folder) {
             return true;
         }
@@ -259,10 +379,18 @@ fn open_session(session_id: Option<String>, path: Option<String>) -> bool {
     // opens when none of them could bring the window forward.
     #[cfg(target_os = "linux")]
     {
+        // The island gives the keyboard back first, or the compositor hands it to the window it had before.
+        focus_window(app, false);
         std::thread::spawn(move || {
-            if !platform::focus_session_window(&owners, &folder) {
-                open_in_vscode(path);
+            std::thread::sleep(KEYBOARD_HANDOVER);
+            if platform::focus_session_window(&owners, &folder) {
+                return;
             }
+            if platform::runs_in_terminal(&owners) {
+                crate::log::line("open terminal: its window could not be raised".to_string());
+                return;
+            }
+            open_in_vscode(path);
         });
         true
     }
@@ -289,7 +417,8 @@ fn diff_file(path: &str) -> Option<&std::path::Path> {
 #[tauri::command]
 fn open_file_in_vscode(path: String) -> bool {
     let Some(file) = diff_file(&path) else { return false };
-    if let Some(code) = platform::find_on_path("code") {
+    // VSCodium is the same editor under another name.
+    if let Some(code) = platform::find_on_path("code").or_else(|| platform::find_on_path("codium")) {
         let mut cmd = Command::new(code);
         cmd.arg(file);
         if platform::no_console(&mut cmd).spawn().is_ok() {
@@ -328,6 +457,21 @@ fn agent_hooks_status() -> std::collections::HashMap<String, bool> {
 }
 
 /// Returns the diff the user has to look at before anything is written.
+#[tauri::command]
+fn remote_status() -> Vec<remote::HostStatus> {
+    remote::status()
+}
+
+#[tauri::command]
+async fn remote_preview(host: String, install: bool) -> Result<HookPreview, String> {
+    remote::preview(&host, install).await
+}
+
+#[tauri::command]
+async fn remote_apply(host: String, install: bool, fingerprint: String) -> Result<String, String> {
+    remote::apply(&host, install, &fingerprint).await
+}
+
 #[tauri::command]
 fn hooks_preview(install: bool) -> Result<HookPreview, String> {
     hooks::preview(install)
@@ -420,8 +564,17 @@ async fn codex_plan_usage() -> Option<serde_json::Value> {
     tauri::async_runtime::spawn_blocking(codex_plan::read).await.ok().flatten()
 }
 
+/// Only the island may drive an approval — the buttons live there, and the
+/// request ids stay unguessable (pipe.rs) so they cannot be borrowed either.
+fn from_island(window: &tauri::WebviewWindow) -> bool {
+    window.label() == island::WINDOW_LABEL
+}
+
 #[tauri::command]
-fn approval_decision(app: AppHandle, request_id: String, decision: String) {
+fn approval_decision(window: tauri::WebviewWindow, app: AppHandle, request_id: String, decision: String) {
+    if !from_island(&window) {
+        return;
+    }
     recap::record_decision(&app, &request_id, &decision);
     pipe::answer(&app, &request_id, &decision);
 }
@@ -429,10 +582,14 @@ fn approval_decision(app: AppHandle, request_id: String, decision: String) {
 /// An option picked on the island for a question Claude Code asked.
 #[tauri::command]
 fn approval_answer(
+    window: tauri::WebviewWindow,
     app: AppHandle,
     request_id: String,
     answers: std::collections::HashMap<String, serde_json::Value>,
 ) {
+    if !from_island(&window) {
+        return;
+    }
     // An answered question is not an Allow / Deny: nothing for the recap.
     recap::forget_request(&app, &request_id);
     pipe::answer_question(&app, &request_id, &answers);
@@ -442,14 +599,20 @@ fn approval_answer(
 /// Until this arrives the relay only waits a few hundred milliseconds, which is
 /// what stops a paused or unresponsive island from freezing Claude Code.
 #[tauri::command]
-fn approval_ack(app: AppHandle, request_id: String) {
+fn approval_ack(window: tauri::WebviewWindow, app: AppHandle, request_id: String) {
+    if !from_island(&window) {
+        return;
+    }
     pipe::acknowledge(&app, &request_id);
 }
 
 /// Nobody can act on this request — the island is paused, or another card is
 /// already up. Claude Code falls back to asking in the terminal immediately.
 #[tauri::command]
-fn approval_decline(app: AppHandle, request_id: String) {
+fn approval_decline(window: tauri::WebviewWindow, app: AppHandle, request_id: String) {
+    if !from_island(&window) {
+        return;
+    }
     recap::forget_request(&app, &request_id);
     pipe::decline(&app, &request_id);
 }
@@ -465,9 +628,10 @@ async fn chat_send(
     chat: State<'_, Chat>,
     query: String,
     context: Option<ChatContext>,
+    variables: Option<chat::PromptVariables>,
 ) -> Result<ChatReply, String> {
     let settings = shared.settings.lock().unwrap().clone();
-    chat::send(&app, &chat, &settings, query, context).await
+    chat::send(&app, &chat, &settings, query, context, variables.unwrap_or_default()).await
 }
 
 /// The models a provider offers, for the picker in the chat view. Only asked
@@ -484,16 +648,17 @@ async fn local_connect(provider: String, url: String) -> Result<local_chat::Conn
     local_chat::connect(&provider, &url).await
 }
 
-/// Stores the custom server's key for the address typed next to it; it is only
-/// ever sent to that address.
+/// Stores a server's key (the custom server's, Open WebUI's) for the address
+/// typed next to it; it is only ever sent to that address.
 #[tauri::command]
-fn local_set_key(url: String, key: String) -> Result<(), String> {
-    local_chat::set_custom_key(&url, &key)
+fn local_set_key(provider: String, url: String, key: String) -> Result<(), String> {
+    local_chat::set_key(&provider, &url, &key)
 }
 
 #[tauri::command]
 fn chat_reset(chat: State<Chat>) {
     chat.reset();
+    claude_code::cancel();
 }
 
 /// Copies a dropped file into the inbox and reports its name back.
@@ -511,14 +676,24 @@ fn secret_present(key: String) -> bool {
 #[tauri::command]
 fn secret_set(app: AppHandle, key: String, value: String) -> Result<(), String> {
     // Bound to its server's address: only local_set_key may store it.
-    if key == local_chat::CUSTOM_KEY {
+    if key == local_chat::CUSTOM_KEY || key == open_webui::KEY {
         return Err("use local_set_key".into());
     }
-    let before = (key == "github-token").then(|| secrets::get(&key));
+    if key == "linear-api-key" {
+        integrations::forget_linear();
+    }
+    let before = (key == "github-token" || key == "betterstack-token").then(|| secrets::get(&key));
     secrets::set(&key, &value)?;
+    if key == claude::KEY {
+        voice::sync(&app);
+    }
     if let Some(before) = before {
         if secrets::get(&key) != before {
-            integrations::github_token_changed(&app);
+            if key == "github-token" {
+                integrations::github_token_changed(&app);
+            } else {
+                integrations::reset_betterstack();
+            }
         }
     }
     Ok(())
@@ -526,8 +701,14 @@ fn secret_set(app: AppHandle, key: String, value: String) -> Result<(), String> 
 
 #[tauri::command]
 fn secret_clear(app: AppHandle, key: String) -> Result<(), String> {
+    if key == "linear-api-key" {
+        integrations::forget_linear();
+    }
     let had = key == "github-token" && secrets::present(&key);
     secrets::clear(&key)?;
+    if key == claude::KEY {
+        voice::sync(&app);
+    }
     if had {
         integrations::github_token_changed(&app);
     }
@@ -546,6 +727,25 @@ fn open_n8n() {
 #[tauri::command]
 async fn refresh_integration(app: AppHandle, id: String) {
     integrations::poll_once(app, &id).await;
+}
+
+/// Settings → Timely → Connect: Timely's consent page, which then shows a code.
+#[tauri::command]
+fn timely_authorize() -> bool {
+    let Some(id) = secrets::get("timely-client-id") else { return false };
+    platform::open_url(&timely::authorize_url(&id));
+    true
+}
+
+/// Settings → Timely → Save: trades the pasted code for tokens.
+#[tauri::command]
+async fn timely_connect(app: AppHandle, code: String) -> Result<(), String> {
+    integrations::timely_connect(app, &code).await
+}
+
+#[tauri::command]
+fn timely_disconnect(app: AppHandle) {
+    integrations::timely_disconnect(&app);
 }
 
 /// The GitHub card was opened: refetch its `section` ("pulse" or "activity")
@@ -602,17 +802,21 @@ fn settings_page_url(app: &AppHandle) -> WebviewUrl {
     WebviewUrl::App("settings.html".into())
 }
 
-/// The settings window is created hidden at launch and only ever shown and
+/// The Coucou window (Flow dictation, the Notetaker and every setting of the
+/// island), labelled "settings" since it grew out of the settings window.
+pub const HUB_LABEL: &str = "settings";
+
+/// The Coucou window is created hidden at launch and only ever shown and
 /// hidden afterwards. A WebView2 window created later — on the main thread or
 /// not — silently comes up blank in this app, so the window that works is the
 /// one that exists before the island's webview does.
 fn create_settings_window(app: &AppHandle) {
     let url = settings_page_url(app);
-    match WebviewWindowBuilder::new(app, "settings", url)
+    match WebviewWindowBuilder::new(app, HUB_LABEL, url)
         .additional_browser_args(BROWSER_ARGS)
-        .title(i18n::t("Settings — Coucou"))
-        .inner_size(560.0, 680.0)
-        .min_inner_size(460.0, 480.0)
+        .title("Coucou")
+        .inner_size(1100.0, 720.0)
+        .min_inner_size(820.0, 560.0)
         .resizable(true)
         .visible(false)
         .center()
@@ -628,23 +832,40 @@ fn create_settings_window(app: &AppHandle) {
                 }
             });
         }
-        Err(err) => log::line(format!("settings window failed: {err}")),
+        Err(err) => log::line(format!("Coucou window failed: {err}")),
     }
 }
 
 pub fn show_settings_window(app: &AppHandle) {
-    let Some(win) = app.get_webview_window("settings") else {
-        log::line("settings window missing");
+    show_hub(app, Some("general"));
+}
+
+/// Shows the Coucou window, on `page` when given ("dictation", "notes",
+/// "settings", "general", "shortcuts"…).
+pub fn show_hub(app: &AppHandle, page: Option<&str>) {
+    let Some(win) = app.get_webview_window(HUB_LABEL) else {
+        log::line("Coucou window missing");
         return;
     };
+    if let Some(page) = page {
+        let _ = win.emit("hub-page", page.to_string());
+    }
     let _ = win.unminimize();
     let _ = win.show();
     let _ = win.set_focus();
 }
 
+/// The argument the login item starts Coucou with.
+const AUTOSTART_ARG: &str = "--autostart";
+
+/// Coucou started with the computer, not opened by the user: the window stays hidden.
+pub fn launched_at_login() -> bool {
+    std::env::args().any(|a| a == AUTOSTART_ARG)
+}
+
 #[tauri::command]
-fn open_settings_window(app: AppHandle) {
-    show_settings_window(&app);
+fn open_settings_window(app: AppHandle, page: Option<String>) {
+    show_hub(&app, Some(page.as_deref().unwrap_or("general")));
 }
 
 pub fn run() {
@@ -659,12 +880,11 @@ pub fn run() {
             // settings run where we can't listen for keys ourselves (Wayland).
             match shortcuts::from_args(&argv) {
                 Some(action) => shortcuts::dispatch(app, action),
-                None => {
-                    let _ = app.emit_to(island::WINDOW_LABEL, "tray", "open".to_string());
-                }
+                // Opening Coucou again (its shortcut, the Start menu) shows its window.
+                None => show_hub(app, None),
             }
         }))
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None));
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![AUTOSTART_ARG])));
     // Where no global shortcut can work, the plugin isn't even started.
     if platform::global_shortcuts_blocked().is_none() {
         builder = builder.plugin(shortcuts::plugin());
@@ -687,9 +907,11 @@ pub fn run() {
             set_island_rect,
             focus_window,
             reposition,
+            fit_zoom,
             list_monitors,
             open_url,
             open_in_vscode,
+            file_snippet,
             open_session,
             open_claude_desktop,
             open_file_in_vscode,
@@ -697,6 +919,9 @@ pub fn run() {
             hooks_status,
             agent_hooks_status,
             hooks_preview,
+            remote_status,
+            remote_preview,
+            remote_apply,
             hooks_apply,
             agent_hooks_list,
             agent_hooks_preview,
@@ -713,12 +938,18 @@ pub fn run() {
             chat_models,
             local_connect,
             local_set_key,
+            claude_sessions,
             chat_reset,
             ingest_file,
             secret_present,
             secret_set,
             secret_clear,
             refresh_integration,
+            timely_authorize,
+            timely_connect,
+            timely_disconnect,
+            slack::slack_open,
+            slack::slack_open_workspace,
             github_refresh,
             open_n8n,
             open_settings_window,
@@ -773,10 +1004,51 @@ pub fn run() {
             sounds::custom_sound,
             sounds::reveal_sounds_folder,
             sounds::reload_sounds,
+            calls::call_sensors,
             spotify::spotify_refresh,
             spotify::spotify_control,
             spotify::spotify_open,
             spotify::spotify_installed,
+            flow::flow_status,
+            flow::flow_set_prefs,
+            flow::flow_history,
+            flow::flow_delete,
+            flow::flow_clear,
+            flow::flow_stats,
+            flow::flow_words,
+            flow::flow_set_words,
+            flow::flow_snippets,
+            flow::flow_set_snippets,
+            flow::flow_styles,
+            flow::flow_set_styles,
+            flow::flow_running_apps,
+            flow::flow_copy,
+            flow::flow_paste_again,
+            flow::flow_models_download,
+            flow::flow_models_remove,
+            flow::pill_state,
+            flow::pill_hot,
+            flow::pill_hover,
+            flow::pill_action,
+            notes::notes_state,
+            notes::notes_start,
+            notes::notes_stop,
+            notes::notes_rename,
+            notes::notes_rename_speaker,
+            notes::notes_toggle_todo,
+            notes::notes_delete,
+            notes::notes_summarize,
+            notes::notes_retry,
+            notes::notes_markdown,
+            notes::notes_export,
+            voice::voice_done,
+            voice::voice_say_native,
+            portfolio::portfolio_status,
+            portfolio::portfolio_address_plausible,
+            portfolio::portfolio_add_exchange,
+            portfolio::portfolio_remove_exchange,
+            portfolio::portfolio_add_wallet,
+            portfolio::portfolio_remove_wallet,
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -784,8 +1056,10 @@ pub fn run() {
             tray::build(&handle)?;
             // Before the island: see create_settings_window.
             create_settings_window(&handle);
-            // Same rule for Mochi's desktop window.
+            // Same rule for Mochi's desktop window and the dictation pill.
             desktop::setup(&handle);
+            flow::setup(&handle);
+            notes::setup(&handle);
 
             if let Some(win) = island::window(&handle) {
                 // Where Tauri takes the drop itself (Linux), its paths are the
@@ -796,10 +1070,23 @@ pub fn run() {
                     }
                 });
                 platform::make_non_activating(&win);
+                // Not through the page: it may be the part that stalled.
+                let app = handle.clone();
+                platform::on_monitor_added(move || place_island(&app));
                 #[cfg(windows)]
                 webview_drop::install(&handle);
+                // Once a click or a shortcut gave the island the keyboard
+                // (takeKeyboard, island.ts), losing it means a click elsewhere:
+                // the island closes, as on Escape.
+                let blur_handle = handle.clone();
+                win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let _ = blur_handle.emit_to(island::WINDOW_LABEL, "blur", ());
+                    }
+                });
                 island::apply_geometry(&handle, &loaded.screen, false);
                 let _ = win.show();
+                platform::hide_in_full_screen(&handle, loaded.hide_in_full_screen);
             }
             gate.collapsed.store(false, Ordering::Relaxed);
             // Nothing drawn yet, so nothing takes the mouse until the page
@@ -816,7 +1103,24 @@ pub fn run() {
             phone_link::start_if_enabled(&handle);
             integrations::start(handle.clone());
             spotify::sync(&handle, &loaded.active_integrations);
+            remote::sync(&handle, &loaded.remote_hosts, &loaded.remote_client_id);
+            // The entry stores the executable's path: point it at this one, in case the app moved.
+            if loaded.autostart {
+                if let Err(err) = handle.autolaunch().enable() {
+                    log::line(format!("autostart: {err}"));
+                }
+            }
+            calls::start(handle.clone());
             shortcuts::apply(&handle, &loaded.shortcuts);
+            if loaded.autostart {
+                // Login items written before 0.5 start Coucou without --autostart:
+                // writing it again adds it, so the window stays hidden at login.
+                let _ = handle.autolaunch().enable();
+            }
+            let open_window = flow::get(&handle).map(|f| f.store.lock().unwrap().prefs.open_at_launch).unwrap_or(true);
+            if open_window && !launched_at_login() {
+                show_hub(&handle, None);
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -825,6 +1129,7 @@ pub fn run() {
             // Withdraw the phone link's announcement on the local network before the process ends.
             if let tauri::RunEvent::Exit = event {
                 phone_link::stop_on_exit(app);
+                notes::shutdown(app);
             }
         });
 }

@@ -146,8 +146,8 @@ pub async fn send(
     let key = secrets::get(KEY).ok_or_else(|| t("API key missing. Open settings."))?;
     let endpoint = endpoint()?;
 
-    let turn = chat.begin(chat::ANTHROPIC);
-    let user = json!({ "role": "user", "content": user_content(turn.first, context.as_ref(), &query) });
+    let turn = chat.begin(chat::ANTHROPIC, context.as_ref());
+    let user = json!({ "role": "user", "content": user_content(turn.attach, context.as_ref(), &query) });
     let body = request_body(model, &chat::system_prompt(true), &turn.history, &user);
 
     let response = call(&endpoint, &key, &body).await?;
@@ -155,13 +155,54 @@ pub async fn send(
 
     // Store the whole content — tool_use / tool_result blocks included — so the
     // next turn has the right context.
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, user, json!({ "role": "assistant", "content": blocks }), &plain, &text);
     Ok(ChatReply { text })
 }
 
+/// One question, one answer, no history: the dictation clean-up and the notes
+/// of a call. The text of the answer, or why there is none.
+pub async fn complete(model: &str, system: &str, user: &str, max_tokens: u32, timeout: Duration) -> Result<String, String> {
+    let key = secrets::get(KEY).ok_or_else(|| t("API key missing. Open settings."))?;
+    let endpoint = endpoint()?;
+    let body = json!({
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": [{ "role": "user", "content": user }],
+    });
+    let response = call_with_timeout(&endpoint, &key, &body, timeout).await?;
+    let text: String = response["content"]
+        .as_array()
+        .map(|blocks| blocks.iter().filter_map(|b| b["text"].as_str()).collect())
+        .unwrap_or_default();
+    if text.trim().is_empty() {
+        return Err("empty answer".into());
+    }
+    Ok(text)
+}
+
+/// One turn of « OK Coucou »'s conversation with tools: the API's whole answer
+/// (content blocks and stop_reason).
+pub async fn voice_turn(model: &str, system: &str, messages: &[Value], tools: &[Value]) -> Result<Value, String> {
+    let key = secrets::get(KEY).ok_or_else(|| t("API key missing. Open settings."))?;
+    let endpoint = endpoint()?;
+    let body = json!({
+        "model": model,
+        "max_tokens": 1024,
+        "system": system,
+        "messages": messages,
+        "tools": tools,
+    });
+    call_with_timeout(&endpoint, &key, &body, Duration::from_secs(45)).await
+}
+
 async fn call(endpoint: &Url, key: &str, body: &Value) -> Result<Value, String> {
-    let response = net::client(endpoint, Duration::from_secs(90))?
+    call_with_timeout(endpoint, key, body, Duration::from_secs(90)).await
+}
+
+async fn call_with_timeout(endpoint: &Url, key: &str, body: &Value, timeout: Duration) -> Result<Value, String> {
+    let response = net::client(endpoint, timeout)?
         .post(endpoint.clone())
         .header("x-api-key", key)
         .header("anthropic-version", ANTHROPIC_VERSION)
@@ -210,7 +251,7 @@ fn parse_models(json: &Value) -> Vec<ModelInfo> {
         .filter_map(|m| {
             let id = m.get("id")?.as_str()?.to_string();
             let label = m.get("display_name").and_then(Value::as_str).unwrap_or(&id).to_string();
-            Some(ModelInfo { id, label })
+            Some(ModelInfo { id, label, group: None })
         })
         .collect()
 }
@@ -367,8 +408,8 @@ mod tests {
         assert_eq!(
             parse_models(&list),
             vec![
-                ModelInfo { id: "claude-opus-5".into(), label: "Claude Opus 5".into() },
-                ModelInfo { id: "claude-x".into(), label: "claude-x".into() },
+                ModelInfo { id: "claude-opus-5".into(), label: "Claude Opus 5".into(), group: None },
+                ModelInfo { id: "claude-x".into(), label: "claude-x".into(), group: None },
             ]
         );
     }

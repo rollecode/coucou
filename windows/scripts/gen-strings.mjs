@@ -31,8 +31,10 @@ export const LANGUAGES = ["en", "zh-Hans", "hi", "es", "ar", "fr", "bn", "pt-BR"
  * key: the n-th specifier becomes `{names[n]}` instead of `{n}`.
  */
 const RENAMES = {
+  "%lld unread": ["count"],
   "Auto-close · %llds": ["seconds"],
   "Chat with %@": ["name"],
+  "step.background %lld": ["count"],
   "Claude is reading %@…": ["name"],
   "Connected · %@": ["detail"],
   "Key configured · %@": ["model"],
@@ -95,6 +97,10 @@ export function generate(catalog) {
       const value = readLocalization(locs[lang], names);
       if (value !== undefined) out[lang] = value;
     }
+    // Only a string translated in every language comes across. Xcode keeps every literal it finds in the catalog,
+    // brand names and placeholders like " +%@" too, with no translation; and a string still being translated on
+    // the Mac shows in English there. Either way Windows has nothing to add, and the tests below would flag it.
+    if (LANGUAGES.some((lang) => lang !== "en" && out[lang] === undefined)) continue;
     // The English plural forms are needed to pick "one" in English too.
     if (typeof en !== "string") out.en = en;
     strings[key] = out;

@@ -1,7 +1,9 @@
 // The chat, whoever answers it: the conversation, the system prompt, and which
 // provider a turn goes to. Each provider's own wire format lives in its module:
-// claude.rs (Anthropic), openai_compat.rs (OpenAI, Google AI, OpenRouter) and
-// local_chat.rs (Ollama, LM Studio, any OpenAI-compatible server).
+// claude.rs (Anthropic), openai_compat.rs (OpenAI, Google AI, OpenRouter),
+// local_chat.rs (Ollama, LM Studio, any OpenAI-compatible server) and
+// open_webui.rs (Open WebUI, which keeps the conversation in its own history),
+// claude_code.rs (the user's own Claude Code).
 //
 // API keys never leave the credential store and file bytes never cross the IPC
 // boundary: the island sends the question and gets the answer's text back.
@@ -13,7 +15,7 @@ use serde_json::{json, Value};
 use tauri::AppHandle;
 
 use crate::settings::Settings;
-use crate::{claude, local_chat, openai_compat, secrets};
+use crate::{claude, claude_code, local_chat, open_webui, openai_compat, secrets};
 
 pub const ANTHROPIC: &str = "anthropic";
 
@@ -30,12 +32,20 @@ pub struct ChatReply {
     pub text: String,
 }
 
+/// What the user's machine knows that a server can't: local date, time and
+/// timezone, as Open WebUI's own page sends them (`{{CURRENT_TIMEZONE}}`…).
+/// Only Open WebUI is given them; its filters and prompt templates read them.
+pub type PromptVariables = std::collections::BTreeMap<String, String>;
+
 /// A model a provider offers, for the picker in the chat view.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelInfo {
     pub id: String,
     pub label: String,
+    /// The picker's section: "used" or "custom" (Open WebUI only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group: Option<&'static str>,
 }
 
 // ── Conversation ──────────────────────────────────────────────────────────────
@@ -59,17 +69,37 @@ struct Conversation {
     native: Vec<Value>,
     /// `{"role", "content": text}` turns, the same whoever answered.
     plain: Vec<Value>,
+    /// The record `owner` keeps of this conversation on its side, if any.
+    thread: Option<Thread>,
+    /// The dropped file the model already has (`context_key`), so a file dropped
+    /// mid-conversation goes with the next turn and is not sent twice.
+    sent: Option<String>,
+}
+
+/// A conversation as a provider stores it (Open WebUI's chat and its latest message).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Thread {
+    pub id: String,
+    pub last: Option<String>,
 }
 
 /// What a provider needs to build one turn.
 pub struct Turn {
     epoch: u64,
     provider: String,
-    /// No earlier turn: the file or window context rides along with this one.
+    /// No earlier turn in this conversation.
     pub first: bool,
+    /// The context rides along with this turn: a file the model doesn't have
+    /// yet, or the window context on the first turn.
+    pub attach: bool,
+    context_key: Option<String>,
     /// The earlier turns, in this provider's format.
     pub history: Vec<Value>,
+    pub thread: Option<Thread>,
 }
+
+/// Turns kept as provider context. Older turns are dropped, never mid-pair.
+const MAX_TURNS: usize = 40;
 
 impl Chat {
     pub fn reset(&self) {
@@ -80,17 +110,29 @@ impl Chat {
 
     /// Starts a turn with `provider`, converting the history if another
     /// provider answered the previous turns.
-    pub fn begin(&self, provider: &str) -> Turn {
+    pub fn begin(&self, provider: &str, context: Option<&ChatContext>) -> Turn {
         let mut c = self.inner.lock().unwrap();
         if c.owner.as_deref() != Some(provider) {
             c.native = c.plain.clone();
             c.owner = Some(provider.to_string());
+            c.thread = None;
         }
-        Turn {
-            epoch: c.epoch,
-            provider: provider.to_string(),
-            first: c.plain.is_empty(),
-            history: c.native.clone(),
+        let first = c.plain.is_empty();
+        let context_key = context_key(context);
+        let attach = match context {
+            None => false,
+            Some(ChatContext::Window { .. }) => first,
+            Some(ChatContext::File { .. }) => context_key != c.sent,
+        };
+        Turn { epoch: c.epoch, provider: provider.to_string(), first, attach, context_key, history: c.native.clone(), thread: c.thread.clone() }
+    }
+
+    /// Records where the provider keeps this conversation, unless it was reset
+    /// or another provider took over since `turn` began.
+    pub fn set_thread(&self, turn: &Turn, thread: Option<Thread>) {
+        let mut c = self.inner.lock().unwrap();
+        if c.epoch == turn.epoch && c.owner.as_deref() == Some(turn.provider.as_str()) {
+            c.thread = thread;
         }
     }
 
@@ -102,10 +144,30 @@ impl Chat {
         if c.epoch != turn.epoch || c.owner.as_deref() != Some(turn.provider.as_str()) {
             return;
         }
+        if turn.attach && turn.context_key.is_some() {
+            c.sent = turn.context_key.clone();
+        }
         c.native.push(user);
         c.native.push(assistant);
         c.plain.push(json!({ "role": "user", "content": user_text }));
         c.plain.push(json!({ "role": "assistant", "content": answer }));
+        // begin() clones the whole history every turn, so an unbounded
+        // conversation is quadratic work. Both vectors grow in pairs — the
+        // drop count is even and the alignment survives.
+        if c.plain.len() > MAX_TURNS * 2 {
+            let drop = c.plain.len() - MAX_TURNS * 2;
+            c.plain.drain(..drop);
+            c.native.drain(..drop);
+        }
+    }
+}
+
+/// Identifies a dropped file by its inbox copy: every drop gets its own copy, so
+/// dropping the same file again sends it again.
+fn context_key(context: Option<&ChatContext>) -> Option<String> {
+    match context {
+        Some(ChatContext::File { path, .. }) => Some(path.clone()),
+        _ => None,
     }
 }
 
@@ -145,8 +207,8 @@ pub fn window_line(app_name: &str, title: &str, url: Option<&str>) -> String {
 }
 
 /// The plain-text record of what the user asked, context included.
-pub fn plain_question(first: bool, context: Option<&ChatContext>, query: &str) -> String {
-    match context.filter(|_| first) {
+pub fn plain_question(attach: bool, context: Option<&ChatContext>, query: &str) -> String {
+    match context.filter(|_| attach) {
         Some(ChatContext::File { name, .. }) => format!("File: {name}\n\n{query}"),
         Some(ChatContext::Window { app_name, title, url }) => {
             format!("{}\n\n{query}", window_line(app_name, title, url.as_deref()))
@@ -203,10 +265,14 @@ pub async fn send(
     settings: &Settings,
     query: String,
     context: Option<ChatContext>,
+    variables: PromptVariables,
 ) -> Result<ChatReply, String> {
     let context = context.map(checked_context).transpose()?;
     let provider = settings.chat_provider.as_str();
     let model = model_for(settings, provider);
+    if provider == claude_code::ID {
+        return claude_code::send(app, chat, settings, &model, query, context).await;
+    }
     if provider == ANTHROPIC || provider.is_empty() {
         return claude::send(chat, &model, query, context).await;
     }
@@ -214,6 +280,10 @@ pub async fn send(
         return openai_compat::send(chat, p, &model, query, context).await;
     }
     if let Some(server) = local_chat::server(settings, provider) {
+        if server.id == open_webui::ID {
+            let web_search = settings.open_webui_web_search;
+            return open_webui::send(app, chat, &server, &model, query, context, variables, web_search).await;
+        }
         return local_chat::send(app, chat, &server, &model, query, context).await;
     }
     Err(format!("Unknown chat provider: {provider}"))
@@ -247,6 +317,9 @@ pub async fn send_for_phone(
 /// address): nothing is sent anywhere before that.
 pub async fn models(settings: &Settings, provider: &str) -> Result<Vec<ModelInfo>, String> {
     let no_key = || crate::i18n::t("No API key — add it in Settings.");
+    if provider == claude_code::ID {
+        return Ok(claude_code::models());
+    }
     if provider == ANTHROPIC {
         let key = secrets::get(claude::KEY).ok_or_else(no_key)?;
         return claude::models(&key).await;
@@ -256,6 +329,9 @@ pub async fn models(settings: &Settings, provider: &str) -> Result<Vec<ModelInfo
         return openai_compat::models(p, &key).await;
     }
     if let Some(server) = local_chat::server(settings, provider) {
+        if server.id == open_webui::ID {
+            return open_webui::models(&server).await;
+        }
         return local_chat::models(&server).await;
     }
     Err(format!("Unknown chat provider: {provider}"))
@@ -275,14 +351,14 @@ mod tests {
     #[test]
     fn a_turn_is_recorded_only_once_it_succeeds() {
         let chat = Chat::default();
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(t.first);
         assert!(t.history.is_empty());
         // A failed turn records nothing: the next one is still the first.
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(t.first);
         chat.commit(&t, json!({"role":"user","content":[{"type":"text","text":"hi"}]}), json!({"role":"assistant","content":[{"type":"text","text":"hello"}]}), "hi", "hello");
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert!(!t.first);
         assert_eq!(t.history.len(), 2);
         assert!(t.history[0]["content"].is_array());
@@ -291,7 +367,7 @@ mod tests {
     #[test]
     fn switching_provider_never_sends_claude_blocks_to_another_one() {
         let chat = Chat::default();
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         let blocks = json!([
             {"type":"server_tool_use","id":"srvtoolu_1","name":"web_search","input":{"query":"x"}},
             {"type":"web_search_tool_result","tool_use_id":"srvtoolu_1","content":[]},
@@ -299,7 +375,7 @@ mod tests {
         ]);
         chat.commit(&t, json!({"role":"user","content":[{"type":"text","text":"look"}]}), json!({"role":"assistant","content":blocks}), "look", "Found it.");
 
-        let t = chat.begin("openai");
+        let t = chat.begin("openai", None);
         assert!(!t.first);
         assert_eq!(
             turn_texts(&t.history),
@@ -310,7 +386,7 @@ mod tests {
 
         // And back: Claude gets the plain turns too, including OpenAI's answer.
         chat.commit(&t, json!({"role":"user","content":"more"}), json!({"role":"assistant","content":"Sure."}), "more", "Sure.");
-        let t = chat.begin("anthropic");
+        let t = chat.begin("anthropic", None);
         assert_eq!(t.history.len(), 4);
         assert_eq!(t.history[3], json!({"role":"assistant","content":"Sure."}));
         assert!(!serde_json::to_string(&t.history).unwrap().contains("web_search"));
@@ -319,15 +395,34 @@ mod tests {
     #[test]
     fn an_answer_that_lands_after_a_reset_or_a_switch_is_dropped() {
         let chat = Chat::default();
-        let t = chat.begin("openai");
+        let t = chat.begin("openai", None);
         chat.reset();
         chat.commit(&t, json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a"}), "q", "a");
-        assert!(chat.begin("openai").first);
+        assert!(chat.begin("openai", None).first);
 
-        let t = chat.begin("openai");
-        let _other = chat.begin("google");
+        let t = chat.begin("openai", None);
+        let _other = chat.begin("google", None);
         chat.commit(&t, json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a"}), "q", "a");
-        assert!(chat.begin("google").first);
+        assert!(chat.begin("google", None).first);
+    }
+
+    #[test]
+    fn a_thread_belongs_to_one_provider_and_one_conversation() {
+        let chat = Chat::default();
+        let t = chat.begin("openwebui", None);
+        let thread = Thread { id: "c1".into(), last: Some("m2".into()) };
+        chat.set_thread(&t, Some(thread.clone()));
+        assert_eq!(chat.begin("openwebui", None).thread, Some(thread));
+        // Another provider answering drops it; so does a reset.
+        let _ = chat.begin("openai", None);
+        assert_eq!(chat.begin("openwebui", None).thread, None);
+        let t = chat.begin("openwebui", None);
+        chat.set_thread(&t, Some(Thread { id: "c2".into(), last: None }));
+        chat.reset();
+        assert_eq!(chat.begin("openwebui", None).thread, None);
+        // A turn from before the reset cannot bring it back.
+        chat.set_thread(&t, Some(Thread { id: "c2".into(), last: None }));
+        assert_eq!(chat.begin("openwebui", None).thread, None);
     }
 
     #[test]
@@ -340,6 +435,32 @@ mod tests {
         assert!(p.starts_with("You are Mochi, a personal AI assistant living at the top of the user's screen."));
         assert!(!p.contains("web search"));
         assert!(p.contains("no web access"));
+    }
+
+    #[test]
+    fn a_file_goes_with_the_next_turn_once_and_the_window_with_the_first_only() {
+        let chat = Chat::default();
+        let ok = |t: &Turn| chat.commit(t, json!({}), json!({}), "q", "a");
+        let win = ChatContext::Window { app_name: "Code".into(), title: "x".into(), url: None };
+        let t = chat.begin("anthropic", Some(&win));
+        assert!(t.attach);
+        ok(&t);
+        assert!(!chat.begin("anthropic", Some(&win)).attach);
+
+        // Dropped mid-conversation: attached, and kept for a retry until a turn succeeds.
+        let file = ChatContext::File { name: "a.pdf".into(), path: "/inbox/a.pdf".into() };
+        assert!(chat.begin("anthropic", Some(&file)).attach);
+        let t = chat.begin("openai", Some(&file));
+        assert!(t.attach);
+        ok(&t);
+        assert!(!chat.begin("openai", Some(&file)).attach);
+
+        // The same file dropped again is a new inbox copy: sent again.
+        let again = ChatContext::File { name: "a.pdf".into(), path: "/inbox/a (2).pdf".into() };
+        assert!(chat.begin("openai", Some(&again)).attach);
+
+        chat.reset();
+        assert!(chat.begin("openai", Some(&file)).attach);
     }
 
     #[test]

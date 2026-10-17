@@ -59,6 +59,7 @@ You can also [build it yourself](#build-it-yourself).
 | On the desktop: click / right-click / double-click Mochi | Poke him / the wardrobe / he flies home. Drag him to move him |
 | Drag a file onto the island | Mochi turns into a box, swallows it, then offers to answer questions about it |
 | Click a file in the session ticker | Its diff opens in the island; ↗ opens the file in VS Code, ‹ or `Esc` goes back |
+| Click a Claude Code session's card (once it has edited a file or run a command) | The code view: the turn's phases, the last edit in place with a few lines of the file around it, the last command and its last lines of output; ‹ goes back |
 | `Esc` | Closes the island |
 | Put a file named like one of Mochi's sounds (`finish.wav`, `approval.mp3`, `greet.m4a`…) in the sounds folder | It replaces that sound after **Settings → General → Reload sounds**. **Open sounds folder** shows the folder: `~/.config/coucou/sounds` on Linux, `%APPDATA%\Coucou\sounds` on Windows |
 | Tray icon | Open, Weekly recap, Wardrobe…, Settings…, Pause, Quit |
@@ -126,6 +127,34 @@ Mac: past 200 KB or 4 000 lines only the counts are kept, at most 50 diffs per
 session, and they are forgotten an hour after the last edit or when the session
 ends. When Claude finishes, the card keeps the first paragraph of its final
 answer on one line, still, until the next prompt.
+
+**Code view.** The lines around an edit are read from the file itself, and only
+from a regular file inside the session's folder, up to 2 MB; a session on another
+machine shows the edit alone. Of what a command printed, the relay forwards its
+last three lines and nothing else. Nothing opens by itself.
+
+## Flow, the Notetaker and « OK Coucou »
+
+Coucou has its own window (tray → Open, or launch Coucou again): **Flow** on the
+left (Dictation, Notetaker, Statistics, Dictionary, Snippets, Styles, Settings),
+then **Notch**, the island's settings. Everything below runs on
+[Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) through
+[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), on your CPU and offline;
+nothing is downloaded until you click **Download** (about 700 MB, once, checked
+against its SHA-256, kept in Coucou's data folder under `Models`).
+
+| What you do | What happens |
+|---|---|
+| Hold **right Ctrl** anywhere, speak, let go | Your words are pasted where you type. Pick another key in Flow → Settings: right Alt, right Shift, Ctrl + Win (Ctrl + Super on Linux) |
+| Tap the key twice | Hands-free: speak as long as you like, tap once to paste. `Esc` cancels |
+| Hover the pill at the bottom of the screen | Dictate, record a call, open Coucou. Put the pill on the left or right edge in Flow → Settings |
+| Click **Record a call** | Your microphone and what the computer plays, transcribed live, then written person by person with a summary and to-dos by Claude (your key). The audio is deleted once the transcript is written |
+| Say **« OK Coucou »**, then ask | Claude (your key) answers in the pill and out loud: pills, Spotify, your services' numbers, your agents, web search, open an app, an email prepared in your mail app. Turn it on in Notch → OK Coucou |
+
+Your voice never leaves the computer. With Claude's clean-up (Flow → Styles),
+a call's summary or « OK Coucou », the text — never the audio — goes to
+Anthropic with your key; an ElevenLabs voice for the answers sends them to
+ElevenLabs with yours.
 
 ## Your pills
 
@@ -280,6 +309,17 @@ minute while a CI is running, and as soon as you open the card on data older
 than a minute; contributions every 30 minutes. Nothing is fetched while the pill
 is off or Coucou is paused.
 
+## Portfolio
+
+**Settings… → Integrations → Portfolio** connects exchange accounts (Binance,
+OKX, Bybit, Kraken, Coinbase) with a read-only key, and self-custody wallets
+by their public address on 16 networks. **Test & Save** keeps a key only once
+a real request went through with it; the keys stay in the credential store and
+never reach the interface. The card shows each account's holdings in USD, with
+the 24 h change and a 7-day curve from Coinbase's public prices. Balances are
+read every 2 minutes, and as soon as you open the card on data older than 30
+seconds; nothing is fetched while the pill is off or Coucou is paused.
+
 ## Build it yourself
 
 You need [Rust](https://rustup.rs), [Node 20+](https://nodejs.org), and the
@@ -397,6 +437,30 @@ own window.
 
 ## What's different from the Mac version
 
+- **Flow dictation** pastes with `Ctrl+V` (`Ctrl+Shift+V` in a terminal),
+  typed by `SendInput` on Windows and XTest on X11, and puts back what the
+  clipboard held once it is pasted; clipboard history (Windows, KDE, GNOME
+  extensions) leaves the dictation out. On **Wayland** no app may watch the
+  keyboard: the desktop holds the dictation key through its GlobalShortcuts
+  portal (`Ctrl+Alt+V` unless you pick others when it asks) and the
+  RemoteDesktop portal types the paste, asked once and remembered. Desktops
+  without those portals (older GNOME) dictate from the pill's microphone and
+  leave the words on the clipboard. The Mac's fn key and Apple's own
+  recognition have no equivalent: Parakeet is the only engine.
+- **The Notetaker** records what the computer plays through WASAPI loopback on
+  Windows and the default output's monitor on Linux (PulseAudio or PipeWire).
+  The people in a call are told apart by
+  [pyannote](https://github.com/pyannote/pyannote-audio)'s segmentation and
+  3D-Speaker's voice prints, also on the CPU. Summaries are Claude's only:
+  there is no Apple Intelligence here.
+- **« OK Coucou »** listens with a small energy detector and Parakeet instead of
+  the Mac's speech recognizer, so it understands Parakeet's 25 languages.
+  Emails open in your default mail app through a `mailto:` link, with no
+  contact lookup and no attachment; « play » something on Spotify opens its
+  search rather than starting a track; apps open from the Start menu's
+  shortcuts or Linux's `.desktop` entries. The system voice is the webview's;
+  where WebKitGTK has none, `spd-say` (speech-dispatcher) or `espeak-ng`
+  speaks if installed.
 - No notch, so the island lives at the top centre of the screen and retracts into
   the top edge instead of hiding in a notch.
 - Permission approval works from **any** terminal; the Mac build only listens to
@@ -413,13 +477,32 @@ own window.
   the island, and reopened by clicking the island, Open in the tray or **Go to
   alert**.
 - Apple Music, the one pill from the Mac catalog with nothing behind it here,
-  is left out. Spotify is on Linux only (see [Linux](#linux)): Windows has
-  nothing to read it from yet.
+  is left out.
+- **Spotify** (Settings → Integrations) is read from the system media
+  controls, the session Spotify publishes for the media keys: the same pill
+  and card as on Linux (cover, progress bar, play/pause, previous, next,
+  shuffle, repeat), and Mochi dances while it plays. Nothing is polled: one
+  thread waits for the session's change events while the pill is declared.
+  The volume is Spotify's own in the Windows mixer. Works with the installer
+  from spotify.com and the Microsoft Store app; **Open Spotify** goes through
+  its `spotify:` link, and without Spotify **Get Spotify** opens its download
+  page. Windows gives no Spotify link for the track, so an ad is told apart by
+  having a title and no artist or album.
+- Settings → General → Calls reads PipeWire on Linux (`pw-dump --monitor`):
+  another app's stream on a microphone, on a PipeWire camera, or on a shared
+  screen. A camera opened directly as `/dev/video*`, outside PipeWire, is not
+  seen. Windows has nothing behind it yet, so no call is ever detected there.
 - Not in this version: sending a dropped file by email and dragging Mochi onto
   a window to attach it as context. On the Mac, email goes through Resend or
   Apple Mail's scripting; neither has a safe equivalent that attaches a file
   here, and the drop card would need a third button it doesn't have.
 - Cal.com shows the next bookings as a list rather than the Mac's calendar.
+- The Calendar pill reads a secret iCal address (Google Calendar → Settings →
+  your calendar → Integrate calendar, or any iCal link) instead of the Mac's
+  Calendar app. The address is kept in the Credential Manager or Secret
+  Service; the island only ever gets the feed.
+- Timely's running timer moves on with each poll, once a minute, rather than
+  every 30 seconds on screen.
 - The Cursor pill carries both Cursor Agent's own hooks and Claude Code running
   in Cursor's terminal.
 - Hermes: Coucou writes the plugin but does not run the `hermes` CLI, so it is
@@ -477,8 +560,7 @@ own window.
   without a restart (the Mac's **Restart Coucou** isn't needed). Arabic turns
   the island's text right to left but not its layout: Mochi and the pills keep
   their sides.
-- Mochi on the desktop dances only on Linux, to Spotify; on Windows there is
-  no music integration to dance to yet. While he dances he stays awake (the
+- Mochi on the desktop dances to Spotify. While he dances he stays awake (the
   Mac lets him doze off mid-dance). Dropping him on a window doesn't attach it
   to the chat. While he
   sleeps, the transparent square around him (120 px) takes the first mouse
@@ -520,8 +602,13 @@ What changes on Linux:
   `COUCOU_X11=0` keeps the native Wayland window, `COUCOU_DOCK=0` makes it a
   utility window instead of a dock. `COUCOU_LAYER_SHELL=0` forces the regular
   window anywhere.
+- **Mochi's eyes** follow the pointer anywhere on screen on Hyprland and on
+  driftwm (with its `cursor` IPC command); elsewhere only while it is over him.
 - **Click-through** is the window's input region, kept equal to the island
   shape, so the compositor sends every other click to what is underneath.
+- **NVIDIA**: with the proprietary driver, WebKitGTK's DMABUF renderer makes the
+  compositor kill the app on its first frame, so Coucou switches it off
+  (`WEBKIT_DISABLE_DMABUF_RENDERER=1`) unless you set that variable yourself.
 - **Mochi's eyes** follow the pointer only while it is over the island: Wayland
   gives no app the cursor position anywhere else. On the desktop, likewise,
   they follow it only while it is over him, and "the cursor is far away" (so
@@ -614,4 +701,25 @@ What changes on Linux:
     app's native window forward (an XWayland one, such as VS Code's by default,
     still can be). There, and for a session under tmux, screen or ssh, whose
     terminal is no ancestor, the folder opens in VS Code as before.
+- **Remote hosts**: Claude Code sessions on other machines show in the island
+  too. Add a host under **Settings → Remote hosts** as you would type it after
+  `ssh` (an alias from `~/.ssh/config`, `user@host` or `ssh://user@host:port`),
+  then **Install hooks…** copies the relay to `~/.local/share/coucou/bin` there
+  and merges the hooks into its `~/.claude/settings.json`, with the same diff,
+  backup and click as here. Coucou keeps `ssh -R` open to the host, forwarding
+  the relay's socket to a private one on this machine: SSH is the only
+  authentication and nothing listens on the network. The relay is a static
+  binary: it runs on any Linux host with this machine's CPU architecture. A
+  macOS host gets a Python relay instead (`coucou-hook.py`, needs `python3`).
+  Any number of computers can share a host, and the host's own Coucou keeps
+  working: each install has its own socket there, `~/.coucou/<id>.sock`, and
+  its own hook entries, which name that socket; installing or uninstalling
+  touches only those. Every Coucou attached shows the request; the first
+  answer counts, and the others' cards go once the tool has run. Approvals work as for local sessions. Open terminal brings
+  forward the session's own terminal when the host is this same machine (another
+  user through `sudo su`), else a terminal already ssh'd into the host, else a
+  new one attached to it over ssh. Connect to a host once in a
+  terminal first, so its key is known: Coucou never answers ssh's questions.
+  The Mac app has the same section (Settings → Agents → Remote hosts, not in
+  the App Store build); it copies its Python relay (`nb-hook.py`) instead.
 - No **Claude Desktop** pill: the Claude app has no Linux build.

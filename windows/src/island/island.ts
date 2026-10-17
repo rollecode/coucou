@@ -6,12 +6,14 @@ import { Bridge, IS_TAURI, onDragDrop } from "../core/bridge";
 import {
   EXPANDED_CORNER, EXPANDED_W, NOTCH_W, PANEL_H, PANEL_W,
   ROUNDED_CORNER, VIEW_LAYOUTS, botGlowColor, botGlowOpacity, botPosition, chatPromptHeight,
-  islandSize,
-  QUESTION_PICKER_H,
+  COMPACT_BOT_HALF, MINI_GRID_HALF, islandSize,
+  CHAT_MAX_H, QUESTION_PICKER_H,
   type BotEmoteName, type IslandMode, type IslandViewName,
 } from "../core/layout";
+import { planColor } from "../core/plan";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
+import { t } from "../i18n/i18n";
 import { SPOTIFY_ID, islandDances } from "../core/spotify";
 import { BotEngine, hexToRGB } from "../mochi/engine";
 import { Greeting } from "../mochi/greeting";
@@ -19,14 +21,16 @@ import { createMiniBot, pruneMiniBots, syncMiniBotStates, tickMiniBots } from ".
 import { SeasonCache, parseOutfit } from "../mochi/wardrobe";
 import { UploadCanvas } from "../upload/canvas";
 import { USC, UploadSeq } from "../upload/sequence";
-import { closePlanCard, openPlanColor, planCardOpen } from "../views/usage";
+import { linearInboxUrl } from "../views/integrations";
+import { closePlanCard, compactPlanWindows, openPlanColor, planCardOpen, refreshCodexPlanUsage } from "../views/usage";
 import { buildHeader, buildViews, type ViewActions, type ViewHost } from "../views/views";
 import { h } from "../views/dom";
 import { IslandStateMachine } from "./fsm";
 import { refreshHookPills } from "./integrations";
+import { calendarAgenda } from "./calendar";
 import { DesktopLink } from "./desktop";
 import type { ViewCommand } from "./shortcuts";
-import { DRAG_THRESHOLD } from "../mochi/desktop-logic";
+import { DRAG_THRESHOLD, gazePoint } from "../mochi/desktop-logic";
 
 const BOT_OVERHANG = 40;
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
@@ -34,6 +38,9 @@ const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
 const BOT_SIDE = 24;
 /** Same margin as the Rust hit test (src-tauri/src/island.rs). */
 const HIT_MARGIN = 14;
+
+/** Time constant of the halo's colour and opacity easing, in seconds (~0.5 s to settle). */
+const GLOW_EASE_S = 0.16;
 
 /** The three views the drop sequence owns; leaving them stops the engine. */
 const UPLOAD_VIEWS: ReadonlySet<IslandViewName> = new Set(["upload", "uploading", "choose"]);
@@ -55,8 +62,16 @@ export class Island {
   private viewsEl!: HTMLElement;
   private botCanvas!: HTMLCanvasElement;
   private botGlow!: HTMLElement;
+  /** The halo's colour (0–1 per channel) and opacity, eased toward the state's. */
+  private glowRGB: [number, number, number] = [1, 1, 1];
+  private glowAlpha = 0;
+  private glowSettled = true;
   private greetingCanvas!: HTMLCanvasElement;
   private miniGrid!: HTMLElement;
+  private compactStats!: HTMLElement;
+  /** Narrowest compact island that fits the stats beside Mochi and the mini grid; 0 without stats. */
+  private statsMinW = 0;
+  private compactCodexShown = false;
   private countdown!: HTMLElement;
   private wakeStrip!: HTMLElement;
 
@@ -108,6 +123,7 @@ export class Island {
 
   /** The next reveal from hidden makes no peek (music starting, as on macOS). */
   private silentReveal = false;
+  private launched = false;
 
   /** Drop sequence bookkeeping: last tick played, and whether the ✓ has fired. */
   private uploadTens = 0;
@@ -137,7 +153,8 @@ export class Island {
   /** The request has its answer: the card goes and the session carries on. */
   private closeApproval() {
     State.endApproval();
-    this.fsm.pinned = false;
+    // The next waiting request, if any, is on the card now and keeps the island open.
+    this.fsm.pinned = State.pendingApproval != null;
     this.setView(State.defaultView());
   }
 
@@ -186,12 +203,17 @@ export class Island {
           integration_stripe: "https://dashboard.stripe.com/payments",
           integration_notion: "https://notion.so",
           integration_calcom: "https://app.cal.com/bookings",
+          integration_calendar: calendarAgenda()?.next?.joinUrl ?? "https://calendar.google.com",
+          integration_timely: "https://app.timelyapp.com",
+          integration_betterstack: "https://uptime.betterstack.com/incidents",
         };
         if (task.id === CLAUDE_DESKTOP_ID) void Bridge.openClaudeDesktop();
         else if (task.id === "integration_claude" || task.sessionId) {
           void Bridge.openSession(task.sessionId ?? null, task.sessionCwd ?? null);
         } else if (task.id === "integration_n8n") void Bridge.openN8n();
+        else if (task.id === "integration_slack") void Bridge.slackOpenWorkspace();
         else if (task.id === SPOTIFY_ID) void Bridge.spotifyOpen();
+        else if (task.id === "integration_linear") void Bridge.openUrl(linearInboxUrl());
         else if (urls[task.id]) void Bridge.openUrl(urls[task.id]);
       },
       openUrl: (url) => {
@@ -258,6 +280,7 @@ export class Island {
     this.botCanvas = h("canvas", { id: "bot-canvas" });
     this.greetingCanvas = h("canvas", { id: "greeting-canvas" });
     this.miniGrid = h("div", { id: "mini-grid" });
+    this.compactStats = h("div", { id: "compact-stats" });
     this.countdown = h("div", { id: "countdown" });
 
     this.header = buildHeader(actions);
@@ -292,6 +315,7 @@ export class Island {
       this.botGlow,
       this.botCanvas,
       this.miniGrid,
+      this.compactStats,
       this.countdown,
     );
 
@@ -342,6 +366,7 @@ export class Island {
   }
 
   launch() {
+    this.launched = true;
     this.fsm.launch();
   }
 
@@ -422,11 +447,21 @@ export class Island {
     this.fsm.forcePetit();
   }
 
+  /** The OS window lost focus — e.g. the user clicked elsewhere on the
+   * desktop. Same guard as Escape: a pinned alert stays open either way. */
+  onBlur() {
+    if (State.mode === "expanded" && !State.isPinned) this.collapse();
+  }
+
   /** Alert from the hook server: open on this view. Pinned alerts never auto-close. */
   alert(view: IslandViewName) {
     this.fsm.pinned = State.isPinned;
     this.fsm.forceHome();
     this.expand(view);
+    // forceHome cancels the collapse timer, and one only starts again on a state
+    // change: an alert on an island that is already open, with the mouse
+    // elsewhere, would otherwise stay open for good.
+    if (!this.wasInIsland) this.fsm.mouseLeft();
   }
 
   reveal() {
@@ -504,6 +539,10 @@ export class Island {
     void Bridge.focusWindow(true);
   }
 
+  focusChat() {
+    window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
+  }
+
   /** The desktop shortcut needs a desktop Mochi: none on GNOME's Wayland. */
   canLeaveIsland(): boolean {
     return this.desktop.supported;
@@ -534,10 +573,11 @@ export class Island {
         if (State.fileDragOver) return;
         State.fileDragOver = true;
         this.engine.animateMorph(1);
-        // enterZone must run before the island expands, so the sequence is
-        // already active by the time the view becomes `upload`.
-        UploadSeq.enterZone(State.mouseInIsland.x, State.mouseInIsland.y);
+        // Open first, then start the sequence: waking a closed island passes
+        // through its default view, and leaving the drop views stops the sequence
+        // — started earlier, it would be dead before the drop (stuck "uploading").
         this.alert("upload");
+        UploadSeq.enterZone(State.mouseInIsland.x, State.mouseInIsland.y);
         break;
       }
       case "leave": {
@@ -572,8 +612,7 @@ export class Island {
     const name = path.split(/[\\/]/).pop() || "file";
     State.droppedFile = { name, path };
     State.promptContext = { kind: "file", name, path };
-    State.chatHistory = [];
-    void Bridge.chatReset();
+    // The conversation goes on: the file rides with the next question (chat.rs).
 
     UploadSeq.performDrop(State.uploadDuration);
     this.uploadTens = 0;
@@ -644,10 +683,11 @@ export class Island {
   // ── Geometry ────────────────────────────────────────────────────────────────
 
   private targetSize(): { w: number; h: number; r: number } {
-    let { w, h } = islandSize(State.mode, State.view, State.chatHistory.length);
+    let { w, h } = islandSize(State.mode, State.view, State.chatHistory.length, State.settings.compactPadding, this.statsMinW);
     if (State.mode === "expanded" && State.view === "question" && State.pendingApproval?.questions) {
       h = QUESTION_PICKER_H;
     }
+    if (State.mode === "expanded" && State.view === "prompt" && State.modelPickerOpen) h = CHAT_MAX_H;
     const r = State.mode === "expanded" ? EXPANDED_CORNER : ROUNDED_CORNER;
     return { w, h, r };
   }
@@ -676,12 +716,16 @@ export class Island {
     this.islandEl.style.transform = `translateX(-50%)`;
     // These follow the island as it resizes, so they belong here rather than in
     // the state-driven DOM sync.
-    this.miniGrid.style.left = `${w - 40 - 14.5}px`;
-    this.miniGrid.style.top = `${hh / 2 - 14.5}px`;
+    const pad = State.settings.compactPadding;
+    this.miniGrid.style.left = `${w - pad.right - 2 * MINI_GRID_HALF}px`;
+    this.miniGrid.style.top = `${pad.top + COMPACT_BOT_HALF - MINI_GRID_HALF}px`;
+    this.compactStats.style.right = `${pad.right + 2 * MINI_GRID_HALF + 10}px`;
+    this.compactStats.style.top = `${pad.top + COMPACT_BOT_HALF}px`;
     this.greetingCanvas.style.left = `${(w - EXPANDED_W) / 2}px`;
     this.uploadCanvas.el.style.left = `${(w - EXPANDED_W) / 2}px`;
 
-    const rect = { x: (PANEL_W - w) / 2, y: 0, w, h: hh };
+    const viewportW = window.innerWidth > 0 ? window.innerWidth : PANEL_W;
+    const rect = { x: (viewportW - w) / 2, y: 0, w, h: hh };
     const p = this.pushedRect;
     if (Math.abs(p.x - rect.x) > 0.5 || Math.abs(p.w - rect.w) > 0.5 || Math.abs(p.h - rect.h) > 0.5) {
       this.pushedRect = rect;
@@ -693,7 +737,8 @@ export class Island {
   private islandRect(): { x: number; y: number; w: number; h: number } {
     const w = this.width.value;
     const hh = this.height.value;
-    return { x: (PANEL_W - w) / 2, y: 0, w, h: hh };
+    const viewportW = window.innerWidth > 0 ? window.innerWidth : PANEL_W;
+    return { x: (viewportW - w) / 2, y: 0, w, h: hh };
   }
 
   // ── Window collapse (hidden → tiny wake strip, zero polling) ────────────────
@@ -733,6 +778,9 @@ export class Island {
       State.lastActivity = performance.now();
       // A click makes a hover-opened island an ordinary open one.
       this.fsm.userInteracted();
+      // Escape and a click outside need the keyboard; an alert that opens on its
+      // own never takes it, so no keystroke meant for the terminal lands here.
+      this.takeKeyboard();
       // A press on Mochi may become a drag out to the desktop.
       if (e.button === 0 && this.isBotHit(e.clientX, e.clientY)) {
         this.botPress = { x: e.clientX, y: e.clientY };
@@ -788,7 +836,11 @@ export class Island {
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && State.mode === "expanded") {
         if (State.pendingApproval) this.foldApproval();
-        else if (!State.isPinned) this.collapse();
+        else if (State.view === "code") {
+          // Back to the overview, as its ← does; a followed session stops being followed.
+          State.stopFollowing();
+          this.setView("overview");
+        } else if (!State.isPinned) this.collapse();
       }
       State.lastActivity = performance.now();
     });
@@ -818,6 +870,14 @@ export class Island {
    * until the first report, so a platform that never sends it is not gated.
    */
   private pointerInside: boolean | null = null;
+  /** Linux: the compositor's pointer in window coordinates, for Mochi's eyes. */
+  private globalPointer: { x: number; y: number } | null = null;
+
+  onGlobalPointer(x: number, y: number) {
+    this.globalPointer = { x, y };
+    // An idle island stops drawing: the eyes only move on a frame.
+    if (State.mode !== "hidden") this.ensureRunning();
+  }
 
   setPointerInside(inside: boolean) {
     this.pointerInside = inside;
@@ -960,7 +1020,7 @@ export class Island {
       this.syncDom();
     }
 
-    this.updateBotTargets();
+    this.updateBotTargets(dt);
     this.botCx.step(dt);
     this.botCy.step(dt);
     this.botSize.step(dt);
@@ -983,6 +1043,7 @@ export class Island {
     if (uploadActive) this.uploadCanvas.draw(UploadSeq.frame(), nowMs / 1000);
     this.uploadCanvas.el.classList.toggle("on", uploadActive);
     this.viewsEl.classList.toggle("hidden-by-upload", uploadActive);
+    this.contentEl.classList.toggle("upload-on", uploadActive);
 
     tickMiniBots(dt);
     // A ticker scroll that loses its frames freezes mid-way, rows overlapping.
@@ -1001,7 +1062,7 @@ export class Island {
     const busy = State.mode === "hidden"
       ? settling
       : settling ||
-        !this.botCx.settled || !this.botCy.settled || !this.botSize.settled ||
+        !this.botCx.settled || !this.botCy.settled || !this.botSize.settled || !this.glowSettled ||
         greetingActive || this.engine.busy || UploadSeq.isActive || viewAnimating;
 
     if (busy) {
@@ -1012,8 +1073,10 @@ export class Island {
     }
   };
 
-  private updateBotTargets() {
-    const p = botPosition(State.mode, State.view, this.height.value, State.uploadProgress);
+  private updateBotTargets(dt: number) {
+    const p = botPosition(
+      State.mode, State.view, this.height.value, State.uploadProgress, State.settings.compactPadding,
+    );
     this.botCx.target = p.cx;
     this.botCy.target = p.cy;
     this.botSize.target = p.diameter / 0.6;
@@ -1027,17 +1090,40 @@ export class Island {
 
     if (State.mode === "expanded" && State.view !== "uploading" && !greetingActive && !this.uploadActive && !away) {
       const d = p.diameter;
-      const color = botGlowColor(State.effectiveState);
       this.botGlow.style.display = "block";
       this.botGlow.style.width = `${d * 2.2}px`;
       this.botGlow.style.height = `${d * 2.2}px`;
       this.botGlow.style.left = `${this.botCx.value - d * 1.1}px`;
       this.botGlow.style.top = `${this.botCy.value - d * 1.1}px`;
-      this.botGlow.style.background = `radial-gradient(circle, ${color} 0%, transparent 62%)`;
-      this.botGlow.style.opacity = String(botGlowOpacity(State.effectiveState));
+      this.paintGlow(dt);
     } else {
       this.botGlow.style.display = "none";
+      // Fades in again from nothing the next time it shows.
+      this.glowAlpha = 0;
+      this.glowSettled = true;
     }
+  }
+
+  /**
+   * Eases the halo toward the colour and opacity of Mochi's state, and paints it.
+   * CSS cannot transition between two gradients (the colour would flip in one
+   * step), so this happens here, every frame, like Mochi's position does.
+   */
+  private paintGlow(dt: number) {
+    const target = hexToRGB(botGlowColor(State.effectiveState));
+    const alpha = botGlowOpacity(State.effectiveState);
+    const k = 1 - Math.exp(-dt / GLOW_EASE_S);
+    // How far from the target; colour channels count for less than opacity.
+    let off = Math.abs(alpha - this.glowAlpha);
+    this.glowAlpha += (alpha - this.glowAlpha) * k;
+    for (let i = 0; i < 3; i++) {
+      off = Math.max(off, Math.abs(target[i] - this.glowRGB[i]) * 0.4);
+      this.glowRGB[i] += (target[i] - this.glowRGB[i]) * k;
+    }
+    this.glowSettled = off < 0.004;
+    const [r, g, b] = this.glowRGB.map((c) => Math.round(c * 255));
+    this.botGlow.style.background = `radial-gradient(circle, rgb(${r},${g},${b}) 0%, transparent 62%)`;
+    this.botGlow.style.opacity = this.glowAlpha.toFixed(3);
   }
 
   private drawBot(dt: number) {
@@ -1046,15 +1132,18 @@ export class Island {
     const hCss = w + BOT_OVERHANG;
     const wCss = w + BOT_SIDE * 2;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (this.canvasPx !== w) {
+    // The canvas only grows: WebKitGTK leaves a shrunk canvas's old pixels on screen.
+    if (w > this.canvasPx) {
       this.canvasPx = w;
-      this.botCanvas.width = Math.round(wCss * dpr);
-      this.botCanvas.height = Math.round(hCss * dpr);
-      this.botCanvas.style.width = `${wCss}px`;
-      this.botCanvas.style.height = `${hCss}px`;
+      this.botCanvas.width = Math.round((w + BOT_SIDE * 2) * dpr);
+      this.botCanvas.height = Math.round((w + BOT_OVERHANG) * dpr);
+      this.botCanvas.style.width = `${w + BOT_SIDE * 2}px`;
+      this.botCanvas.style.height = `${w + BOT_OVERHANG}px`;
     }
-    this.botCanvas.style.left = `${this.botCx.value - wCss / 2}px`;
-    this.botCanvas.style.top = `${this.botCy.value - BOT_OVERHANG / 2 - hCss / 2}px`;
+    const cw = this.canvasPx + BOT_SIDE * 2;
+    const ch = this.canvasPx + BOT_OVERHANG;
+    this.botCanvas.style.left = `${this.botCx.value - cw / 2}px`;
+    this.botCanvas.style.top = `${this.botCy.value - BOT_OVERHANG / 2 - ch / 2}px`;
 
     const ctx = this.botCanvas.getContext("2d");
     if (!ctx) return;
@@ -1098,8 +1187,9 @@ export class Island {
     }));
 
     this.engine.update(dt);
-    ctx.setTransform(dpr, 0, 0, dpr, BOT_SIDE * dpr, 0);
-    ctx.clearRect(-BOT_SIDE, 0, wCss, hCss);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.botCanvas.width, this.botCanvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, ((cw - wCss) / 2 + BOT_SIDE) * dpr, ((ch - hCss) / 2) * dpr);
     ctx.save();
     this.engine.applyDance(ctx, w, hCss);
     this.engine.draw(ctx, w, hCss);
@@ -1110,11 +1200,15 @@ export class Island {
   private lookX(): number {
     const rect = this.islandRect();
     const botScreenX = rect.x + this.botCx.value;
-    return Math.tanh((State.mouse.x - botScreenX) / 260);
+    return Math.tanh((this.lookTarget().x - botScreenX) / 260);
   }
 
   private lookY(): number {
-    return -Math.tanh((State.mouse.y - this.botCy.value) / 200);
+    return -Math.tanh((this.lookTarget().y - this.botCy.value) / 200);
+  }
+
+  private lookTarget(): { x: number; y: number } {
+    return gazePoint(State.mouse, this.globalPointer, this.pointerInside === true);
   }
 
   private updateCountdown(nowMs: number) {
@@ -1159,16 +1253,12 @@ export class Island {
       if (on) view.sync();
     }
 
-    // The chat is the only view with a text field, so it is the only time the
-    // island is allowed to take keyboard focus.
+    // The chat takes the keyboard for its text field (a click already has).
     if (this.lastSyncedView !== State.view) {
-      const wasChat = this.lastSyncedView === "prompt";
       this.lastSyncedView = State.view;
       if (State.view === "prompt") {
-        void Bridge.focusWindow(true);
-        window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
-      } else if (wasChat) {
-        void Bridge.focusWindow(false);
+        this.takeKeyboard();
+        this.focusChat();
       }
     }
 
@@ -1176,7 +1266,7 @@ export class Island {
     const showGrid = State.mode === "compact";
     this.miniGrid.style.opacity = showGrid ? "1" : "0";
     if (showGrid) {
-      const others = State.otherTasks.slice(0, 4);
+      const others = State.othersByActivity.slice(0, 4);
       const key = others.map((t) => t.id).join("|");
       if (this.miniGrid.dataset.key !== key) {
         this.miniGrid.dataset.key = key;
@@ -1188,6 +1278,34 @@ export class Island {
       }
     }
 
+    // Compact stats: agent session count beside Mochi, plan % beside the mini grid
+    // (the last text stays while it fades out).
+    const count = showGrid && State.settings.compactShowAgents ? State.tasks.filter((t) => t.source !== "n8n" && (!State.settings.compactAgentsWorkingOnly || t.state !== "idle")).length : 0;
+    const windows = showGrid ? compactPlanWindows() : [];
+    if (count || windows.length) {
+      this.compactStats.replaceChildren(
+        ...(count ? [statRow([[State.settings.compactAgentsNumberOnly ? "" : t("Agents"), String(count), null]])] : []),
+        ...(windows.length ? [statRow(windows.map((w) => [w.label, `${Math.round(w.pct)}%`, planColor(w.pct)]))] : []),
+      );
+    }
+    this.compactStats.style.opacity = count || windows.length ? "1" : "0";
+    // Mochi and the mini grid with their gaps, wherever the padding puts them.
+    const pad = State.settings.compactPadding;
+    const sides = pad.left + 2 * COMPACT_BOT_HALF + 8 + pad.right + 2 * MINI_GRID_HALF + 10;
+    const statsMinW = count || windows.length ? Math.ceil(this.compactStats.offsetWidth) + sides : 0;
+    if (statsMinW !== this.statsMinW) {
+      this.statsMinW = statsMinW;
+      if (State.mode === "compact") {
+        this.animateGeometry(false);
+      }
+    }
+    // Codex is asked when the compact island comes into view, as by its pill.
+    const codexShown = showGrid && State.settings.showCodexPlanInNotch;
+    if (codexShown && !this.compactCodexShown) {
+      refreshCodexPlanUsage();
+    }
+    this.compactCodexShown = codexShown;
+
     syncMiniBotStates(State.tasks);
     this.engine.setState(State.effectiveState);
   }
@@ -1198,7 +1316,33 @@ export class Island {
     Sound.setVolume(State.settings.soundVolume);
     this.fsm.homeToPetitDelay = State.settings.autoCloseInterval;
     this.fsm.openOnHover = State.settings.openOnHover;
+    this.animateGeometry(false);
+    this.applyAutoHide(State.settings.autoHide);
+    this.syncCall();
     State.notify();
+  }
+
+  /** Before launch the greeting shows the island anyway. */
+  private applyAutoHide(on: boolean) {
+    if (on === this.fsm.autoHide) return;
+    this.fsm.autoHide = on;
+    if (!this.launched) return;
+    if (!on && !State.paused) this.fsm.reveal();
+    // Cancels the countdown to hidden, or starts it again once the setting is off.
+    if (this.fsm.state === "petit" && !this.wasInIsland) this.fsm.mouseLeft();
+  }
+
+  /** A call started: the island goes away, a card waiting for an answer excepted. Ended: back, folded. */
+  syncCall() {
+    const on = State.inCall;
+    if (on === this.fsm.paused) return;
+    this.fsm.paused = on;
+    Sound.quiet = on;
+    if (on) {
+      if (!State.pendingApproval) this.fsm.forceHidden();
+    } else if (State.mode === "hidden" && State.tasks.length > 0) {
+      this.revealSilently();
+    }
   }
 
   get panelSize() {
@@ -1208,4 +1352,17 @@ export class Island {
   get chatHeight() {
     return chatPromptHeight(State.chatHistory.length);
   }
+}
+
+/** One right-aligned compact stats line: grey labels, each followed by its value. */
+function statRow(items: [label: string, value: string, color: string | null][]): HTMLElement {
+  const row = h("div", { class: "cs-row" });
+  items.forEach(([label, value, color], i) => {
+    if (i) row.append(h("span", { class: "cs-sep", text: "·" }));
+    if (label) {
+      row.append(h("span", { text: label }));
+    }
+    row.append(h("b", { class: label ? "" : "alone", text: value, style: color ? `color:${color}` : "" }));
+  });
+  return row;
 }

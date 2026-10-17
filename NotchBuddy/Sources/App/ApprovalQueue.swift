@@ -21,6 +21,11 @@ struct QueuedApproval: Equatable, Sendable {
     /// Host app / bundle id of the session, so the card's pill keeps showing where it runs.
     var hostApp: String? = nil
     var bundleId: String = ""
+    /// The session's terminal (Open terminal), and whether it is Coucou's own chat (no pill rename).
+    var tty: String = ""
+    var isChat: Bool = false
+    /// When the request arrived (for the log: how long it waited).
+    var received = Date()
 }
 
 struct ApprovalQueue: Sendable {
@@ -81,5 +86,27 @@ struct ApprovalQueue: Sendable {
         default:
             return []
         }
+    }
+}
+
+/// Ignores clicks on the approval card for a moment after a new request takes its place:
+/// a double-click meant for the previous request must not answer the next. Same rule as
+/// the Windows and Linux card (CLICK_GUARD_MS).
+struct ClickGuard: Sendable {
+    static let delay: TimeInterval = 0.6
+
+    private var shownFor: UUID?
+    private var shownAt: TimeInterval = 0
+
+    /// Notes the request on the card at `now`; the clock restarts only when it changes.
+    mutating func show(_ id: UUID?, at now: TimeInterval) {
+        guard id != shownFor else { return }
+        shownFor = id
+        shownAt = now
+    }
+
+    /// Whether a click at `now` may answer `id`.
+    func accepts(_ id: UUID, at now: TimeInterval) -> Bool {
+        id == shownFor && now - shownAt >= Self.delay
     }
 }

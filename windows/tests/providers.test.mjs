@@ -4,18 +4,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  PROVIDERS, activeModel, isLoopbackHost, pickModel, providerDef, urlExposure, visibleProviders, withModel,
+  PROVIDERS, SERVER_KEYS, activeModel, claudeCodeLabel, promptVariables, isLoopbackHost, pickModel, providerDef, urlExposure, visibleProviders, withModel,
 } from "../src/core/providers.ts";
 import { DEFAULT_SETTINGS } from "../src/core/state.ts";
 
 const settings = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
 
 test("the ids and key names match the Rust side and the Mac", () => {
-  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "google", "openai", "openrouter", "ollama", "lmstudio", "custom"]);
+  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "ollama", "lmstudio", "custom", "openwebui"]);
+  assert.equal(providerDef("claudecode").key, null);
   assert.equal(providerDef("google").key, "google-api-key");
   assert.equal(providerDef("openai").key, "openai-api-key");
   assert.equal(providerDef("openrouter").key, "openrouter-api-key");
+  assert.equal(providerDef("deepseek").key, "deepseek-api-key");
+  assert.equal(providerDef("qwen").key, "qwen-api-key");
+  assert.equal(providerDef("moonshot").key, "moonshot-api-key");
   assert.equal(providerDef("ollama").key, null);
+  // Keys bound to a server address: local_chat.rs CUSTOM_KEY, open_webui.rs KEY.
+  assert.deepEqual(SERVER_KEYS, { custom: "openai-compatible-key", openwebui: "open-webui-key" });
   // An unknown id (an older or newer settings.json) falls back to Claude.
   assert.equal(providerDef("nope").id, "anthropic");
 });
@@ -36,9 +42,17 @@ test("Claude's model is the existing setting; the others are kept per provider",
 
 test("model servers show in the picker once connected, or while in use", () => {
   const ids = (s) => visibleProviders(s).map((p) => p.id);
-  assert.deepEqual(ids(settings()), ["anthropic", "google", "openai", "openrouter"]);
-  assert.deepEqual(ids(settings({ ollamaUrl: "http://127.0.0.1:11434" })), ["anthropic", "google", "openai", "openrouter", "ollama"]);
-  assert.deepEqual(ids(settings({ chatProvider: "custom" })), ["anthropic", "google", "openai", "openrouter", "custom"]);
+  const always = ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot"];
+  assert.deepEqual(ids(settings()), always);
+  assert.deepEqual(ids(settings({ ollamaUrl: "http://127.0.0.1:11434" })), [...always, "ollama"]);
+  assert.deepEqual(ids(settings({ chatProvider: "custom" })), [...always, "custom"]);
+});
+
+test("Claude Code's button names its model and effort", () => {
+  const cc = (over) => claudeCodeLabel(settings({ chatProvider: "claudecode", ...over }));
+  assert.equal(cc({}), "Claude Code");
+  assert.equal(cc({ claudeCodeEffort: "high" }), "Claude Code · high");
+  assert.equal(cc({ chatModels: { claudecode: "opus" }, claudeCodeEffort: "max" }), "opus · max");
 });
 
 test("the saved model is kept when offered, else a sensible one is picked", () => {
@@ -71,4 +85,13 @@ test("an address says whether what you type leaves this computer", () => {
   assert.equal(urlExposure("ftp://example.com"), "invalid");
   assert.equal(urlExposure("http://user:pw@example.com"), "invalid");
   assert.equal(urlExposure("http://"), "invalid");
+});
+
+test("template variables are local time in Open WebUI's formats", () => {
+  const v = promptVariables(new Date(2026, 9, 10, 8, 5, 3));
+  assert.equal(v["{{CURRENT_DATETIME}}"], "2026-10-10 08:05:03");
+  assert.equal(v["{{CURRENT_DATE}}"], "2026-10-10");
+  assert.equal(v["{{CURRENT_TIME}}"], "08:05:03");
+  assert.equal(v["{{CURRENT_WEEKDAY}}"], "Saturday");
+  assert.ok(v["{{CURRENT_TIMEZONE}}"].length > 0);
 });

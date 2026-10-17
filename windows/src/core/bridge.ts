@@ -8,6 +8,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
+import type { ExchangeId, PortfolioStatus, WalletKind } from "./portfolio";
 
 export const IS_TAURI =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -20,6 +21,16 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T |
     console.error(`[coucou] ${cmd} failed`, err);
     return null;
   }
+}
+
+/** The lines around an edit, read from the file itself (see snippet.rs). */
+export interface Snippet {
+  /** Line number (1-based) of `lines[0]`. */
+  start: number;
+  lines: string[];
+  /** Where the edited block begins in `lines`, and how many lines it spans. */
+  at: number;
+  len: number;
 }
 
 export interface BootInfo {
@@ -199,6 +210,7 @@ export const Bridge = {
   focusWindow: (focused: boolean) => call<void>("focus_window", { focused }),
 
   reposition: () => call<void>("reposition"),
+  fitZoom: (dpr: number) => call<boolean>("fit_zoom", { dpr }),
 
   /** Displays the island can be pinned to: `key` is what `settings.screen` stores. */
   listMonitors: () => call<{ key: string; label: string }[]>("list_monitors"),
@@ -222,6 +234,10 @@ export const Bridge = {
    */
   openSession: (sessionId: string | null, path: string | null) =>
     call<boolean>("open_session", { sessionId, path }),
+
+  /** The lines around an edit, read from the file (null: unreadable, outside the session folder, not found). */
+  fileSnippet: (cwd: string, path: string, find: string, context: number) =>
+    call<Snippet>("file_snippet", { cwd, path, find, context }),
 
   /** The Claude desktop app, for the Claude Desktop pill (Windows only). */
   openClaudeDesktop: () => call<boolean>("open_claude_desktop"),
@@ -248,6 +264,15 @@ export const Bridge = {
    */
   hooksApply: (install: boolean, fingerprint: string) =>
     callOrThrow<string>("hooks_apply", { install, fingerprint }),
+
+  // ── Remote hosts (Claude Code over SSH, Linux) ────────────────────────────
+  remoteStatus: () => call<RemoteStatus[]>("remote_status"),
+  /** Same rules as hooksPreview, for ~/.claude/settings.json on `host`. */
+  remotePreview: (host: string, install: boolean) =>
+    callOrThrow<HookPreview>("remote_preview", { host, install }),
+  /** Same rules as hooksApply; installing also puts the relay on the host. */
+  remoteApply: (host: string, install: boolean, fingerprint: string) =>
+    callOrThrow<string>("remote_apply", { host, install, fingerprint }),
 
   // ── Other agents (Gemini CLI, Codex, Cursor…) ─────────────────────────────
   agentHooksList: () => call<AgentHookStatus[]>("agent_hooks_list"),
@@ -327,19 +352,22 @@ export const Bridge = {
 
   // ── Chat, files, secrets ──────────────────────────────────────────────────
   /** One chat turn. The API key and any file bytes never leave Rust. */
-  chatSend: (query: string, context: ChatContext | null) =>
-    callOrThrow<{ text: string }>("chat_send", { query, context }),
+  chatSend: (query: string, context: ChatContext | null, variables: Record<string, string> = {}) =>
+    callOrThrow<{ text: string }>("chat_send", { query, context, variables }),
   chatReset: () => call<void>("chat_reset"),
+  /** The Claude Code sessions running now (Linux), for their pills before any event. */
+  claudeSessions: () => call<{ pid: number; cwd: string; name: string }[]>("claude_sessions"),
   /**
    * The models a provider offers, for the picker in the chat view. Rust asks
    * the provider only when it has a key (or a server address).
    */
   chatModels: (provider: string) => callOrThrow<ModelInfo[]>("chat_models", { provider }),
   /** Settings → Local models → Connect: does the server answer, and with which models? */
-  /** The custom server's key, bound to the address it is entered for. */
-  localSetKey: (url: string, key: string) => call<void>("local_set_key", { url, key }),
+  /** A server's key (custom, Open WebUI), bound to the address it is entered for. */
+  localSetKey: (provider: "custom" | "openwebui", url: string, key: string) =>
+    call<void>("local_set_key", { provider, url, key }),
 
-  localConnect: (provider: "ollama" | "lmstudio" | "custom", url: string) =>
+  localConnect: (provider: "ollama" | "lmstudio" | "custom" | "openwebui", url: string) =>
     callOrThrow<LocalServer>("local_connect", { provider, url }),
   /** Copies a dropped file into the inbox. */
   ingestFile: (path: string) => callOrThrow<DroppedFile>("ingest_file", { path }),
@@ -354,9 +382,20 @@ export const Bridge = {
   githubRefresh: (section: "pulse" | "activity") => call<void>("github_refresh", { section }),
   /** Opens the configured n8n instance in the browser. */
   openN8n: () => call<void>("open_n8n"),
+  /** Opens Timely's consent page; false when no client ID is stored. */
+  timelyAuthorize: () => call<boolean>("timely_authorize"),
+  /** Trades the code Timely showed for tokens. */
+  timelyConnect: (code: string) => callOrThrow<void>("timely_connect", { code }),
+  timelyDisconnect: () => call<void>("timely_disconnect"),
+  /** A Slack conversation in the Slack app, else in the browser. */
+  slackOpen: (channel: string, permalink: string | null) => call<void>("slack_open", { channel, permalink }),
+  /** The Slack app, else the workspace in the browser. */
+  slackOpenWorkspace: () => call<void>("slack_open_workspace"),
 
   /** Tray → Pause. Stops the integration pollers, not just the island. */
   setPaused: (paused: boolean) => call<void>("set_paused", { paused }),
+  /** `cam`, `mic`, `scr` held by another app (calls.rs); updates come as "call-sensors". */
+  callSensors: () => call<string[]>("call_sensors"),
 
   // ── Global shortcuts ──────────────────────────────────────────────────────
   /** How each global shortcut went when Rust last registered them. */
@@ -398,7 +437,7 @@ export const Bridge = {
   /** Asleep, the cursor poll stops. */
   desktopSetAsleep: (asleep: boolean) => call<void>("desktop_mochi_set_asleep", { asleep }),
 
-  // ── Spotify (src-tauri/src/spotify.rs, Linux) ─────────────────────────────
+  // ── Spotify (src-tauri/src/spotify.rs) ────────────────────────────────────
   /** Reads the player again (the card came on screen) and reports it. */
   spotifyRefresh: () => call<SpotifyState | null>("spotify_refresh"),
   /** True when Spotify took it. `value`: seconds for seek, 0/1 for shuffle and repeat, 0…100 for volume. */
@@ -408,6 +447,20 @@ export const Bridge = {
   spotifyOpen: () => call<boolean>("spotify_open"),
   /** Whether there is a Spotify to launch (Settings). */
   spotifyInstalled: () => call<boolean>("spotify_installed"),
+
+  // ── Portfolio (src-tauri/src/portfolio.rs) ────────────────────────────────
+  portfolioStatus: () => call<PortfolioStatus>("portfolio_status"),
+  portfolioAddressPlausible: (kind: WalletKind, address: string) =>
+    call<boolean>("portfolio_address_plausible", { kind, address }),
+  /** Test & Save: rejects with the exchange's error; the keys are kept only when the test went through. */
+  portfolioAddExchange: (exchange: ExchangeId, key: string, secret: string, passphrase: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_exchange", { exchange, key, secret, passphrase }),
+  portfolioRemoveExchange: (exchange: ExchangeId) =>
+    callOrThrow<PortfolioStatus>("portfolio_remove_exchange", { exchange }),
+  /** Verify & Save: the address is kept once its balance could be read. */
+  portfolioAddWallet: (kind: WalletKind, address: string, label: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_wallet", { kind, address, label }),
+  portfolioRemoveWallet: (address: string) => callOrThrow<PortfolioStatus>("portfolio_remove_wallet", { address }),
 };
 
 export type SpotifyAction = "playPause" | "next" | "previous" | "seek" | "shuffle" | "repeat" | "volume";
@@ -462,6 +515,8 @@ export type ChatContext =
 export interface ModelInfo {
   id: string;
   label: string;
+  /** The picker's section (Open WebUI): its most used models, its workspace models. */
+  group?: "used" | "custom";
 }
 
 export interface LocalServer {
@@ -510,6 +565,13 @@ export interface AgentHookPlan {
   fingerprint: string;
 }
 
+export interface RemoteStatus {
+  host: string;
+  state: "connecting" | "connected" | "error";
+  /** ssh's own words when it failed. */
+  error: string;
+}
+
 export interface HookPreview {
   diff: string;
   backup: string;
@@ -528,7 +590,8 @@ export type BridgeEvent =
   | { name: "cursor"; payload: { x: number; y: number } }
   | { name: "tray"; payload: string }
   | { name: "hook"; payload: Record<string, unknown> }
-  | { name: "screen-changed"; payload: null };
+  | { name: "screen-changed"; payload: null }
+  | { name: "blur"; payload: null };
 
 export interface DragDropPayload {
   type: "enter" | "over" | "drop" | "leave";
