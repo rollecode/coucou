@@ -18,7 +18,7 @@ use std::sync::Mutex;
 
 use gtk::glib::translate::ToGlibPtr;
 use gtk::prelude::*;
-use tauri::{AppHandle, WebviewWindow};
+use tauri::{AppHandle, Manager, WebviewWindow};
 
 use super::{home_dir, LocalTime};
 
@@ -630,6 +630,19 @@ fn start_pointer_watch() {
         }
         gtk::glib::ControlFlow::Continue
     });
+}
+
+/// Settings → General → Hide in full screen: the top layer, which a full-screen
+/// window covers, instead of the overlay above everything. A regular window (X11,
+/// GNOME) is a dock or keep-above window, which a focused full-screen window covers anyway.
+pub fn hide_in_full_screen(app: &AppHandle, on: bool) {
+    if !LAYER_SURFACE.load(Ordering::Relaxed) {
+        return;
+    }
+    let Some(win) = app.get_webview_window(crate::island::WINDOW_LABEL) else { return };
+    let Ok(gw) = win.gtk_window() else { return };
+    let layer = if on { layer::LAYER_TOP } else { layer::LAYER_OVERLAY };
+    unsafe { layer::gtk_layer_set_layer(gtk_window_ptr(&gw), layer) };
 }
 
 /// Puts the layer surface on the display whose logical origin is (`x`, `y`).

@@ -2587,6 +2587,17 @@
    "ru": "Скрыть через",
    "id": "Sembunyikan setelah"
   },
+  "Hide in full screen": {
+   "zh-Hans": "全屏时隐藏",
+   "hi": "फ़ुल स्क्रीन में छिपाएँ",
+   "es": "Ocultar en pantalla completa",
+   "ar": "إخفاء في وضع ملء الشاشة",
+   "fr": "Masquer en plein écran",
+   "bn": "পূর্ণ স্ক্রিনে লুকান",
+   "pt-BR": "Ocultar em tela cheia",
+   "ru": "Скрывать в полноэкранном режиме",
+   "id": "Sembunyikan saat layar penuh"
+  },
   "Hide project names in shared images": {
    "zh-Hans": "在分享图片中隐藏项目名称",
    "hi": "साझा छवियों में प्रोजेक्ट नाम छुपाएं",
@@ -6282,6 +6293,17 @@
    "pt-BR": "A ilha se esconde e fica em silêncio enquanto um destes está em uso. Lido dos indicadores de câmera, microfone e tela da barra de menus.",
    "ru": "Остров скрывается и молчит, пока что-то из этого используется. Читается из индикаторов камеры, микрофона и экрана в строке меню.",
    "id": "Pulau bersembunyi dan diam selama salah satunya digunakan. Dibaca dari indikator kamera, mikrofon, dan layar di bilah menu."
+  },
+  "The island steps aside while a full-screen app, a game or a video, fills its display.": {
+   "zh-Hans": "当全屏应用（游戏或视频）占满其所在屏幕时，岛会让开。",
+   "hi": "जब कोई फ़ुल-स्क्रीन ऐप, गेम या वीडियो उसकी स्क्रीन भर देता है, तब आइलैंड हट जाता है।",
+   "es": "La isla se aparta mientras una app a pantalla completa, un juego o un vídeo, ocupa su pantalla.",
+   "ar": "تتنحى الجزيرة جانبًا بينما يملأ تطبيق بملء الشاشة، كلعبة أو فيديو، شاشتها.",
+   "fr": "L'île s'efface tant qu'une app en plein écran, un jeu ou une vidéo, occupe son écran.",
+   "bn": "পূর্ণ স্ক্রিনের কোনো অ্যাপ, গেম বা ভিডিও ডিসপ্লে ভরে রাখলে আইল্যান্ড সরে যায়।",
+   "pt-BR": "A ilha sai do caminho enquanto um app em tela cheia, um jogo ou um vídeo, ocupa a tela.",
+   "ru": "Остров убирается, пока полноэкранное приложение, игра или видео, занимает его экран.",
+   "id": "Pulau menyingkir selama aplikasi layar penuh, game atau video, memenuhi layarnya."
   },
   "The keys that open the notch and its actions.": {
    "zh-Hans": "打开刘海及其操作的按键。",

@@ -35,6 +35,8 @@ pub struct Settings {
     pub follow_activity: bool,
     /// While following, new activity opens the island on that agent's card.
     pub expand_on_activity: bool,
+    /// The island steps aside while a full-screen app fills its display. Off by default.
+    pub hide_in_full_screen: bool,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
     /// The always-on workspace pill (src/core/pills.ts checks it is one).
@@ -192,6 +194,7 @@ impl Default for Settings {
             expand_on_alert: Vec::new(),
             follow_activity: false,
             expand_on_activity: false,
+            hide_in_full_screen: false,
             absence_interval: 180.0,
             active_integrations: vec![
                 "integration_resend".into(),
@@ -514,6 +517,7 @@ mod tests {
   "expandOnAlert": ["agentFinished", "integration_vercel"],
   "followActivity": true,
   "expandOnActivity": true,
+  "hideInFullScreen": true,
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
   "mainPill": "agent_cursor",
@@ -1040,6 +1044,7 @@ mod tests {
                 "expandOnAlert",
                 "followActivity",
                 "expandOnActivity",
+                "hideInFullScreen",
                 "absenceInterval",
                 "activeIntegrations",
                 "mainPill",

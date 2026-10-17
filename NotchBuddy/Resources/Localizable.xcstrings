@@ -391,6 +391,70 @@
         }
       }
     },
+    "Hide in full screen" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إخفاء في وضع ملء الشاشة"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "পূর্ণ স্ক্রিনে লুকান"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide in full screen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar en pantalla completa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer en plein écran"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फ़ुल स्क्रीन में छिपाएँ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sembunyikan saat layar penuh"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar em tela cheia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрывать в полноэкранном режиме"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全屏时隐藏"
+          }
+        }
+      }
+    },
     "No detail available." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -582,6 +646,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "回答过长，已被截断。"
+          }
+        }
+      }
+    },
+    "The island steps aside while a full-screen app, a game or a video, fills its display." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تتنحى الجزيرة جانبًا بينما يملأ تطبيق بملء الشاشة، كلعبة أو فيديو، شاشتها."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "পূর্ণ স্ক্রিনের কোনো অ্যাপ, গেম বা ভিডিও ডিসপ্লে ভরে রাখলে আইল্যান্ড সরে যায়।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The island steps aside while a full-screen app, a game or a video, fills its display."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La isla se aparta mientras una app a pantalla completa, un juego o un vídeo, ocupa su pantalla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'île s'efface tant qu'une app en plein écran, un jeu ou une vidéo, occupe son écran."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जब कोई फ़ुल-स्क्रीन ऐप, गेम या वीडियो उसकी स्क्रीन भर देता है, तब आइलैंड हट जाता है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulau menyingkir selama aplikasi layar penuh, game atau video, memenuhi layarnya."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ilha sai do caminho enquanto um app em tela cheia, um jogo ou um vídeo, ocupa a tela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Остров убирается, пока полноэкранное приложение, игра или видео, занимает его экран."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当全屏应用（游戏或视频）占满其所在屏幕时，岛会让开。"
           }
         }
       }

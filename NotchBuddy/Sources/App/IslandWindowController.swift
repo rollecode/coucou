@@ -20,6 +20,7 @@ final class IslandWindowController: NSWindowController {
     private var openOnHoverSubscription: AnyCancellable?
     private var autoHideSubscription: AnyCancellable?
     private var callSubscription: AnyCancellable?
+    private var fullScreenSubscription: AnyCancellable?
 
     // Confused recovery timer (set by handleDizzy)
     private var confusedRecoveryTimer: DispatchWorkItem?
@@ -305,6 +306,15 @@ final class IslandWindowController: NSWindowController {
         }
         callSubscription = state.$inCall.dropFirst().removeDuplicates().sink { [weak self] on in
             DispatchQueue.main.async { self?.pauseForCall(on) }
+        }
+        // A panel without .fullScreenAuxiliary is left out of full-screen Spaces.
+        fullScreenSubscription = state.$hideInFullScreen.sink { [weak self] hide in
+            guard let panel = self?.window else { return }
+            if hide {
+                panel.collectionBehavior.remove(.fullScreenAuxiliary)
+            } else {
+                panel.collectionBehavior.insert(.fullScreenAuxiliary)
+            }
         }
 
         fsm.onTransition = { [weak self] from, to in

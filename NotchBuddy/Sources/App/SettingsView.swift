@@ -399,6 +399,8 @@ struct SettingsView: View {
                 ForEach(PillCatalog.available.filter { AlertExpansion.pills.contains($0.id) }, id: \.id) { def in
                     Toggle(def.name, isOn: alertBinding(def.id))
                 }
+                Toggle("Hide in full screen", isOn: $state.hideInFullScreen)
+                    .help("The island steps aside while a full-screen app, a game or a video, fills its display.")
                 HStack(spacing: 8) {
                     Text("Close after")
                     TextField("60", value: $state.autoCloseInterval, format: .number)
