@@ -33,6 +33,8 @@ pub const KNOWN_KEYS: &[&str] = &[
     "betterstack-token",
     "betterstack-team",
     "linear-api-key",
+    // « OK Coucou »'s answers in an ElevenLabs voice.
+    "elevenlabs-api-key",
 ];
 
 fn entry(key: &str) -> Option<Entry> {

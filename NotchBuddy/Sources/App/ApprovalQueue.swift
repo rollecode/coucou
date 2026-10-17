@@ -24,6 +24,8 @@ struct QueuedApproval: Equatable, Sendable {
     /// The session's terminal (Open terminal), and whether it is Coucou's own chat (no pill rename).
     var tty: String = ""
     var isChat: Bool = false
+    /// When the request arrived (for the log: how long it waited).
+    var received = Date()
 }
 
 struct ApprovalQueue: Sendable {
