@@ -419,6 +419,8 @@ mod layer {
         pub fn gtk_layer_set_anchor(window: *mut GtkWindow, edge: c_int, anchor: c_int);
         pub fn gtk_layer_set_margin(window: *mut GtkWindow, edge: c_int, margin: c_int);
         pub fn gtk_layer_set_monitor(window: *mut GtkWindow, monitor: *mut gtk::gdk::ffi::GdkMonitor);
+        pub fn gtk_layer_get_monitor(window: *mut GtkWindow) -> *mut gtk::gdk::ffi::GdkMonitor;
+        pub fn gtk_layer_is_layer_window(window: *mut GtkWindow) -> c_int;
         pub fn gtk_layer_set_exclusive_zone(window: *mut GtkWindow, zone: c_int);
         pub fn gtk_layer_set_keyboard_mode(window: *mut GtkWindow, mode: c_int);
     }
@@ -502,25 +504,60 @@ pub fn make_non_activating(win: &WebviewWindow) {
         layer::gtk_layer_set_exclusive_zone(ptr, -1);
         layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
     }
-    // WebKitGTK in a freshly mapped layer surface never paints its first frame
-    // (seen on COSMIC, and reproduced with a bare GTK window + WebKitGTK, no
-    // Tauri involved): the surface stays empty. Unmapping and mapping it once,
-    // right after the first map, gets it drawing for good.
-    let remapped = std::cell::Cell::new(false);
-    gw.connect_map_event(move |w, _| {
-        apply_input_region(w, *INPUT_REGION.lock().unwrap());
-        if !remapped.replace(true) {
-            let w = w.clone();
-            gtk::glib::idle_add_local_once(move || {
-                w.hide();
-                w.show_all();
-                apply_input_region(&w, *INPUT_REGION.lock().unwrap());
-            });
-        }
-        gtk::glib::Propagation::Proceed
-    });
+    remap_new_surfaces(&gw, |w| apply_input_region(w, *INPUT_REGION.lock().unwrap()));
+    unpin_removed_monitors(&gw.display());
     LAYER_SURFACE.store(true, Ordering::Relaxed);
     crate::log::line("island is a layer-shell overlay");
+}
+
+/// WebKitGTK in a freshly mapped layer surface never paints its first frame
+/// (seen on COSMIC, and reproduced with a bare GTK window + WebKitGTK, no Tauri
+/// involved). Unmapping and mapping it once gets it drawing. gtk-layer-shell maps
+/// a fresh surface again when a monitor comes back, so every map but our own gets it.
+fn remap_new_surfaces(gw: &gtk::ApplicationWindow, reapply: fn(&gtk::ApplicationWindow)) {
+    let ours = std::rc::Rc::new(std::cell::Cell::new(false));
+    gw.connect_map_event(move |w, _| {
+        reapply(w);
+        if ours.replace(false) {
+            return gtk::glib::Propagation::Proceed;
+        }
+        ours.set(true);
+        let (w, ours) = (w.clone(), ours.clone());
+        gtk::glib::idle_add_local_once(move || {
+            // Hidden again meanwhile, or no monitor to map on (GTK aborts then).
+            if !w.is_mapped() || w.display().n_monitors() == 0 {
+                ours.set(false);
+                return;
+            }
+            w.hide();
+            w.show_all();
+            reapply(&w);
+        });
+        gtk::glib::Propagation::Proceed
+    });
+}
+
+/// A monitor switched off goes away: a layer surface pinned to it would stay
+/// tied to the dead output, so unpin it.
+fn unpin_removed_monitors(display: &gtk::gdk::Display) {
+    display.connect_monitor_removed(|_, gone| {
+        let gone: *mut gtk::gdk::ffi::GdkMonitor = gone.to_glib_none().0;
+        for w in gtk::Window::list_toplevels() {
+            let Ok(w) = w.downcast::<gtk::Window>() else { continue };
+            let ptr: *mut gtk::ffi::GtkWindow = w.to_glib_none().0;
+            unsafe {
+                if layer::gtk_layer_is_layer_window(ptr) != 0 && layer::gtk_layer_get_monitor(ptr) == gone {
+                    layer::gtk_layer_set_monitor(ptr, std::ptr::null_mut());
+                }
+            }
+        }
+    });
+}
+
+/// Runs `f` whenever a monitor is plugged in or switched back on. Main thread.
+pub fn on_monitor_added(f: impl Fn() + 'static) {
+    let Some(display) = gtk::gdk::Display::default() else { return };
+    display.connect_monitor_added(move |_, _| f());
 }
 
 thread_local! {
@@ -743,20 +780,7 @@ pub fn prepare_desktop_window(win: &WebviewWindow, mode: super::DesktopMode) -> 
                 layer::gtk_layer_set_exclusive_zone(ptr, -1);
                 layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
             }
-            // Same first-frame problem as the island (see make_non_activating).
-            let remapped = std::cell::Cell::new(false);
-            gw.connect_map_event(move |w, _| {
-                apply_mouse_shape(w, *MOCHI_SHAPE.lock().unwrap());
-                if !remapped.replace(true) {
-                    let w = w.clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        w.hide();
-                        w.show_all();
-                        apply_mouse_shape(&w, *MOCHI_SHAPE.lock().unwrap());
-                    });
-                }
-                gtk::glib::Propagation::Proceed
-            });
+            remap_new_surfaces(&gw, |w| apply_mouse_shape(w, *MOCHI_SHAPE.lock().unwrap()));
             true
         }
         super::DesktopMode::Window => {
@@ -973,19 +997,7 @@ pub fn prepare_pill_window(win: &WebviewWindow, mode: super::DesktopMode) -> boo
                 layer::gtk_layer_set_exclusive_zone(ptr, 0);
                 layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
             }
-            let remapped = std::cell::Cell::new(false);
-            gw.connect_map_event(move |w, _| {
-                reapply(w);
-                if !remapped.replace(true) {
-                    let w = w.clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        w.hide();
-                        w.show_all();
-                        apply_rects(&w, &PILL_SHAPE.lock().unwrap());
-                    });
-                }
-                gtk::glib::Propagation::Proceed
-            });
+            remap_new_surfaces(&gw, reapply);
             true
         }
         super::DesktopMode::Window => {

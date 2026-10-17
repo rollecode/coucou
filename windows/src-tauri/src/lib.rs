@@ -207,10 +207,15 @@ fn focus_window(app: AppHandle, focused: bool) {
 }
 
 #[tauri::command]
-fn reposition(app: AppHandle, shared: State<Shared>) {
+fn reposition(app: AppHandle) {
+    place_island(&app);
+}
+
+fn place_island(app: &AppHandle) {
+    let Some(shared) = app.try_state::<Shared>() else { return };
     let pref = shared.settings.lock().unwrap().screen.clone();
     let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
-    island::apply_geometry(&app, &pref, collapsed);
+    island::apply_geometry(app, &pref, collapsed);
 }
 
 /// The panel is laid out in CSS px against the window's own scale. If the webview
@@ -1052,6 +1057,9 @@ pub fn run() {
                     }
                 });
                 platform::make_non_activating(&win);
+                // Not through the page: it may be the part that stalled.
+                let app = handle.clone();
+                platform::on_monitor_added(move || place_island(&app));
                 #[cfg(windows)]
                 webview_drop::install(&handle);
                 // Once a click or a shortcut gave the island the keyboard
