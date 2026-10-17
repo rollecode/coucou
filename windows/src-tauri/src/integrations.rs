@@ -21,6 +21,7 @@ use tokio::sync::Notify;
 use crate::github::{self, GitHubActivity, GitHubPulse};
 use crate::island::WINDOW_LABEL;
 use crate::log;
+use crate::portfolio;
 use crate::secrets;
 
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -77,7 +78,8 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_betterstack", 10, 60, poll_betterstack);
     spawn(app.clone(), "integration_slack", 10, 60, crate::slack::poll);
     spawn(app.clone(), TIMELY, 9, 60, poll_timely);
-    spawn(app, "integration_calendar", 10, 300, poll_calendar);
+    spawn(app.clone(), "integration_calendar", 10, 300, poll_calendar);
+    spawn(app, portfolio::PILL_ID, 4, 120, poll_portfolio);
 }
 
 /// True when the user has this integration switched on in settings.
@@ -131,6 +133,7 @@ pub async fn poll_once(app: AppHandle, id: &str) {
         "integration_slack" => crate::slack::poll(app).await,
         "integration_betterstack" => poll_betterstack(app).await,
         "integration_linear" => poll_linear(app).await,
+        portfolio::PILL_ID => poll_portfolio(app).await,
         _ => {}
     }
 }
@@ -560,6 +563,10 @@ pub fn github_token_changed(app: &AppHandle) {
 /// Switching the pill off forgets the pulse, so switching it back on starts
 /// silent instead of alerting on everything that changed in between.
 pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
+    let portfolio_on = active_integrations.iter().any(|id| id == portfolio::PILL_ID);
+    if PORTFOLIO_ON.swap(portfolio_on, Ordering::SeqCst) != portfolio_on {
+        portfolio_changed(app);
+    }
     if active_integrations.iter().any(|id| id == GITHUB_ID) {
         return;
     }
@@ -572,6 +579,29 @@ pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
     };
     if had_data {
         emit_github(app);
+    }
+}
+
+// ── Portfolio (PortfolioController.swift) ────────────────────────────────────
+
+/// Whether the pill was on at the last settings save, to start over when it changes.
+static PORTFOLIO_ON: AtomicBool = AtomicBool::new(false);
+
+async fn poll_portfolio(app: AppHandle) {
+    let wallets = app
+        .try_state::<crate::Shared>()
+        .map(|shared| shared.settings.lock().unwrap().portfolio_wallets.clone())
+        .unwrap_or_default();
+    let Some(data) = portfolio::fetch(wallets).await else { return };
+    emit(&app, IntegrationUpdate { id: portfolio::PILL_ID, data, error: None, event: None });
+}
+
+/// Accounts were added or removed, or the pill was switched: the card starts
+/// over from "Loading…" and fetches at once while the pill is on.
+pub fn portfolio_changed(app: &AppHandle) {
+    emit(app, IntegrationUpdate { id: portfolio::PILL_ID, data: json!({}), error: None, event: None });
+    if !PAUSED.load(Ordering::Relaxed) && enabled(app, portfolio::PILL_ID) {
+        tauri::async_runtime::spawn(poll_portfolio(app.clone()));
     }
 }
 

@@ -138,6 +138,8 @@ pub struct Settings {
     pub quiet_on_camera: bool,
     pub quiet_on_mic: bool,
     pub quiet_on_screen_share: bool,
+    /// The Portfolio pill's self-custody wallets: public addresses, not secrets. Owned by Rust (portfolio.rs).
+    pub portfolio_wallets: Vec<crate::portfolio::Wallet>,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -237,6 +239,7 @@ impl Default for Settings {
             quiet_on_camera: true,
             quiet_on_mic: true,
             quiet_on_screen_share: true,
+            portfolio_wallets: Vec::new(),
         }
     }
 }
@@ -552,7 +555,8 @@ mod tests {
   "phoneRelayUrl": "wss://relay.example.workers.dev",
   "quietOnCamera": false,
   "quietOnMic": false,
-  "quietOnScreenShare": false
+  "quietOnScreenShare": false,
+  "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }]
 }"##;
 
     fn custom() -> Value {
@@ -1078,6 +1082,7 @@ mod tests {
                 "quietOnCamera",
                 "quietOnMic",
                 "quietOnScreenShare",
+                "portfolioWallets",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);

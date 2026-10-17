@@ -15,6 +15,8 @@ import { isAfterToday, minutesUntil, type CalendarEvent } from "../core/calendar
 import { readActivity, readPulse, readStats } from "../core/github";
 import { githubDetail, githubPulseCard } from "./github";
 import { entrySeconds, hm, loggedSeconds, readTimelyDay } from "../core/timely";
+import { portfolioCard } from "./portfolio";
+import { PORTFOLIO_ID } from "../core/portfolio";
 import { N_, language, t } from "../i18n/i18n";
 
 /** Same shape as the Swift `timeAgo` computed properties. */
@@ -712,6 +714,8 @@ export function hasIntegrationData(id: string): boolean {
 }
 
 export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHooks): HTMLElement {
+  // Its own card in every state (loading, no accounts, balances), as on the Mac.
+  if (task.id === PORTFOLIO_ID) return portfolioCard(task);
   if (task.id === "integration_n8n") {
     const hasActivity = task.steps.length > 0 && (task.state === "finished" || task.state === "error");
     return hooks.detailOpen && hasActivity

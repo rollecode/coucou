@@ -8,6 +8,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
+import type { ExchangeId, PortfolioStatus, WalletKind } from "./portfolio";
 
 export const IS_TAURI =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -446,6 +447,20 @@ export const Bridge = {
   spotifyOpen: () => call<boolean>("spotify_open"),
   /** Whether there is a Spotify to launch (Settings). */
   spotifyInstalled: () => call<boolean>("spotify_installed"),
+
+  // ── Portfolio (src-tauri/src/portfolio.rs) ────────────────────────────────
+  portfolioStatus: () => call<PortfolioStatus>("portfolio_status"),
+  portfolioAddressPlausible: (kind: WalletKind, address: string) =>
+    call<boolean>("portfolio_address_plausible", { kind, address }),
+  /** Test & Save: rejects with the exchange's error; the keys are kept only when the test went through. */
+  portfolioAddExchange: (exchange: ExchangeId, key: string, secret: string, passphrase: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_exchange", { exchange, key, secret, passphrase }),
+  portfolioRemoveExchange: (exchange: ExchangeId) =>
+    callOrThrow<PortfolioStatus>("portfolio_remove_exchange", { exchange }),
+  /** Verify & Save: the address is kept once its balance could be read. */
+  portfolioAddWallet: (kind: WalletKind, address: string, label: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_wallet", { kind, address, label }),
+  portfolioRemoveWallet: (address: string) => callOrThrow<PortfolioStatus>("portfolio_remove_wallet", { address }),
 };
 
 export type SpotifyAction = "playPause" | "next" | "previous" | "seek" | "shuffle" | "repeat" | "volume";

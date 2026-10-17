@@ -23,6 +23,8 @@ import { startHub, type PageId } from "../hub/shell";
 import { FLOW_PAGE_RENDERERS } from "../hub/pages";
 import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
+import { portfolioSettings } from "./portfolio";
+import { PORTFOLIO_ID } from "../core/portfolio";
 import { colorDot } from "./colors";
 import { sshDestination } from "../core/ssh";
 import { renderDiff, statusDot } from "./parts";
@@ -987,6 +989,8 @@ const INTEGRATIONS: IntegrationDef[] = [
     hint: N_("Personal API key from Linear: Settings → Account → Security & access.") },
   // Nothing to enter: Spotify is read from the OS (src-tauri/src/spotify.rs).
   { id: "integration_spotify", name: "Spotify", color: "#1DB954", fields: [] },
+  // Exchanges and wallets of its own, below (./portfolio.ts).
+  { id: PORTFOLIO_ID, name: "Portfolio", color: "#FFD700", fields: [] },
 ];
 
 
@@ -1052,6 +1056,7 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
 
     if (def.id === "integration_timely") rows.append(timelyRow(present));
     if (def.hint) rows.append(h("div", { class: "hint", text: t(def.hint) }));
+    if (def.id === PORTFOLIO_ID) rows.append(portfolioSettings(KEY_STORE));
     if (def.id === "integration_spotify") {
       // As on the Mac's row: said only when there is no Spotify to launch.
       const hint = h("div", { class: "hint", style: "padding-top:5px" });
