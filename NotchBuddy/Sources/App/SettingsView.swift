@@ -342,6 +342,8 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Toggle("Open on hover", isOn: $state.openOnHover)
                     .help("Hovering the island opens it; it folds again shortly after the pointer leaves. Click inside to keep it open.")
+                Toggle("Hide in full screen", isOn: $state.hideInFullScreen)
+                    .help("The island steps aside while a full-screen app, a game or a video, fills its display.")
                 HStack(spacing: 8) {
                     Text("Close after")
                     TextField("60", value: $state.autoCloseInterval, format: .number)

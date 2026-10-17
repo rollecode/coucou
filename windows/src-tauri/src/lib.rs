@@ -89,9 +89,10 @@ fn boot(app: AppHandle, shared: State<Shared>) -> BootInfo {
 
 #[tauri::command]
 fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
-    let (screen_changed, autostart_changed, shortcuts_changed) = {
+    let (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed) = {
         let mut current = shared.settings.lock().unwrap();
         let screen_changed = current.screen != settings.screen;
+        let full_screen_changed = current.hide_in_full_screen != settings.hide_in_full_screen;
         let autostart_changed = current.autostart != settings.autostart;
         let shortcuts_changed = current.shortcuts != settings.shortcuts;
         // Where Mochi sits on the desktop is desktop.rs's to say, not a webview's.
@@ -109,7 +110,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         settings.phone_relay_url = current.phone_relay_url.clone();
         settings.phone_chat_models = current.phone_chat_models.clone();
         *current = settings;
-        (screen_changed, autostart_changed, shortcuts_changed)
+        (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed)
     };
     let settings = shared.settings.lock().unwrap().clone();
     if let Err(err) = settings::save(&settings) {
@@ -121,6 +122,10 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         if let Err(err) = result {
             eprintln!("[coucou] autostart: {err}");
         }
+    }
+    if full_screen_changed {
+        let (handle, on) = (app.clone(), settings.hide_in_full_screen);
+        let _ = app.run_on_main_thread(move || platform::hide_in_full_screen(&handle, on));
     }
     if screen_changed {
         let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
@@ -887,6 +892,7 @@ pub fn run() {
                 webview_drop::install(&handle);
                 island::apply_geometry(&handle, &loaded.screen, false);
                 let _ = win.show();
+                platform::hide_in_full_screen(&handle, loaded.hide_in_full_screen);
             }
             gate.collapsed.store(false, Ordering::Relaxed);
             // Nothing drawn yet, so nothing takes the mouse until the page
