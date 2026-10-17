@@ -11,11 +11,14 @@ import { DEFAULT_SETTINGS } from "../src/core/state.ts";
 const settings = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
 
 test("the ids and key names match the Rust side and the Mac", () => {
-  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "claudecode", "google", "openai", "openrouter", "ollama", "lmstudio", "custom", "openwebui"]);
+  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "ollama", "lmstudio", "custom", "openwebui"]);
   assert.equal(providerDef("claudecode").key, null);
   assert.equal(providerDef("google").key, "google-api-key");
   assert.equal(providerDef("openai").key, "openai-api-key");
   assert.equal(providerDef("openrouter").key, "openrouter-api-key");
+  assert.equal(providerDef("deepseek").key, "deepseek-api-key");
+  assert.equal(providerDef("qwen").key, "qwen-api-key");
+  assert.equal(providerDef("moonshot").key, "moonshot-api-key");
   assert.equal(providerDef("ollama").key, null);
   // Keys bound to a server address: local_chat.rs CUSTOM_KEY, open_webui.rs KEY.
   assert.deepEqual(SERVER_KEYS, { custom: "openai-compatible-key", openwebui: "open-webui-key" });
@@ -39,7 +42,7 @@ test("Claude's model is the existing setting; the others are kept per provider",
 
 test("model servers show in the picker once connected, or while in use", () => {
   const ids = (s) => visibleProviders(s).map((p) => p.id);
-  const always = ["anthropic", "claudecode", "google", "openai", "openrouter"];
+  const always = ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot"];
   assert.deepEqual(ids(settings()), always);
   assert.deepEqual(ids(settings({ ollamaUrl: "http://127.0.0.1:11434" })), [...always, "ollama"]);
   assert.deepEqual(ids(settings({ chatProvider: "custom" })), [...always, "custom"]);
