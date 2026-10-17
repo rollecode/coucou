@@ -18,6 +18,7 @@ final class IslandWindowController: NSWindowController {
     private var displaySubscription: AnyCancellable?
     private var autoCloseSubscription: AnyCancellable?
     private var openOnHoverSubscription: AnyCancellable?
+    private var fullScreenSubscription: AnyCancellable?
 
     // Confused recovery timer (set by handleDizzy)
     private var confusedRecoveryTimer: DispatchWorkItem?
@@ -266,6 +267,15 @@ final class IslandWindowController: NSWindowController {
         openOnHoverSubscription = state.$openOnHover.sink { [weak self] on in
             self?.fsm.openOnHover = on
         }
+        // A panel without .fullScreenAuxiliary is left out of full-screen Spaces.
+        fullScreenSubscription = state.$hideInFullScreen.sink { [weak self] hide in
+            guard let panel = self?.window else { return }
+            if hide {
+                panel.collectionBehavior.remove(.fullScreenAuxiliary)
+            } else {
+                panel.collectionBehavior.insert(.fullScreenAuxiliary)
+            }
+        }
 
         fsm.onTransition = { [weak self] from, to in
             guard let self else { return }
@@ -488,6 +498,9 @@ final class IslandWindowController: NSWindowController {
         if overBot && !botHovering { botHoverIn(mousePos: NSEvent.mouseLocation) }
         if !overBot && botHovering { botHoverOut() }
         botHovering = overBot
+        // The pointer on Mochi (or on the resting island): the line about the Mac shows under it.
+        let vitalsHover = (state.mode == .compact && inIsland) || overBot
+        if MachineVitals.shared.hovered != vitalsHover { MachineVitals.shared.hovered = vitalsHover }
         if botHovering {
             let m = NSEvent.mouseLocation
             let dist = hypot(m.x - botHoverStartPos.x, m.y - botHoverStartPos.y)
@@ -708,6 +721,12 @@ final class IslandWindowController: NSWindowController {
             #if !APPSTORE
             VoiceSpeaker.shared.stop()
             VoiceEngine.shared.startListeningDirectly()
+            #endif
+
+        case .captureScreen:
+            #if !APPSTORE
+            appendAppLog("nb.log", "[Capture] shortcut pressed")
+            ScreenCapture.shared.begin()
             #endif
         }
     }
