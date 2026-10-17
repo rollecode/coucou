@@ -355,6 +355,9 @@ pub fn set_input_region(_win: &WebviewWindow, _rect: Option<(f64, f64, f64, f64)
 /// The cursor poll already parks itself with the island (island.rs): nothing to do.
 pub fn set_pointer_watch(_active: bool) {}
 
+/// The island follows display changes through its layout watch (island.rs).
+pub fn on_monitor_added(_f: impl Fn() + 'static) {}
+
 /// `set_position` already places a Win32 window on the right display.
 pub fn pin_to_monitor(_win: &WebviewWindow, _x: i32, _y: i32) {}
 
