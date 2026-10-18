@@ -333,6 +333,8 @@ mod layer {
         pub fn gtk_layer_set_anchor(window: *mut GtkWindow, edge: c_int, anchor: c_int);
         pub fn gtk_layer_set_margin(window: *mut GtkWindow, edge: c_int, margin: c_int);
         pub fn gtk_layer_set_monitor(window: *mut GtkWindow, monitor: *mut gtk::gdk::ffi::GdkMonitor);
+        pub fn gtk_layer_get_monitor(window: *mut GtkWindow) -> *mut gtk::gdk::ffi::GdkMonitor;
+        pub fn gtk_layer_is_layer_window(window: *mut GtkWindow) -> c_int;
         pub fn gtk_layer_set_exclusive_zone(window: *mut GtkWindow, zone: c_int);
         pub fn gtk_layer_set_keyboard_mode(window: *mut GtkWindow, mode: c_int);
     }
@@ -416,25 +418,64 @@ pub fn make_non_activating(win: &WebviewWindow) {
         layer::gtk_layer_set_exclusive_zone(ptr, -1);
         layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
     }
-    // WebKitGTK in a freshly mapped layer surface never paints its first frame
-    // (seen on COSMIC, and reproduced with a bare GTK window + WebKitGTK, no
-    // Tauri involved): the surface stays empty. Unmapping and mapping it once,
-    // right after the first map, gets it drawing for good.
-    let remapped = std::cell::Cell::new(false);
-    gw.connect_map_event(move |w, _| {
-        apply_input_region(w, *INPUT_REGION.lock().unwrap());
-        if !remapped.replace(true) {
-            let w = w.clone();
-            gtk::glib::idle_add_local_once(move || {
-                w.hide();
-                w.show_all();
-                apply_input_region(&w, *INPUT_REGION.lock().unwrap());
-            });
-        }
-        gtk::glib::Propagation::Proceed
-    });
+    remap_new_surfaces(&gw, |w| apply_input_region(w, *INPUT_REGION.lock().unwrap()));
+    unpin_removed_monitors(&gw.display());
     LAYER_SURFACE.store(true, Ordering::Relaxed);
     crate::log::line("island is a layer-shell overlay");
+}
+
+/// WebKitGTK in a freshly mapped layer surface never paints its first frame
+/// (seen on COSMIC, and reproduced with a bare GTK window + WebKitGTK, no Tauri
+/// involved). Unmapping and mapping it once gets it drawing. GTK maps the window on
+/// every open too, so only the first map and the one after a monitor change get it.
+fn remap_new_surfaces(gw: &gtk::ApplicationWindow, reapply: fn(&gtk::ApplicationWindow)) {
+    let fresh = std::rc::Rc::new(std::cell::Cell::new(true));
+    let display = gw.display();
+    let on_change = fresh.clone();
+    display.connect_monitor_added(move |_, _| on_change.set(true));
+    let on_change = fresh.clone();
+    display.connect_monitor_removed(move |_, _| on_change.set(true));
+    gw.connect_map_event(move |w, _| {
+        reapply(w);
+        if !fresh.replace(false) {
+            return gtk::glib::Propagation::Proceed;
+        }
+        let (w, fresh) = (w.clone(), fresh.clone());
+        gtk::glib::idle_add_local_once(move || {
+            // Hidden again meanwhile, or no monitor to map on (GTK aborts then): the next map gets it.
+            if !w.is_mapped() || w.display().n_monitors() == 0 {
+                fresh.set(true);
+                return;
+            }
+            w.hide();
+            w.show_all();
+            reapply(&w);
+        });
+        gtk::glib::Propagation::Proceed
+    });
+}
+
+/// A monitor switched off goes away: a layer surface pinned to it would stay
+/// tied to the dead output, so unpin it.
+fn unpin_removed_monitors(display: &gtk::gdk::Display) {
+    display.connect_monitor_removed(|_, gone| {
+        let gone: *mut gtk::gdk::ffi::GdkMonitor = gone.to_glib_none().0;
+        for w in gtk::Window::list_toplevels() {
+            let Ok(w) = w.downcast::<gtk::Window>() else { continue };
+            let ptr: *mut gtk::ffi::GtkWindow = w.to_glib_none().0;
+            unsafe {
+                if layer::gtk_layer_is_layer_window(ptr) != 0 && layer::gtk_layer_get_monitor(ptr) == gone {
+                    layer::gtk_layer_set_monitor(ptr, std::ptr::null_mut());
+                }
+            }
+        }
+    });
+}
+
+/// Runs `f` whenever a monitor is plugged in or switched back on. Main thread.
+pub fn on_monitor_added(f: impl Fn() + 'static) {
+    let Some(display) = gtk::gdk::Display::default() else { return };
+    display.connect_monitor_added(move |_, _| f());
 }
 
 thread_local! {
@@ -652,20 +693,7 @@ pub fn prepare_desktop_window(win: &WebviewWindow, mode: super::DesktopMode) -> 
                 layer::gtk_layer_set_exclusive_zone(ptr, -1);
                 layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
             }
-            // Same first-frame problem as the island (see make_non_activating).
-            let remapped = std::cell::Cell::new(false);
-            gw.connect_map_event(move |w, _| {
-                apply_mouse_shape(w, *MOCHI_SHAPE.lock().unwrap());
-                if !remapped.replace(true) {
-                    let w = w.clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        w.hide();
-                        w.show_all();
-                        apply_mouse_shape(&w, *MOCHI_SHAPE.lock().unwrap());
-                    });
-                }
-                gtk::glib::Propagation::Proceed
-            });
+            remap_new_surfaces(&gw, |w| apply_mouse_shape(w, *MOCHI_SHAPE.lock().unwrap()));
             true
         }
         super::DesktopMode::Window => {
@@ -842,4 +870,86 @@ mod tests {
         assert_eq!(xdg_user_dir("XDG_PICTURES_DIR=\"pics\"", "XDG_PICTURES_DIR", home), None);
         assert_eq!(xdg_user_dir("", "XDG_PICTURES_DIR", home), None);
     }
+}
+
+// ── Flow dictation's pill ─────────────────────────────────────────────────────
+//
+// The pill rests at the bottom (or on the left or right edge) of the screen.
+// On X11 it is an ordinary always-on-top window placed with set_position; on a
+// layer-shell compositor a layer surface anchored to that edge. Either way the
+// input region is the pill and its bubble, so clicks anywhere else go through.
+
+/// The pill's input rectangles, re-applied on every map.
+static PILL_SHAPE: Mutex<Vec<(f64, f64, f64, f64)>> = Mutex::new(Vec::new());
+
+/// Sets the pill's window up before it is ever shown. Main thread.
+pub fn prepare_pill_window(win: &WebviewWindow, mode: super::DesktopMode) -> bool {
+    let Ok(gw) = win.gtk_window() else { return false };
+    gw.set_accept_focus(false);
+    let reapply = |w: &gtk::ApplicationWindow| apply_rects(w, &PILL_SHAPE.lock().unwrap());
+    match mode {
+        super::DesktopMode::Layer => {
+            if gw.is_realized() {
+                return false;
+            }
+            gw.set_titlebar(None::<&gtk::Widget>);
+            let ptr = gtk_window_ptr(&gw);
+            unsafe {
+                layer::gtk_layer_init_for_window(ptr);
+                layer::gtk_layer_set_namespace(ptr, c"coucou-pill".as_ptr());
+                layer::gtk_layer_set_layer(ptr, layer::LAYER_OVERLAY);
+                layer::gtk_layer_set_anchor(ptr, layer::EDGE_BOTTOM, 1);
+                layer::gtk_layer_set_exclusive_zone(ptr, 0);
+                layer::gtk_layer_set_keyboard_mode(ptr, layer::KEYBOARD_NONE);
+            }
+            remap_new_surfaces(&gw, reapply);
+            true
+        }
+        super::DesktopMode::Window => {
+            if !gw.is_realized() {
+                gw.set_type_hint(gtk::gdk::WindowTypeHint::Dock);
+            }
+            gw.set_keep_above(true);
+            gw.connect_map_event(move |w, _| {
+                reapply(w);
+                gtk::glib::Propagation::Proceed
+            });
+            true
+        }
+        _ => false,
+    }
+}
+
+/// Layer surface only: anchors the pill to its edge, centred along it. Main thread.
+pub fn set_pill_edge(win: &WebviewWindow, edge: &str) {
+    let Ok(gw) = win.gtk_window() else { return };
+    let ptr = gtk_window_ptr(&gw);
+    unsafe {
+        layer::gtk_layer_set_anchor(ptr, layer::EDGE_BOTTOM, (edge == "bottom") as i32);
+        layer::gtk_layer_set_anchor(ptr, layer::EDGE_LEFT, (edge == "left") as i32);
+        layer::gtk_layer_set_anchor(ptr, layer::EDGE_RIGHT, (edge == "right") as i32);
+        layer::gtk_layer_set_anchor(ptr, layer::EDGE_TOP, 0);
+    }
+}
+
+/// The parts of the pill's window that take the mouse. Main thread.
+pub fn set_pill_input(win: &WebviewWindow, rects: Vec<(f64, f64, f64, f64)>) {
+    *PILL_SHAPE.lock().unwrap() = rects.clone();
+    let Ok(gw) = win.gtk_window() else { return };
+    apply_rects(&gw, &rects);
+}
+
+fn apply_rects(gw: &impl IsA<gtk::Widget>, rects: &[(f64, f64, f64, f64)]) {
+    use gtk::cairo::{RectangleInt, Region};
+    let Some(gdk_window) = gw.window() else { return };
+    let region = Region::create_rectangle(&RectangleInt::new(0, 0, 0, 0));
+    for &(x, y, w, h) in rects {
+        let _ = region.union_rectangle(&RectangleInt::new(
+            x.floor() as i32,
+            y.floor() as i32,
+            w.ceil().max(0.0) as i32,
+            h.ceil().max(0.0) as i32,
+        ));
+    }
+    gdk_window.input_shape_combine_region(&region, 0, 0);
 }
