@@ -426,21 +426,25 @@ pub fn make_non_activating(win: &WebviewWindow) {
 
 /// WebKitGTK in a freshly mapped layer surface never paints its first frame
 /// (seen on COSMIC, and reproduced with a bare GTK window + WebKitGTK, no Tauri
-/// involved). Unmapping and mapping it once gets it drawing. gtk-layer-shell maps
-/// a fresh surface again when a monitor comes back, so every map but our own gets it.
+/// involved). Unmapping and mapping it once gets it drawing. GTK maps the window on
+/// every open too, so only the first map and the one after a monitor change get it.
 fn remap_new_surfaces(gw: &gtk::ApplicationWindow, reapply: fn(&gtk::ApplicationWindow)) {
-    let ours = std::rc::Rc::new(std::cell::Cell::new(false));
+    let fresh = std::rc::Rc::new(std::cell::Cell::new(true));
+    let display = gw.display();
+    let on_change = fresh.clone();
+    display.connect_monitor_added(move |_, _| on_change.set(true));
+    let on_change = fresh.clone();
+    display.connect_monitor_removed(move |_, _| on_change.set(true));
     gw.connect_map_event(move |w, _| {
         reapply(w);
-        if ours.replace(false) {
+        if !fresh.replace(false) {
             return gtk::glib::Propagation::Proceed;
         }
-        ours.set(true);
-        let (w, ours) = (w.clone(), ours.clone());
+        let (w, fresh) = (w.clone(), fresh.clone());
         gtk::glib::idle_add_local_once(move || {
-            // Hidden again meanwhile, or no monitor to map on (GTK aborts then).
+            // Hidden again meanwhile, or no monitor to map on (GTK aborts then): the next map gets it.
             if !w.is_mapped() || w.display().n_monitors() == 0 {
-                ours.set(false);
+                fresh.set(true);
                 return;
             }
             w.hide();
