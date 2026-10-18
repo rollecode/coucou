@@ -9,6 +9,9 @@ import { Bridge } from "./bridge";
 
 export const SOUND_VOLUME_MAX = 1;
 
+/** Quiet time before the audio output is suspended: past a burst of sounds. */
+const IDLE_SUSPEND_MS = 30_000;
+
 export const SOUND_NAMES = [
   "peek", "open", "close", "hover", "blip", "slap", "annoyed", "dizzy", "greet",
   "work", "finish", "error", "approval", "question", "approve", "gulp", "tick",
@@ -100,14 +103,16 @@ class SoundEngine {
    * up as a steady trickle of CPU on a machine that is supposed to be idle.
    *
    * The delay covers the tail of whatever just played — suspending mid-sound
-   * would clip it — and `play()` resumes the context on its own.
+   * would clip it — and `play()` resumes the context on its own. It also spans
+   * a burst of sounds: on Linux each resume opens a new PipeWire stream, and a
+   * desktop shell can take that churn for a volume change (a volume OSD).
    */
   idle() {
     if (!this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
     this.idleTimer = window.setTimeout(() => {
       this.idleTimer = null;
       void this.ctx?.suspend();
-    }, 1500);
+    }, IDLE_SUSPEND_MS);
   }
 
   setVolume(v: number) {
