@@ -3576,6 +3576,12 @@
             "value" : "অ্যাডভান্সড: নিজের গেটওয়ে"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweitert: eigenes Gateway"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3618,6 +3624,12 @@
             "value" : "Дополнительно: свой шлюз"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelişmiş: kendi ağ geçidiniz"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3645,6 +3657,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WhatsApp ইনস্টল করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp installieren"
           }
         },
         "en" : {
@@ -3689,6 +3707,12 @@
             "value" : "Установить WhatsApp"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp’ı yükle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3716,6 +3740,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডাউনলোড GOWA-র প্রকাশিত ফাইলের সঙ্গে মেলে না: মুছে ফেলা হয়েছে, কিছু ইনস্টল হয়নি।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Download stimmt nicht mit der von GOWA veröffentlichten Datei überein: Er wurde gelöscht, nichts wurde installiert."
           }
         },
         "en" : {
@@ -3760,6 +3790,12 @@
             "value" : "Загрузка не совпадает с файлом, опубликованным GOWA: она удалена, ничего не установлено."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirilen dosya GOWA’nın yayımladığı dosyayla eşleşmiyor: silindi, hiçbir şey yüklenmedi."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3787,6 +3823,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GOWA-র সর্বশেষ সংস্করণ খোঁজা হচ্ছে…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neueste GOWA-Version wird gesucht…"
           }
         },
         "en" : {
@@ -3831,6 +3873,12 @@
             "value" : "Поиск последней версии GOWA…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En son GOWA sürümü aranıyor…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3858,6 +3906,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডাউনলোড সম্পূর্ণ হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Download ist fehlgeschlagen. Verbindung prüfen und erneut versuchen."
           }
         },
         "en" : {
@@ -3902,6 +3956,12 @@
             "value" : "Загрузка не удалась. Проверьте подключение и попробуйте снова."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirme tamamlanamadı. Bağlantınızı denetleyip yeniden deneyin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3929,6 +3989,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডাউনলোড হচ্ছে (%lld MB)…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird geladen (%lld MB)…"
           }
         },
         "en" : {
@@ -3973,6 +4039,12 @@
             "value" : "Загрузка (%lld МБ)…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndiriliyor (%lld MB)…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4000,6 +4072,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou ওপেন-সোর্স গেটওয়ে GOWA তার GitHub পেজ থেকে ডাউনলোড করে (প্রায় ১৫ MB, একবারই), যাচাই করে চালু করে। তারপর ফোন দিয়ে QR কোড স্ক্যান করুন। টার্মিনাল লাগবে না।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou lädt GOWA, das Open-Source-Gateway, von seiner GitHub-Seite (etwa 15 MB, einmalig), prüft es und startet es. Danach den QR-Code mit dem Telefon scannen. Kein Terminal nötig."
           }
         },
         "en" : {
@@ -4044,6 +4122,12 @@
             "value" : "Coucou скачивает GOWA, шлюз с открытым кодом, с его страницы на GitHub (около 15 МБ, один раз), проверяет и запускает. Затем отсканируйте QR-код телефоном. Терминал не нужен."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou, açık kaynaklı ağ geçidi GOWA’yı GitHub sayfasından indirir (yaklaşık 15 MB, bir kez), denetler ve başlatır. Ardından QR kodunu telefonunuzla tarayın. Terminal gerekmez."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4071,6 +4155,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ইনস্টল ও চালু হচ্ছে…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird installiert und gestartet…"
           }
         },
         "en" : {
@@ -4115,6 +4205,12 @@
             "value" : "Установка и запуск…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yükleniyor ve başlatılıyor…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4142,6 +4238,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GitHub-এ এই Mac-এর জন্য GOWA পাওয়া যায়নি। পরে আবার চেষ্টা করুন, বা অ্যাডভান্সডে নিজের গেটওয়ে সেট করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf GitHub wurde kein GOWA-Build für diesen Mac gefunden. Später erneut versuchen oder unter Erweitert ein eigenes Gateway festlegen."
           }
         },
         "en" : {
@@ -4186,6 +4288,12 @@
             "value" : "На GitHub нет сборки GOWA для этого Mac. Попробуйте позже или укажите свой шлюз в разделе «Дополнительно»."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub’da bu Mac için GOWA derlemesi bulunamadı. Daha sonra yeniden deneyin ya da Gelişmiş bölümünde kendi ağ geçidinizi ayarlayın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4213,6 +4321,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GOWA রিলিজে ডাউনলোড যাচাইয়ের চেকসাম নেই: কিছু ইনস্টল হয়নি।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die GOWA-Version hat keine Prüfsumme, um den Download zu prüfen: Nichts wurde installiert."
           }
         },
         "en" : {
@@ -4257,6 +4371,12 @@
             "value" : "У выпуска GOWA нет контрольной суммы для проверки: ничего не установлено."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA sürümünde indirmeyi doğrulamak için sağlama toplamı yok: hiçbir şey yüklenmedi."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4284,6 +4404,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GOWA %@ গেটওয়ে ইনস্টল, Coucou চালায়"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gateway GOWA %@ installiert, von Coucou gestartet"
           }
         },
         "en" : {
@@ -4328,6 +4454,12 @@
             "value" : "Шлюз GOWA %@ установлен, запускается Coucou"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA %@ ağ geçidi yüklendi, Coucou tarafından başlatıldı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4355,6 +4487,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আপনার GOWA গেটওয়ে সেট করা আছে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigenes GOWA-Gateway ist eingerichtet"
           }
         },
         "en" : {
@@ -4399,6 +4537,12 @@
             "value" : "Ваш шлюз GOWA настроен"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA ağ geçidiniz ayarlandı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4426,6 +4570,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডাউনলোড আনজিপ করা যায়নি। আবার চেষ্টা করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Download konnte nicht entpackt werden. Erneut versuchen."
           }
         },
         "en" : {
@@ -4470,6 +4620,12 @@
             "value" : "Не удалось распаковать загрузку. Попробуйте снова."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirilen dosya açılamadı. Yeniden deneyin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4497,6 +4653,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আপডেট করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisieren"
           }
         },
         "en" : {
@@ -4539,6 +4701,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обновить"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncelle"
           }
         },
         "zh-Hans" : {
@@ -4659,6 +4827,12 @@
             "value" : "WhatsApp সেভ করো"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp speichern"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4701,6 +4875,12 @@
             "value" : "Сохранить WhatsApp"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp’ı kaydet"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4728,6 +4908,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GOWA স্বয়ংক্রিয়ভাবে চালু করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA automatisch starten"
           }
         },
         "en" : {
@@ -4772,6 +4958,12 @@
             "value" : "Запускать GOWA автоматически"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA’yı otomatik olarak başlat"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4799,6 +4991,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou এটি শুধু এই Mac-এ চালায় (127.0.0.1, URL-এর পোর্ট), মিডিয়া ডাউনলোড ছাড়াই, এবং Coucou বন্ধ হলে থামিয়ে দেয়। এর WhatsApp সেশন থাকে ~/Library/Application Support/Coucou/GOWA-তে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou führt es nur auf diesem Mac aus (127.0.0.1, der Port der URL), ohne Medien zu laden, und beendet es, wenn Coucou beendet wird. Die WhatsApp-Sitzung bleibt in ~/Library/Application Support/Coucou/GOWA."
           }
         },
         "en" : {
@@ -4843,6 +5041,12 @@
             "value" : "Coucou запускает его только на этом Mac (127.0.0.1, порт из адреса), без загрузки медиа, и останавливает при выходе. Сессия WhatsApp хранится в ~/Library/Application Support/Coucou/GOWA."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou onu yalnızca bu Mac’te çalıştırır (127.0.0.1, URL’nin bağlantı noktası), medya indirmez ve Coucou kapandığında durdurur. WhatsApp oturumu ~/Library/Application Support/Coucou/GOWA klasöründe kalır."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4870,6 +5074,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GOWA বাইনারির পাথ (whatsapp)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pfad zur GOWA-Binärdatei (whatsapp)"
           }
         },
         "en" : {
@@ -4914,6 +5124,12 @@
             "value" : "Путь к бинарнику GOWA (whatsapp)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GOWA ikili dosyasının yolu (whatsapp)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4941,6 +5157,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বেছে নাও…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auswählen…"
           }
         },
         "en" : {
@@ -4985,6 +5207,12 @@
             "value" : "Выбрать…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seç…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5012,6 +5240,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কথোপকথন খুললে পড়া হিসেবে চিহ্নিত করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Öffnen einer Unterhaltung als gelesen markieren"
           }
         },
         "en" : {
@@ -5056,6 +5290,12 @@
             "value" : "Отмечать прочитанным при открытии беседы"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir sohbeti açtığımda okundu olarak işaretle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5083,6 +5323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বন্ধ: শুধু উত্তর দিলে পড়া হিসেবে চিহ্নিত। বার্তা এলেই কখনও নয়।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus: nur beim Antworten als gelesen markiert. Nie schon beim Eingang einer Nachricht."
           }
         },
         "en" : {
@@ -5127,6 +5373,12 @@
             "value" : "Выключено: прочитанным отмечается только при ответе. Никогда при простом получении."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapalı: yalnızca yanıt verdiğinizde okundu olarak işaretlenir. Bir ileti yalnızca geldiğinde asla işaretlenmez."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5154,6 +5406,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "উত্তর দিন…  (⇧↩ নতুন লাইন)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten…  (⇧↩ neue Zeile)"
           }
         },
         "en" : {
@@ -5198,6 +5456,12 @@
             "value" : "Ответить…  (⇧↩ новая строка)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıtla…  (⇧↩ yeni satır)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5225,6 +5489,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "মিনিটে সর্বোচ্চ কয়েকটি উত্তর: একটু অপেক্ষা করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höchstens ein paar Antworten pro Minute: einen Moment warten."
           }
         },
         "en" : {
@@ -5269,6 +5539,12 @@
             "value" : "Не больше нескольких ответов в минуту: подождите немного."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dakikada en fazla birkaç yanıt: biraz bekleyin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5296,6 +5572,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "একটি বার্তার জন্য খুব লম্বা (সর্বোচ্চ ৪০৯৬ অক্ষর)।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu lang für eine Nachricht (höchstens 4.096 Zeichen)."
           }
         },
         "en" : {
@@ -5340,6 +5622,12 @@
             "value" : "Слишком длинно для одного сообщения (не больше 4096 символов)."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tek bir ileti için çok uzun (en fazla 4.096 karakter)."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5367,6 +5655,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "যোগ করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
           }
         },
         "en" : {
@@ -5411,6 +5705,12 @@
             "value" : "Добавить"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5438,6 +5738,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ হিসেবে সংযুক্ত"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbunden als %@"
           }
         },
         "en" : {
@@ -5482,6 +5788,12 @@
             "value" : "Подключено как %@"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ olarak bağlı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5509,6 +5821,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বেসিক অথ  (user:password, থাকলে)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Auth  (Benutzer:Passwort, falls gesetzt)"
           }
         },
         "en" : {
@@ -5553,6 +5871,12 @@
             "value" : "Basic auth  (пользователь:пароль, если задан)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temel kimlik doğrulama  (kullanıcı:parola, ayarlıysa)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5580,6 +5904,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "API কী  (owa_k1_…)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-Schlüssel  (owa_k1_…)"
           }
         },
         "en" : {
@@ -5624,6 +5954,12 @@
             "value" : "API-ключ  (owa_k1_…)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API anahtarı  (owa_k1_…)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5651,6 +5987,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "নতুন বার্তা নেই"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine neuen Nachrichten"
           }
         },
         "en" : {
@@ -5695,6 +6037,12 @@
             "value" : "Нет новых сообщений"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni ileti yok"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5722,6 +6070,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আমার WhatsApp বার্তা দেখাও"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meine WhatsApp-Nachrichten anzeigen"
           }
         },
         "en" : {
@@ -5766,6 +6120,12 @@
             "value" : "Показывать мои сообщения WhatsApp"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp iletilerimi göster"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5793,6 +6153,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "macOS এখনও Coucou-র এই বিল্ডকে ফোকাসের অবস্থা পড়তে দেয় না: বার্তা আসতে থাকবে, Mochi সাড়া দিতে থাকবে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS erlaubt diesem Build von Coucou noch nicht, den Fokus-Status zu lesen: Nachrichten kommen trotzdem an, Mochi reagiert weiter."
           }
         },
         "en" : {
@@ -5837,6 +6203,12 @@
             "value" : "macOS пока не даёт этой сборке Coucou читать состояние фокусирования: сообщения приходят, Mochi реагирует."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS, Coucou’nun bu derlemesinin Odak durumunu okumasına henüz izin vermiyor: iletiler yine gelir, Mochi tepki vermeye devam eder."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5864,6 +6236,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gateway"
           }
         },
         "en" : {
@@ -5908,6 +6286,12 @@
             "value" : "Шлюз"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5935,6 +6319,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এই চ্যাট উপেক্ষা করো"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesen Chat ignorieren"
           }
         },
         "en" : {
@@ -5979,6 +6369,12 @@
             "value" : "Игнорировать этот чат"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sohbeti yok say"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6006,6 +6402,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "উপেক্ষা করার নম্বর বা চ্যাট id"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefonnummer oder Chat-ID zum Ignorieren"
           }
         },
         "en" : {
@@ -6050,6 +6452,12 @@
             "value" : "Номер или id чата для игнорирования"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yok sayılacak telefon numarası veya sohbet kimliği"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6077,6 +6485,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "উপেক্ষিত চ্যাট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorierte Chats"
           }
         },
         "en" : {
@@ -6121,6 +6535,12 @@
             "value" : "Игнорируемые чаты"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yok sayılan sohbetler"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6148,6 +6568,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "পরিচিতি"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontakt"
           }
         },
         "en" : {
@@ -6192,6 +6618,12 @@
             "value" : "Контакт"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kişi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6219,6 +6651,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডকুমেন্ট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument"
           }
         },
         "en" : {
@@ -6263,6 +6701,12 @@
             "value" : "Документ"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belge"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6290,6 +6734,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "লোকেশন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standort"
           }
         },
         "en" : {
@@ -6334,6 +6784,12 @@
             "value" : "Местоположение"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konum"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6361,6 +6817,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বার্তা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht"
           }
         },
         "en" : {
@@ -6405,6 +6867,12 @@
             "value" : "Сообщение"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İleti"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6432,6 +6900,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ছবি"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto"
           }
         },
         "en" : {
@@ -6476,6 +6950,12 @@
             "value" : "Фото"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6503,6 +6983,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "স্টিকার"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sticker"
           }
         },
         "en" : {
@@ -6547,6 +7033,12 @@
             "value" : "Стикер"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çıkartma"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6574,6 +7066,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ভিডিও"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
           }
         },
         "en" : {
@@ -6618,6 +7116,12 @@
             "value" : "Видео"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6645,6 +7149,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ভয়েস বার্তা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprachnachricht"
           }
         },
         "en" : {
@@ -6689,6 +7199,12 @@
             "value" : "Голосовое"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesli ileti"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6716,6 +7232,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গ্রুপ মিউট (আমাকে উল্লেখ না করলে)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen stummschalten (außer bei Erwähnung)"
           }
         },
         "en" : {
@@ -6760,6 +7282,12 @@
             "value" : "Без звука в группах (если меня не упомянули)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupları sessize al (bahsedilmediğim sürece)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6787,6 +7315,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WhatsApp পিল দেখাতে সক্রিয় পিলে জায়গা খালি করুন (সর্বোচ্চ ৪টি)।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Aktive Pills Platz schaffen, um die WhatsApp-Pill anzuzeigen (höchstens 4)."
           }
         },
         "en" : {
@@ -6831,6 +7365,12 @@
             "value" : "Освободите место в активных пилюлях для WhatsApp (не больше 4)."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp aracını göstermek için Etkin araçlar bölümünde yer açın (en fazla 4)."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6858,6 +7398,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou-র ওয়েবহুক পোর্ট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webhook-Port von Coucou"
           }
         },
         "en" : {
@@ -6902,6 +7448,12 @@
             "value" : "Порт вебхука Coucou"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou’nun webhook bağlantı noktası"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6929,6 +7481,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou শুধু এই Mac-এর গেটওয়ের সঙ্গে কথা বলে। বার্তা মেমরিতে থাকে, কখনও লগ বা সেভ হয় না, এবং Coucou বন্ধ হলে মুছে যায়। কোনো ছবি বা মিডিয়া ডাউনলোড হয় না।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou spricht nur mit dem Gateway auf diesem Mac. Nachrichten bleiben im Arbeitsspeicher, werden nie protokolliert oder gespeichert und beim Beenden von Coucou vergessen. Fotos oder Medien werden nie geladen."
           }
         },
         "en" : {
@@ -6973,6 +7531,12 @@
             "value" : "Coucou общается только со шлюзом на этом Mac. Сообщения хранятся в памяти, никогда не пишутся в журнал и не сохраняются, и забываются при выходе из Coucou. Фото и медиа не загружаются."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou yalnızca bu Mac’teki ağ geçidiyle konuşur. İletiler bellekte kalır, asla günlüğe yazılmaz veya kaydedilmez ve Coucou kapandığında unutulur. Hiçbir fotoğraf veya medya indirilmez."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7000,6 +7564,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ফোনে: WhatsApp › সেটিংস › লিঙ্ক করা ডিভাইস › ডিভাইস লিঙ্ক করুন, তারপর এই কোডটি স্ক্যান করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf dem Telefon: WhatsApp › Einstellungen › Verknüpfte Geräte › Gerät verknüpfen, dann diesen Code scannen."
           }
         },
         "en" : {
@@ -7042,6 +7612,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "На телефоне: WhatsApp › Настройки › Связанные устройства › Привязка устройства, затем отсканируйте этот код."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefonunuzda: WhatsApp › Ayarlar › Bağlı cihazlar › Cihaz bağla, ardından bu kodu tarayın."
           }
         },
         "zh-Hans" : {
@@ -7162,6 +7738,12 @@
             "value" : "ফোকাসের সময় চুপ থাকো"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Während eines Fokus still bleiben"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7204,6 +7786,12 @@
             "value" : "Не беспокоить в режиме фокусирования"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odak sırasında sessiz kal"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7231,6 +7819,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ের URL সঠিক নয় (http://…)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Gateway-URL ist ungültig (http://…)"
           }
         },
         "en" : {
@@ -7275,6 +7869,12 @@
             "value" : "Неверный адрес шлюза (http://…)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi URL’si geçerli değil (http://…)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7302,6 +7902,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সংযুক্ত"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbunden"
           }
         },
         "en" : {
@@ -7346,6 +7952,12 @@
             "value" : "Подключено"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7373,6 +7985,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়েতে সংযুক্ত হচ্ছে…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung zum Gateway wird hergestellt…"
           }
         },
         "en" : {
@@ -7417,6 +8035,12 @@
             "value" : "Подключение к шлюзу…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidine bağlanılıyor…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7444,6 +8068,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সেটিংসে QR কোড স্ক্যান করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QR-Code in den Einstellungen scannen"
           }
         },
         "en" : {
@@ -7488,6 +8118,12 @@
             "value" : "Отсканируйте QR-код в настройках"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar’daki QR kodunu tarayın"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7515,6 +8151,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সেটিংসে বন্ধ"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In den Einstellungen deaktiviert"
           }
         },
         "en" : {
@@ -7559,6 +8201,12 @@
             "value" : "Выключено в настройках"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar’da kapatıldı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7586,6 +8234,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে পরিচয়পত্র প্রত্যাখ্যান করছে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gateway lehnt die Anmeldedaten ab"
           }
         },
         "en" : {
@@ -7630,6 +8284,12 @@
             "value" : "Шлюз отклоняет учётные данные"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi kimlik bilgilerini reddediyor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7657,6 +8317,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে সাড়া দিচ্ছে না: এটি চালু আছে?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gateway antwortet nicht: Läuft es?"
           }
         },
         "en" : {
@@ -7701,6 +8367,12 @@
             "value" : "Шлюз не отвечает: он запущен?"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi yanıt vermiyor: çalışıyor mu?"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7728,6 +8400,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সংযোগ পরীক্ষা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung testen"
           }
         },
         "en" : {
@@ -7772,6 +8450,12 @@
             "value" : "Проверить подключение"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantıyı sına"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7799,6 +8483,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ হিসেবে সংযুক্ত।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbunden als %@."
           }
         },
         "en" : {
@@ -7843,6 +8533,12 @@
             "value" : "Подключено как %@."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ olarak bağlı."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7870,6 +8566,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে সাড়া দিচ্ছে এবং WhatsApp-এ সংযুক্ত হচ্ছে…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gateway antwortet und verbindet sich mit WhatsApp…"
           }
         },
         "en" : {
@@ -7914,6 +8616,12 @@
             "value" : "Шлюз отвечает и подключается к WhatsApp…"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi yanıt veriyor ve WhatsApp’a bağlanıyor…"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7941,6 +8649,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে সাড়া দিচ্ছে। নিচের QR কোডটি ফোনে স্ক্যান করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gateway antwortet. Den QR-Code unten mit dem Telefon scannen."
           }
         },
         "en" : {
@@ -7985,6 +8699,12 @@
             "value" : "Шлюз отвечает. Отсканируйте QR-код ниже телефоном."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi yanıt veriyor. Aşağıdaki QR kodunu telefonunuzla tarayın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8012,6 +8732,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WhatsApp (পরীক্ষামূলক)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp (experimentell)"
           }
         },
         "en" : {
@@ -8056,6 +8782,12 @@
             "value" : "WhatsApp (экспериментально)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhatsApp (deneysel)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8083,6 +8815,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "অনানুষ্ঠানিক ইন্টিগ্রেশন: এটি এই Mac-এ চালানো একটি গেটওয়ে দিয়ে কাজ করে। শুধু নিজের অ্যাকাউন্টে ব্যবহার করুন। অপব্যবহারে WhatsApp অ্যাকাউন্ট সীমিত করতে পারে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inoffizielle Integration: Sie läuft über ein Gateway, das auf diesem Mac läuft. Nur mit dem eigenen Konto verwenden. WhatsApp kann Konten einschränken, die sie missbrauchen."
           }
         },
         "en" : {
@@ -8127,6 +8865,12 @@
             "value" : "Неофициальная интеграция: работает через шлюз, запущенный на этом Mac. Используйте только со своим аккаунтом. WhatsApp может ограничить аккаунт при злоупотреблении."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resmi olmayan entegrasyon: bu Mac’te çalıştırdığınız bir ağ geçidi üzerinden çalışır. Yalnızca kendi hesabınızda kullanın. WhatsApp, kötüye kullanan hesapları kısıtlayabilir."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8154,6 +8898,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "লাইভ: নতুন বার্তা সঙ্গে সঙ্গে আসে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live: Neue Nachrichten kommen sofort an."
           }
         },
         "en" : {
@@ -8198,6 +8948,12 @@
             "value" : "В реальном времени: новые сообщения приходят сразу."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canlı: yeni iletiler hemen gelir."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8225,6 +8981,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "প্রতি ২০ সেকেন্ডে নতুন বার্তা দেখা হচ্ছে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Nachrichten werden alle 20 s abgerufen."
           }
         },
         "en" : {
@@ -8269,6 +9031,12 @@
             "value" : "Проверка новых сообщений каждые 20 с."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni iletiler 20 sn’de bir denetleniyor."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8296,6 +9064,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "পোর্ট %lld ব্যস্ত: অন্যটি বেছে নিন। ততক্ষণ প্রতি ২০ সেকেন্ডে দেখা হচ্ছে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Port %lld ist belegt: einen anderen wählen. Bis dahin wird alle 20 s abgerufen."
           }
         },
         "en" : {
@@ -8340,6 +9114,12 @@
             "value" : "Порт %lld занят: выберите другой. Пока проверка каждые 20 с."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bağlantı noktası kullanımda: başka birini seçin. Bu arada 20 sn’de bir denetleniyor."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8367,6 +9147,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "গেটওয়ে Coucou-র ঠিকানা প্রত্যাখ্যান করেছে (%@)। এর বদলে প্রতি ২০ সেকেন্ডে দেখা হচ্ছে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gateway hat die Adresse von Coucou abgelehnt (%@). Stattdessen wird alle 20 s abgerufen."
           }
         },
         "en" : {
@@ -8411,6 +9197,12 @@
             "value" : "Шлюз отклонил адрес Coucou (%@). Вместо этого проверка каждые 20 с."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ geçidi Coucou’nun adresini reddetti (%@). Bunun yerine 20 sn’de bir denetleniyor."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8438,6 +9230,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আপনি"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du"
           }
         },
         "en" : {
@@ -8480,6 +9278,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вы"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siz"
           }
         },
         "zh-Hans" : {
@@ -9044,6 +9848,12 @@
             "value" : "পূর্ণ স্ক্রিনে লুকান"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Vollbildmodus ausblenden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9084,6 +9894,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скрывать в полноэкранном режиме"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tam ekranda gizle"
           }
         },
         "zh-Hans" : {
@@ -9375,6 +10191,12 @@
             "value" : "পূর্ণ স্ক্রিনের কোনো অ্যাপ, গেম বা ভিডিও ডিসপ্লে ভরে রাখলে আইল্যান্ড সরে যায়।"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Insel tritt zur Seite, solange eine Vollbild-App, ein Spiel oder ein Video ihren Bildschirm füllt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9415,6 +10237,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остров убирается, пока полноэкранное приложение, игра или видео, занимает его экран."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tam ekran bir uygulama, oyun veya video ekranını kapladığı sürece ada kenara çekilir."
           }
         },
         "zh-Hans" : {
@@ -31277,10 +32105,76 @@
     },
     "Address" : {
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "العنوان"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ঠিকানা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dirección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पता"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alamat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endereço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес"
+          }
+        },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ที่อยู่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址"
           }
         },
         "zh-Hant" : {
@@ -35477,10 +36371,76 @@
     },
     "Codex plan" : {
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطة Codex"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex প্ল্যান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex-Tarif"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de Codex"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfait Codex"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex प्लान"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paket Codex"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plano Codex"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тариф Codex"
+          }
+        },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "แพ็กเกจ Codex"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex planı"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex 套餐"
           }
         },
         "zh-Hant" : {
@@ -57437,10 +58397,76 @@
     },
     "Resets" : {
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعادات التعيين"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "রিসেট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurücksetzungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reinicios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialisations"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रीसेट"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinições"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросы"
+          }
+        },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "รีเซ็ต"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıfırlama hakları"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
           }
         },
         "zh-Hant" : {
@@ -73259,6 +74285,12 @@
             "value" : "%@ কোনো ফোল্ডার নয়।"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ist kein Ordner."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -73301,6 +74333,12 @@
             "value" : "%@ не является папкой."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bir klasör değil."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -73321,6 +74359,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Schlüssel wird nur über https oder an einen Server auf diesem Computer gesendet."
           }
         },
         "en" : {
@@ -73365,6 +74409,12 @@
             "value" : "Ключ отправляется только по https или на сервер на этом компьютере."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtar yalnızca https üzerinden veya bu bilgisayardaki bir sunucuya gönderilir."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -73385,6 +74435,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এমন অ্যাপের শেয়ার করা স্ক্রিন যা মাইক বা ক্যামেরাও ব্যবহার করছে। রেকর্ডার বা স্ক্রিনশট টুল গণ্য হয় না।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Bildschirm, den eine App teilt, die auch Mikrofon oder Kamera nutzt. Ein Rekorder oder ein Bildschirmfoto-Tool zählt nicht."
           }
         },
         "en" : {
@@ -73429,6 +74485,12 @@
             "value" : "Экран, который показывает приложение, также использующее микрофон или камеру. Запись экрана и скриншоты не считаются."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofonu veya kamerayı da kullanan bir uygulamanın paylaştığı ekran. Kayıt ya da ekran görüntüsü aracı sayılmaz."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -73449,6 +74511,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "im:read, users:read ও search:read স্কোপসহ একটি Slack অ্যাপের ইউজার টোকেন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein User-Token einer Slack-App mit den Scopes im:read, users:read und search:read."
           }
         },
         "en" : {
@@ -73491,6 +74559,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Токен пользователя из приложения Slack с правами im:read, users:read и search:read."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "im:read, users:read ve search:read kapsamlarına sahip bir Slack uygulamasından kullanıcı token’ı."
           }
         },
         "zh-Hans" : {
@@ -74323,6 +75397,12 @@
             "value" : "স্বীকৃত"
           }
         },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestätigt"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74365,6 +75445,12 @@
             "value" : "Подтверждён"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onaylandı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74385,6 +75471,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "যোগ করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
           }
         },
         "en" : {
@@ -74429,6 +75521,12 @@
             "value" : "Добавить"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74449,6 +75547,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আগে সেটিংস → স্থানীয় মডেলে একটি Open WebUI API কী যোগ করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuerst einen Open WebUI-API-Schlüssel unter Einstellungen → Lokale Modelle hinzufügen."
           }
         },
         "en" : {
@@ -74493,6 +75597,12 @@
             "value" : "Сначала добавьте API-ключ Open WebUI в Настройки → Локальные модели."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce Ayarlar → Yerel modeller bölümünde bir Open WebUI API anahtarı ekleyin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74513,6 +75623,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এজেন্টের ত্রুটি"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent-Fehler"
           }
         },
         "en" : {
@@ -74557,6 +75673,12 @@
             "value" : "Ошибка агента"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan hatası"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74577,6 +75699,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এজেন্ট শেষ করেছে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent fertig"
           }
         },
         "en" : {
@@ -74621,6 +75749,12 @@
             "value" : "Агент завершил работу"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan bitirdi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74641,6 +75775,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "যে সতর্কতাগুলো আইল্যান্ড খোলে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warnungen, die die Insel öffnen"
           }
         },
         "en" : {
@@ -74685,6 +75825,12 @@
             "value" : "Оповещения, открывающие остров"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adayı açan uyarılar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74705,6 +75851,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সারাদিন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganztägig"
           }
         },
         "en" : {
@@ -74749,6 +75901,12 @@
             "value" : "Весь день"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tüm gün"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74769,6 +75927,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সব মডেল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Modelle"
           }
         },
         "en" : {
@@ -74813,6 +75977,12 @@
             "value" : "Все модели"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tüm modeller"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74833,6 +76003,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সব মনিটর চালু"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Monitore erreichbar"
           }
         },
         "en" : {
@@ -74877,6 +76053,12 @@
             "value" : "Все мониторы работают"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tüm monitörler çalışıyor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74897,6 +76079,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্যালেন্ডারে অ্যাক্সেসের অনুমতি দিন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalenderzugriff erlauben"
           }
         },
         "en" : {
@@ -74941,6 +76129,12 @@
             "value" : "Разрешить доступ к календарю"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim erişimine izin ver"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -74961,6 +76155,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "অনুমোদন কোড"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisierungscode"
           }
         },
         "en" : {
@@ -75005,6 +76205,12 @@
             "value" : "Код авторизации"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yetkilendirme kodu"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75025,6 +76231,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "স্বয়ংক্রিয়ভাবে লুকান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch ausblenden"
           }
         },
         "en" : {
@@ -75069,6 +76281,12 @@
             "value" : "Автоскрытие"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otomatik gizle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75089,6 +76307,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ফিরে যান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
           }
         },
         "en" : {
@@ -75133,6 +76357,12 @@
             "value" : "Назад"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geri"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75153,6 +76383,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "নিচে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unten"
           }
         },
         "en" : {
@@ -75197,6 +76433,12 @@
             "value" : "Снизу"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alt"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75217,6 +76459,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্যালেন্ডার অ্যাক্সেসের অনুমতি নেই"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalenderzugriff nicht erlaubt"
           }
         },
         "en" : {
@@ -75261,6 +76509,12 @@
             "value" : "Доступ к календарю не разрешён"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim erişimine izin verilmedi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75281,6 +76535,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্যালেন্ডার"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalender"
           }
         },
         "en" : {
@@ -75325,6 +76585,12 @@
             "value" : "Календари"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvimler"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75345,6 +76611,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anrufe"
           }
         },
         "en" : {
@@ -75389,6 +76661,12 @@
             "value" : "Звонки"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aramalar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75409,6 +76687,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্যামেরা চালু"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera an"
           }
         },
         "en" : {
@@ -75453,6 +76737,12 @@
             "value" : "Камера включена"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera açık"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75473,6 +76763,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এখানকার আপনার চ্যাটগুলো Open WebUI-তেও দেখা যায়। কী পেতে, একজন অ্যাডমিন Admin Panel → Settings → Authentication → API Keys চালু করেন; তারপর Settings → Account → API keys → Secrets → Show থেকে একটি তৈরি হয়।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats, die hier geführt werden, erscheinen auch in Open WebUI. Für den Schlüssel aktiviert ein Admin Admin Panel → Settings → Authentication → API Keys; danach erstellt Settings → Account → API keys → Secrets → Show einen."
           }
         },
         "en" : {
@@ -75517,6 +76813,12 @@
             "value" : "Ваши чаты здесь также появляются в Open WebUI. Для ключа администратор включает Admin Panel → Settings → Authentication → API Keys; затем Settings → Account → API keys → Secrets → Show создаёт его."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Burada yaptığınız sohbetler Open WebUI’da da görünür. Anahtar için bir yönetici Admin Panel → Settings → Authentication → API Keys seçeneğini açar; ardından Settings → Account → API keys → Secrets → Show bir anahtar oluşturur."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75537,6 +76839,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code ইনস্টল করা নেই (`claude` কমান্ড পাওয়া যায়নি)।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code ist nicht installiert (kein `claude`-Befehl gefunden)."
           }
         },
         "en" : {
@@ -75581,6 +76889,12 @@
             "value" : "Claude Code не установлен (команда `claude` не найдена)."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code yüklü değil (`claude` komutu bulunamadı)."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75601,6 +76915,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "অন্য মেশিনের Claude Code সেশন, আপনার কী আর ~/.ssh/config দিয়ে SSH-এর মাধ্যমে। প্রথমে প্রতিটি হোস্টে টার্মিনাল থেকে একবার যুক্ত হন, যাতে তার হোস্ট কী জানা থাকে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code-Sitzungen auf anderen Rechnern, über SSH mit den eigenen Schlüsseln und ~/.ssh/config. Zuerst einmal in einem Terminal mit jedem Host verbinden, damit sein Host-Key bekannt ist."
           }
         },
         "en" : {
@@ -75645,6 +76965,12 @@
             "value" : "Сеансы Claude Code на других машинах по SSH с вашими ключами и ~/.ssh/config. Сначала подключитесь к каждому хосту один раз в терминале, чтобы его ключ был известен."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer makinelerdeki Claude Code oturumları, anahtarlarınız ve ~/.ssh/config ile SSH üzerinden. Ana bilgisayar anahtarının bilinmesi için önce her ana bilgisayara bir terminalde bir kez bağlanın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75665,6 +76991,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code-এর ডিফল্ট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard von Claude Code"
           }
         },
         "en" : {
@@ -75709,6 +77041,12 @@
             "value" : "По умолчанию в Claude Code"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code varsayılanı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75729,6 +77067,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্লায়েন্ট আইডি"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client-ID"
           }
         },
         "en" : {
@@ -75773,6 +77117,12 @@
             "value" : "ID клиента"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstemci kimliği"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75793,6 +77143,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্লায়েন্ট সিক্রেট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client-Secret"
           }
         },
         "en" : {
@@ -75837,6 +77193,12 @@
             "value" : "Секрет клиента"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstemci gizli anahtarı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75857,6 +77219,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কোড"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
           }
         },
         "en" : {
@@ -75901,6 +77269,12 @@
             "value" : "Код"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kod"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75921,6 +77295,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou-র চ্যাট ফোল্ডার"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat-Ordner von Coucou"
           }
         },
         "en" : {
@@ -75965,6 +77345,12 @@
             "value" : "Папка чата Coucou"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou’nun sohbet klasörü"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -75985,6 +77371,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "শুধু কাজরত এজেন্ট গণনা করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur arbeitende Agents zählen"
           }
         },
         "en" : {
@@ -76029,6 +77421,12 @@
             "value" : "Считать только работающих агентов"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yalnızca çalışan ajanları say"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76049,6 +77447,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডাউন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgefallen"
           }
         },
         "en" : {
@@ -76093,6 +77497,12 @@
             "value" : "Недоступен"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışmıyor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76113,6 +77523,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code যে ফাইলই সম্পাদনা করে, তা সঙ্গে সঙ্গে আইল্যান্ডে খোলে, আর পরের সম্পাদনা সেটির জায়গা নেয়। পরের প্রম্পট পর্যন্ত অনুসরণ বন্ধ রাখতে এটি বন্ধ করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede Datei, die Claude Code bearbeitet, öffnet sich sofort in der Insel, und die nächste Bearbeitung ersetzt sie. Schließen, um bis zum nächsten Prompt nicht mehr zu folgen."
           }
         },
         "en" : {
@@ -76157,6 +77573,12 @@
             "value" : "Каждый файл, который правит Claude Code, сразу открывается в острове, а следующая правка его заменяет. Закройте его, чтобы не следить до следующего запроса."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code’un düzenlediği her dosya o anda adada açılır ve sonraki düzenleme onun yerini alır. Bir sonraki prompt’a kadar izlemeyi durdurmak için kapatın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76177,6 +77599,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "প্রচেষ্টা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufwand"
           }
         },
         "en" : {
@@ -76221,6 +77649,12 @@
             "value" : "Усилие"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76241,6 +77675,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সম্পাদনা লাইভ অনুসরণ করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bearbeitungen live verfolgen"
           }
         },
         "en" : {
@@ -76285,6 +77725,12 @@
             "value" : "Следить за правками вживую"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düzenlemeleri canlı izle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76305,6 +77751,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সর্বশেষ কার্যকলাপ অনুসরণ করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzter Aktivität folgen"
           }
         },
         "en" : {
@@ -76349,6 +77801,12 @@
             "value" : "Следить за последней активностью"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En son etkinliği izle"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76369,6 +77827,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "অন্য কোথাও সামলানো হয়েছে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderswo erledigt."
           }
         },
         "en" : {
@@ -76413,6 +77877,12 @@
             "value" : "Обработано в другом месте."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başka yerde işlendi."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76433,6 +77903,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ঘটনা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorfälle"
           }
         },
         "en" : {
@@ -76477,6 +77953,12 @@
             "value" : "Инциденты"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olaylar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76497,6 +77979,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "যোগ দিন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beitreten"
           }
         },
         "en" : {
@@ -76541,6 +78029,12 @@
             "value" : "Войти"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Katıl"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76561,6 +78055,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou-র চ্যাট ফোল্ডার ব্যবহার করতে খালি রাখুন। Claude Code-কে কোনো প্রকল্পে কাজ করাতে সেই প্রকল্পের ফোল্ডার বেছে নিন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer lassen, um den Chat-Ordner von Coucou zu verwenden. Einen Projektordner wählen, damit Claude Code an diesem Projekt arbeitet."
           }
         },
         "en" : {
@@ -76605,6 +78105,12 @@
             "value" : "Оставьте пустым, чтобы использовать папку чата Coucou. Выберите папку проекта, чтобы Claude Code работал над этим проектом."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou’nun sohbet klasörünü kullanmak için boş bırakın. Claude Code’un o proje üzerinde çalışması için bir proje klasörü seçin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76625,6 +78131,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বামে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
           }
         },
         "en" : {
@@ -76669,6 +78181,12 @@
             "value" : "Слева"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sol"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76689,6 +78207,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "লাইভ"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
           }
         },
         "en" : {
@@ -76733,6 +78257,12 @@
             "value" : "Вживую"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canlı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76753,6 +78283,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "বার্তা"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachrichten"
           }
         },
         "en" : {
@@ -76797,6 +78333,12 @@
             "value" : "Сообщения"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İletiler"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76817,6 +78359,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "মাইক্রোফোন চালু"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofon an"
           }
         },
         "en" : {
@@ -76861,6 +78409,12 @@
             "value" : "Микрофон включён"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofon açık"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76881,6 +78435,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সবচেয়ে বেশি ব্যবহৃত"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meistgenutzt"
           }
         },
         "en" : {
@@ -76925,6 +78485,12 @@
             "value" : "Часто используемые"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En çok kullanılanlar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -76945,6 +78511,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "নতুন চ্যাট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Chat"
           }
         },
         "en" : {
@@ -76989,6 +78561,12 @@
             "value" : "Новый чат"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni sohbet"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77009,6 +78587,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "নতুন কথোপকথন (⌘K)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Unterhaltung (⌘K)"
           }
         },
         "en" : {
@@ -77053,6 +78637,12 @@
             "value" : "Новый разговор (⌘K)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşma (⌘K)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77073,6 +78663,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coucou চালু হওয়ার পর থেকে কোনো কার্যকলাপ নেই"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Aktivität seit dem Start von Coucou"
           }
         },
         "en" : {
@@ -77117,6 +78713,12 @@
             "value" : "Нет активности с запуска Coucou"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou başladığından beri etkinlik yok"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77137,6 +78739,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কোনো মডেল মেলেনি।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein passendes Modell."
           }
         },
         "en" : {
@@ -77181,6 +78789,12 @@
             "value" : "Нет подходящих моделей."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eşleşen model yok."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77201,6 +78815,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আজ আর কোনো মিটিং নেই"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute keine Meetings mehr"
           }
         },
         "en" : {
@@ -77245,6 +78865,12 @@
             "value" : "Сегодня встреч больше нет"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün başka toplantı yok"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77265,6 +78891,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কোনো নতুন বার্তা নেই"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine neuen Nachrichten"
           }
         },
         "en" : {
@@ -77309,6 +78941,12 @@
             "value" : "Нет новых сообщений"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni ileti yok"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77329,6 +78967,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "উত্তরে কোনো লেখা নেই।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Antworttext."
           }
         },
         "en" : {
@@ -77373,6 +79017,12 @@
             "value" : "В ответе нет текста."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıt metni yok."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77393,6 +79043,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কোনো টাইমার চলছে না"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Timer aktiv"
           }
         },
         "en" : {
@@ -77437,6 +79093,12 @@
             "value" : "Таймер не запущен"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışan zamanlayıcı yok"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77457,6 +79119,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এটি হোস্টের নাম নয়"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Hostname"
           }
         },
         "en" : {
@@ -77501,6 +79169,12 @@
             "value" : "Это не имя хоста"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ana bilgisayar adı değil"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77521,6 +79195,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এখন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt"
           }
         },
         "en" : {
@@ -77565,6 +79245,12 @@
             "value" : "Сейчас"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77585,6 +79271,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open WebUI-তে এই অ্যাকাউন্টের জন্য কোনো মডেল নেই।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI hat keine Modelle für dieses Konto."
           }
         },
         "en" : {
@@ -77629,6 +79321,12 @@
             "value" : "В Open WebUI нет моделей для этой учётной записи."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI’da bu hesap için model yok."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77649,6 +79347,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "অ্যাডমিন ওয়েব অনুসন্ধান চালু করে থাকলে Open WebUI উত্তর দেওয়ার আগে ওয়েবে খোঁজে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI sucht vor dem Antworten im Web, sofern der Admin die Websuche aktiviert hat."
           }
         },
         "en" : {
@@ -77693,6 +79397,12 @@
             "value" : "Open WebUI ищет в интернете перед ответом там, где администратор включил поиск."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI, yöneticisi web aramasını açtıysa yanıt vermeden önce web’de arama yapar."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77713,6 +79423,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "নতুন কার্যকলাপে আইল্যান্ড খুলুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insel bei neuer Aktivität öffnen"
           }
         },
         "en" : {
@@ -77757,6 +79473,12 @@
             "value" : "Открывать остров при новой активности"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni etkinlikte adayı aç"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77777,6 +79499,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "প্যাডিং"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innenabstand"
           }
         },
         "en" : {
@@ -77821,6 +79549,12 @@
             "value" : "Отступы"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dolgu"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77841,6 +79575,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuerst ein Modell über dem Chatfeld auswählen."
           }
         },
         "en" : {
@@ -77885,6 +79625,12 @@
             "value" : "Сначала выберите модель над полем чата."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce sohbet kutusunun üstünden bir model seçin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77905,6 +79651,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ক্যালেন্ডার অ্যাপের ক্যালেন্ডারগুলো পড়ে, Google অ্যাকাউন্টসহ।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liest die Kalender der Kalender-App, inklusive Google-Konten."
           }
         },
         "en" : {
@@ -77949,6 +79701,12 @@
             "value" : "Читает календари приложения «Календарь», включая аккаунты Google."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim uygulamasının takvimlerini okur, Google hesapları dahil."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77969,6 +79727,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "রিমোট হোস্ট"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernte Hosts"
           }
         },
         "en" : {
@@ -78013,6 +79777,12 @@
             "value" : "Удалённые хосты"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzak ana bilgisayarlar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78033,6 +79803,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সরান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernen"
           }
         },
         "en" : {
@@ -78077,6 +79853,12 @@
             "value" : "Удалить"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaldır"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78097,6 +79879,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সমাধান হয়েছে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behoben"
           }
         },
         "en" : {
@@ -78141,6 +79929,12 @@
             "value" : "Решён"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çözüldü"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78161,6 +79955,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ডানে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts"
           }
         },
         "en" : {
@@ -78205,6 +80005,12 @@
             "value" : "Справа"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78225,6 +80031,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "স্ক্রিন শেয়ারিং"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildschirmfreigabe"
           }
         },
         "en" : {
@@ -78269,6 +80081,12 @@
             "value" : "Демонстрация экрана"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekran paylaşımı"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78289,6 +80107,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "মডেল খুঁজুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelle suchen"
           }
         },
         "en" : {
@@ -78333,6 +80157,12 @@
             "value" : "Поиск моделей"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model ara"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78353,6 +80183,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ভাঁজ করা আইল্যান্ডে প্ল্যানের ব্যবহার দেখান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarifnutzung in der eingeklappten Insel anzeigen"
           }
         },
         "en" : {
@@ -78397,6 +80233,12 @@
             "value" : "Показывать расход тарифа в свёрнутом острове"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Katlanmış adada plan kullanımını göster"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78417,6 +80259,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ভাঁজ করা আইল্যান্ডে এজেন্টের সংখ্যা দেখান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anzahl der Agents in der eingeklappten Insel anzeigen"
           }
         },
         "en" : {
@@ -78461,6 +80309,12 @@
             "value" : "Показывать число агентов в свёрнутом острове"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Katlanmış adada ajan sayısını göster"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78481,6 +80335,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "শুধু সংখ্যাটি দেখান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur die Anzahl anzeigen"
           }
         },
         "en" : {
@@ -78525,6 +80385,12 @@
             "value" : "Показывать только число"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yalnızca sayıyı göster"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78545,6 +80411,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "টিম আইডি (ঐচ্ছিক)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team-ID (optional)"
           }
         },
         "en" : {
@@ -78589,6 +80461,12 @@
             "value" : "ID команды (необязательно)"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekip kimliği (isteğe bağlı)"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78609,6 +80487,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "টার্মিনাল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminal"
           }
         },
         "en" : {
@@ -78653,6 +80537,12 @@
             "value" : "Терминал"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminal"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78673,6 +80563,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কার্ডে সেই এজেন্ট দেখায় যে শেষবার কিছু করেছে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Karte zeigt den Agent, der zuletzt aktiv war"
           }
         },
         "en" : {
@@ -78717,6 +80613,12 @@
             "value" : "Карточка показывает агента, который последним что-то сделал"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kart, en son bir şey yapan ajanı gösterir"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78737,6 +80639,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "{host}-এ settings.json-এর পরিবর্তনগুলো। Coucou সেখানে তার রিলে ~/.local/share/coucou/bin-এও কপি করে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Änderungen an settings.json auf {host}. Coucou kopiert dort außerdem sein Relay nach ~/.local/share/coucou/bin."
           }
         },
         "en" : {
@@ -78781,6 +80689,12 @@
             "value" : "Изменения в settings.json на {host}. Coucou также копирует туда свой ретранслятор в ~/.local/share/coucou/bin."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{host} üzerindeki settings.json değişiklikleri. Coucou ayrıca aktarıcısını oraya, ~/.local/share/coucou/bin klasörüne kopyalar."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78801,6 +80715,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এগুলোর কোনোটি ব্যবহৃত হলে আইল্যান্ড লুকিয়ে থাকে এবং নীরব থাকে। মেনু বারের ক্যামেরা, মাইক্রোফোন ও স্ক্রিন সূচক থেকে পড়া হয়।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Insel blendet sich aus und verstummt, solange eines davon verwendet wird. Ausgelesen aus den Kamera-, Mikrofon- und Bildschirmanzeigen der Menüleiste."
           }
         },
         "en" : {
@@ -78845,6 +80765,12 @@
             "value" : "Остров скрывается и молчит, пока что-то из этого используется. Читается из индикаторов камеры, микрофона и экрана в строке меню."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunlardan biri kullanılırken ada gizlenir ve sessiz kalır. Menü çubuğunun kamera, mikrofon ve ekran göstergelerinden okunur."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78865,6 +80791,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Server hat den Schlüssel abgelehnt. Schlüssel prüfen und erneut verbinden."
           }
         },
         "en" : {
@@ -78909,6 +80841,12 @@
             "value" : "Сервер отклонил ключ. Проверьте его и подключитесь снова."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunucu anahtarı reddetti. Anahtarı denetleyip yeniden bağlanın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78929,6 +80867,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "শেষ কাজের এক মিনিট পরে ছোট আইল্যান্ড লুকিয়ে যায়। বন্ধ থাকলে এটি স্ক্রিনের উপরে থাকে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die kleine Insel blendet sich eine Minute nach der letzten Aktivität aus. Aus: Sie bleibt oben auf dem Bildschirm."
           }
         },
         "en" : {
@@ -78973,6 +80917,12 @@
             "value" : "Маленький остров прячется через минуту после последней активности. Выключено: он остаётся вверху экрана."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Küçük ada son etkinlikten bir dakika sonra gizlenir. Kapalı: ekranın üstünde kalır."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -78993,6 +80943,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "এই চ্যাটটি Open WebUI-তে মুছে ফেলা হয়েছে। নতুন শুরু করতে আবার পাঠান।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Chat wurde in Open WebUI gelöscht. Erneut senden, um einen neuen zu beginnen."
           }
         },
         "en" : {
@@ -79037,6 +80993,12 @@
             "value" : "Этот чат удалён в Open WebUI. Отправьте снова, чтобы начать новый."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sohbet Open WebUI’da silindi. Yeni bir sohbet başlatmak için yeniden gönderin."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79057,6 +81019,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আজ"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute"
           }
         },
         "en" : {
@@ -79101,6 +81069,12 @@
             "value" : "Сегодня"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79121,6 +81095,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "আগামীকাল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgen"
           }
         },
         "en" : {
@@ -79165,6 +81145,12 @@
             "value" : "Завтра"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yarın"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79185,6 +81171,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "উপরে"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oben"
           }
         },
         "en" : {
@@ -79229,6 +81221,12 @@
             "value" : "Сверху"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Üst"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79249,6 +81247,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code-এর সাইন-ইন, MCP সার্ভার, স্কিল ও হুকসহ এটি ব্যবহার করে। API কী লাগে না।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwendet Claude Code mit seiner Anmeldung, seinen MCP-Servern, Skills und Hooks. Kein API-Schlüssel nötig."
           }
         },
         "en" : {
@@ -79293,6 +81297,12 @@
             "value" : "Использует Claude Code с его входом, MCP-серверами, навыками и хуками. Ключ API не нужен."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code’u oturum açma bilgisi, MCP sunucuları, skill’leri ve hook’larıyla kullanır. API anahtarı gerekmez."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79313,6 +81323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ওয়েব অনুসন্ধান"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websuche"
           }
         },
         "en" : {
@@ -79357,6 +81373,12 @@
             "value" : "Поиск в интернете"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web araması"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79377,6 +81399,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "কাজের ফোল্ডার"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arbeitsordner"
           }
         },
         "en" : {
@@ -79421,6 +81449,12 @@
             "value" : "Рабочая папка"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma klasörü"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79441,6 +81475,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ওয়ার্কস্পেস মডেল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workspace-Modelle"
           }
         },
         "en" : {
@@ -79485,6 +81525,12 @@
             "value" : "Модели рабочего пространства"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma alanı modelleri"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79505,6 +81551,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "devbox বা user@host, ssh-এর পরে যেভাবে লেখেন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "devbox oder Benutzer@Host, wie nach ssh eingegeben"
           }
         },
         "en" : {
@@ -79549,6 +81601,12 @@
             "value" : "devbox или user@host, как вы пишете после ssh"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "devbox veya kullanıcı@ana-bilgisayar, ssh’den sonra yazdığınız gibi"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79569,6 +81627,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Better Stack → API tokens → Team-based tokens: একটি Uptime API টোকেন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack → API tokens → Team-based tokens: ein Uptime-API-Token."
           }
         },
         "en" : {
@@ -79613,6 +81677,12 @@
             "value" : "Better Stack → API tokens → Team-based tokens: токен Uptime API."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack → API tokens → Team-based tokens: bir Uptime API token’ı."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79633,6 +81703,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Linear-এর ব্যক্তিগত API কী: Settings → Account → Security & access."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönlicher API-Schlüssel von Linear: Settings → Account → Security & access."
           }
         },
         "en" : {
@@ -79677,6 +81753,12 @@
             "value" : "Личный API-ключ Linear: Settings → Account → Security & access."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear’dan kişisel API anahtarı: Settings → Account → Security & access."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79697,6 +81779,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timely-তে Settings → Devs খুলে রিডাইরেক্ট URI urn:ietf:wg:oauth:2.0:oob দিয়ে একটি অ্যাপ নিবন্ধন করুন। এর ক্লায়েন্ট আইডি ও সিক্রেট দিয়ে সংযোগ করুন, তারপর Timely-র দেখানো কোড পেস্ট করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Timely Settings → Devs öffnen und eine App mit der Redirect-URI urn:ietf:wg:oauth:2.0:oob registrieren. Client-ID und Secret eingeben, verbinden und dann den Code einfügen, den Timely anzeigt."
           }
         },
         "en" : {
@@ -79741,6 +81829,12 @@
             "value" : "В Timely откройте Settings → Devs и зарегистрируйте приложение с URI перенаправления urn:ietf:wg:oauth:2.0:oob. Введите его ID и секрет клиента, подключитесь и вставьте код, который покажет Timely."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timely’de Settings → Devs bölümünü açın ve urn:ietf:wg:oauth:2.0:oob yönlendirme URI’siyle bir uygulama kaydedin. İstemci kimliğini ve gizli anahtarını girin, bağlanın, ardından Timely’nin gösterdiği kodu yapıştırın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79761,6 +81855,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ভাঁজ করা আইল্যান্ডের কিনারা আর Mochi বা ট্যাবের মধ্যে পিক্সেল"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel zwischen den Rändern der eingeklappten Insel und Mochi oder den Pills"
           }
         },
         "en" : {
@@ -79805,6 +81905,12 @@
             "value" : "пикселей между краями свёрнутого острова и Mochi или вкладками"
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "katlanmış adanın kenarları ile Mochi veya pill’ler arasındaki piksel"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79825,6 +81931,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "✓ Timely সংযুক্ত হয়েছে।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓ Timely verbunden."
           }
         },
         "en" : {
@@ -79869,6 +81981,12 @@
             "value" : "✓ Timely подключён."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓ Timely bağlandı."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79889,6 +82007,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "❌ Timely কোডটি গ্রহণ করেনি। ক্লায়েন্ট আইডি ও সিক্রেট যাচাই করে আবার সংযোগ করুন।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Timely hat den Code nicht akzeptiert. Client-ID und Secret prüfen und erneut verbinden."
           }
         },
         "en" : {
@@ -79933,6 +82057,12 @@
             "value" : "❌ Timely не принял код. Проверьте ID и секрет клиента и подключитесь снова."
           }
         },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Timely kodu kabul etmedi. İstemci kimliğini ve gizli anahtarı denetleyip yeniden bağlanın."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -79953,6 +82083,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ব্যাকগ্রাউন্ডে: %lld"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Hintergrund: %lld"
           }
         },
         "en" : {
@@ -79995,6 +82131,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "В фоне: %lld"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arka planda: %lld"
           }
         },
         "zh-Hans" : {

@@ -430,19 +430,6 @@
    "de": "Insel schließen",
    "tr": "Adayı kapat"
   },
-  "Codex plan": {
-   "zh-Hans": "Codex 套餐",
-   "hi": "Codex प्लान",
-   "es": "Plan de Codex",
-   "ar": "خطة Codex",
-   "fr": "Forfait Codex",
-   "bn": "Codex প্ল্যান",
-   "pt-BR": "Plano Codex",
-   "ru": "Тариф Codex",
-   "id": "Paket Codex",
-   "de": "Codex-Tarif",
-   "tr": "Codex planı"
-  },
   "Codex plan usage": {
    "zh-Hans": "Codex 套餐用量",
    "hi": "Codex प्लान का उपयोग",
@@ -1807,19 +1794,6 @@
    "id": "Kembalikan ke bawaan",
    "de": "Auf Standard zurücksetzen",
    "tr": "Varsayılana sıfırla"
-  },
-  "Resets": {
-   "zh-Hans": "重置",
-   "hi": "रीसेट",
-   "es": "Reinicios",
-   "ar": "إعادات التعيين",
-   "fr": "Réinitialisations",
-   "bn": "রিসেট",
-   "pt-BR": "Redefinições",
-   "ru": "Сбросы",
-   "id": "Reset",
-   "de": "Zurücksetzungen",
-   "tr": "Sıfırlama hakları"
   },
   "Restart Amp to load the plugin.": {
    "zh-Hans": "重启 Amp 以加载插件。",
@@ -4749,7 +4723,9 @@
    "bn": "Claude-এর বদলে Google AI, OpenAI, OpenRouter, DeepSeek, Qwen বা Moonshot-এর সঙ্গে চ্যাট করুন: এখানে একটি কী যোগ করুন, তারপর প্রদানকারী ও মডেল বদলাতে চ্যাট বক্সের উপরে মডেলের নামে ক্লিক করুন। কী সিস্টেম কীচেইনে থাকে। এই প্রদানকারীরা ওয়েব সার্চ বা টুল পায় না: তারা উত্তর দিতে পারে, এই কম্পিউটারে কখনো কিছু করে না।",
    "pt-BR": "Converse com Google AI, OpenAI, OpenRouter, DeepSeek, Qwen ou Moonshot em vez do Claude: adicione uma chave aqui e clique no nome do modelo acima da caixa de chat para trocar de provedor e de modelo. As chaves ficam no chaveiro do sistema. Esses provedores não têm busca na web nem ferramentas: podem responder, nunca agir neste computador.",
    "ru": "Общайтесь с Google AI, OpenAI, OpenRouter, DeepSeek, Qwen или Moonshot вместо Claude: добавьте ключ здесь, затем нажмите на название модели над полем чата, чтобы сменить провайдера и модель. Ключи хранятся в системной связке ключей. У этих провайдеров нет веб-поиска и инструментов: они могут отвечать, но никогда не действуют на этом компьютере.",
-   "id": "Mengobrol dengan Google AI, OpenAI, OpenRouter, DeepSeek, Qwen, atau Moonshot sebagai ganti Claude: tambahkan kunci di sini, lalu klik nama model di atas kotak obrolan untuk mengganti penyedia dan model. Kunci tetap di keychain sistem. Penyedia ini tidak punya pencarian web maupun alat: mereka bisa menjawab, tidak pernah bertindak di komputer ini."
+   "id": "Mengobrol dengan Google AI, OpenAI, OpenRouter, DeepSeek, Qwen, atau Moonshot sebagai ganti Claude: tambahkan kunci di sini, lalu klik nama model di atas kotak obrolan untuk mengganti penyedia dan model. Kunci tetap di keychain sistem. Penyedia ini tidak punya pencarian web maupun alat: mereka bisa menjawab, tidak pernah bertindak di komputer ini.",
+   "de": "Statt mit Claude mit Google AI, OpenAI, OpenRouter, DeepSeek, Qwen oder Moonshot chatten: hier einen Schlüssel hinzufügen, dann auf den Modellnamen über dem Chatfeld klicken, um Anbieter und Modell zu wechseln. Schlüssel bleiben im Schlüsselbund des Systems. Diese Anbieter haben keine Websuche und keine Tools: Sie können antworten, aber nie auf diesem Computer handeln.",
+   "tr": "Claude yerine Google AI, OpenAI, OpenRouter, DeepSeek, Qwen veya Moonshot ile sohbet edin: buraya bir anahtar ekleyin, ardından sağlayıcıyı ve modeli değiştirmek için sohbet kutusunun üstündeki model adına tıklayın. Anahtarlar sistem anahtar zincirinde kalır. Bu sağlayıcılarda web araması ve araç yoktur: yanıt verebilirler, bu bilgisayarda asla işlem yapamazlar."
   },
   "Google Calendar → Settings → your calendar → Integrate calendar. Any iCal link works: Outlook, iCloud, Fastmail.": {
    "zh-Hans": "Google 日历 → 设置 → 你的日历 → 集成日历。任何 iCal 链接都可以：Outlook、iCloud、Fastmail。",
@@ -4760,7 +4736,9 @@
    "bn": "Google Calendar → সেটিংস → আপনার ক্যালেন্ডার → ক্যালেন্ডার ইন্টিগ্রেট করুন। যেকোনো iCal লিংক চলবে: Outlook, iCloud, Fastmail।",
    "pt-BR": "Google Agenda → Configurações → sua agenda → Integrar agenda. Qualquer link iCal funciona: Outlook, iCloud, Fastmail.",
    "ru": "Google Календарь → Настройки → ваш календарь → Интеграция календаря. Подойдёт любая ссылка iCal: Outlook, iCloud, Fastmail.",
-   "id": "Google Kalender → Setelan → kalender Anda → Integrasikan kalender. Tautan iCal apa pun bisa: Outlook, iCloud, Fastmail."
+   "id": "Google Kalender → Setelan → kalender Anda → Integrasikan kalender. Tautan iCal apa pun bisa: Outlook, iCloud, Fastmail.",
+   "de": "Google Kalender → Einstellungen → eigener Kalender → Kalender integrieren. Jeder iCal-Link funktioniert: Outlook, iCloud, Fastmail.",
+   "tr": "Google Takvim → Ayarlar → takviminiz → Takvimi entegre et. Her iCal bağlantısı çalışır: Outlook, iCloud, Fastmail."
   },
   "Keys are stored in the {store}, never on disk.": {
    "zh-Hans": "密钥保存在 {store} 中，绝不写入磁盘。",
@@ -4771,7 +4749,9 @@
    "bn": "কী {store}-এ রাখা হয়, কখনো ডিস্কে নয়।",
    "pt-BR": "As chaves ficam em {store}, nunca no disco.",
    "ru": "Ключи хранятся в {store}, никогда на диске.",
-   "id": "Kunci disimpan di {store}, tidak pernah di disk."
+   "id": "Kunci disimpan di {store}, tidak pernah di disk.",
+   "de": "Schlüssel werden im {store} gespeichert, nie auf der Festplatte.",
+   "tr": "Anahtarlar {store} içinde saklanır, asla diskte değil."
   },
   "No answer came within two minutes. Try again.": {
    "zh-Hans": "两分钟内没有回复，请重试。",
@@ -4782,7 +4762,9 @@
    "bn": "দুই মিনিটে কোনো উত্তর আসেনি। আবার চেষ্টা করুন।",
    "pt-BR": "Nenhuma resposta em dois minutos. Tente de novo.",
    "ru": "Ответа не было две минуты. Попробуйте ещё раз.",
-   "id": "Tidak ada jawaban dalam dua menit. Coba lagi."
+   "id": "Tidak ada jawaban dalam dua menit. Coba lagi.",
+   "de": "Innerhalb von zwei Minuten kam keine Antwort. Erneut versuchen.",
+   "tr": "İki dakika içinde yanıt gelmedi. Yeniden deneyin."
   },
   "Secret address in iCal format": {
    "zh-Hans": "iCal 格式的私密地址",
@@ -4793,7 +4775,9 @@
    "bn": "iCal ফরম্যাটে গোপন ঠিকানা",
    "pt-BR": "Endereço secreto no formato iCal",
    "ru": "Секретный адрес в формате iCal",
-   "id": "Alamat rahasia dalam format iCal"
+   "id": "Alamat rahasia dalam format iCal",
+   "de": "Geheime Adresse im iCal-Format",
+   "tr": "iCal biçiminde gizli adres"
   },
   "Stopped.": {
    "zh-Hans": "已停止。",
@@ -4804,7 +4788,9 @@
    "bn": "থামানো হয়েছে।",
    "pt-BR": "Interrompido.",
    "ru": "Остановлено.",
-   "id": "Dihentikan."
+   "id": "Dihentikan.",
+   "de": "Gestoppt.",
+   "tr": "Durduruldu."
   },
   "The calendar address must start with https:// or webcal://.": {
    "zh-Hans": "日历地址必须以 https:// 或 webcal:// 开头。",
@@ -4815,7 +4801,9 @@
    "bn": "ক্যালেন্ডারের ঠিকানা https:// অথবা webcal:// দিয়ে শুরু হতে হবে।",
    "pt-BR": "O endereço do calendário deve começar com https:// ou webcal://.",
    "ru": "Адрес календаря должен начинаться с https:// или webcal://.",
-   "id": "Alamat kalender harus diawali https:// atau webcal://."
+   "id": "Alamat kalender harus diawali https:// atau webcal://.",
+   "de": "Die Kalenderadresse muss mit https:// oder webcal:// beginnen.",
+   "tr": "Takvim adresi https:// veya webcal:// ile başlamalıdır."
   },
   "The files differ.": {
    "zh-Hans": "文件内容不同。",
@@ -4826,7 +4814,9 @@
    "bn": "ফাইলগুলো আলাদা।",
    "pt-BR": "Os arquivos são diferentes.",
    "ru": "Файлы различаются.",
-   "id": "File berbeda."
+   "id": "File berbeda.",
+   "de": "Die Dateien unterscheiden sich.",
+   "tr": "Dosyalar farklı."
   },
   "The island hides and goes silent while one of these is in use.": {
    "zh-Hans": "其中任何一项使用时，岛会隐藏并保持静音。",
@@ -4837,7 +4827,9 @@
    "bn": "এগুলোর কোনোটি ব্যবহৃত হলে আইল্যান্ড লুকিয়ে থাকে এবং নীরব থাকে।",
    "pt-BR": "A ilha se esconde e fica em silêncio enquanto um destes está em uso.",
    "ru": "Остров скрывается и молчит, пока что-то из этого используется.",
-   "id": "Pulau bersembunyi dan diam selama salah satunya digunakan."
+   "id": "Pulau bersembunyi dan diam selama salah satunya digunakan.",
+   "de": "Die Insel blendet sich aus und verstummt, solange eines davon verwendet wird.",
+   "tr": "Bunlardan biri kullanılırken ada gizlenir ve sessiz kalır."
   },
   "Unexpected response": {
    "zh-Hans": "意外的响应",
@@ -4848,7 +4840,9 @@
    "bn": "অপ্রত্যাশিত উত্তর",
    "pt-BR": "Resposta inesperada",
    "ru": "Неожиданный ответ",
-   "id": "Respons tak terduga"
+   "id": "Respons tak terduga",
+   "de": "Unerwartete Antwort",
+   "tr": "Beklenmeyen yanıt"
   },
   "{count} hooks of other Coucou installs stay as they are: this host's own Coucou, other computers, or an older install.": {
    "zh-Hans": "其他 Coucou 安装的 {count} 个 hook 保持不变：这台主机自己的 Coucou、其他电脑，或较旧的安装。",
@@ -4859,7 +4853,9 @@
    "bn": "অন্য Coucou ইনস্টলের {count}টি hook যেমন আছে তেমনই থাকে: এই হোস্টের নিজের Coucou, অন্য কম্পিউটার, বা কোনো পুরোনো ইনস্টল।",
    "pt-BR": "{count} hooks de outras instalações do Coucou continuam como estão: o Coucou deste host, outros computadores ou uma instalação antiga.",
    "ru": "{count} hooks других установок Coucou остаются как есть: собственный Coucou этого хоста, другие компьютеры или старая установка.",
-   "id": "{count} hook dari instalasi Coucou lain tetap seperti adanya: Coucou milik host ini, komputer lain, atau instalasi lama."
+   "id": "{count} hook dari instalasi Coucou lain tetap seperti adanya: Coucou milik host ini, komputer lain, atau instalasi lama.",
+   "de": "{count} Hooks anderer Coucou-Installationen bleiben unverändert: das eigene Coucou dieses Hosts, andere Computer oder eine ältere Installation.",
+   "tr": "Diğer Coucou kurulumlarına ait {count} hook olduğu gibi kalır: bu ana bilgisayarın kendi Coucou’su, diğer bilgisayarlar veya eski bir kurulum."
   },
   "{index} of {total}": {
    "zh-Hans": "第 {index} 个，共 {total} 个",
@@ -4870,7 +4866,9 @@
    "bn": "{total}টির মধ্যে {index}",
    "pt-BR": "{index} de {total}",
    "ru": "{index} из {total}",
-   "id": "{index} dari {total}"
+   "id": "{index} dari {total}",
+   "de": "{index} von {total}",
+   "tr": "{index} / {total}"
   },
   "{path} is not a folder.": {
    "zh-Hans": "{path} 不是文件夹。",
@@ -4881,7 +4879,9 @@
    "bn": "{path} কোনো ফোল্ডার নয়।",
    "pt-BR": "{path} não é uma pasta.",
    "ru": "{path} не является папкой.",
-   "id": "{path} bukan folder."
+   "id": "{path} bukan folder.",
+   "de": "{path} ist kein Ordner.",
+   "tr": "{path} bir klasör değil."
   },
   "API secret": {
    "zh-Hans": "API 密钥",
@@ -4892,7 +4892,9 @@
    "bn": "API সিক্রেট",
    "pt-BR": "Segredo da API",
    "ru": "Секрет API",
-   "id": "Rahasia API"
+   "id": "Rahasia API",
+   "de": "API-Secret",
+   "tr": "API gizli anahtarı"
   },
   "Key name": {
    "zh-Hans": "密钥名称",
@@ -4903,7 +4905,9 @@
    "bn": "কী-এর নাম",
    "pt-BR": "Nome da chave",
    "ru": "Имя ключа",
-   "id": "Nama kunci"
+   "id": "Nama kunci",
+   "de": "Schlüsselname",
+   "tr": "Anahtar adı"
   },
   "Private key": {
    "zh-Hans": "私钥",
@@ -4914,7 +4918,9 @@
    "bn": "প্রাইভেট কী",
    "pt-BR": "Chave privada",
    "ru": "Закрытый ключ",
-   "id": "Kunci privat"
+   "id": "Kunci privat",
+   "de": "Privater Schlüssel",
+   "tr": "Özel anahtar"
   },
   "Passphrase": {
    "zh-Hans": "密码短语",
@@ -4925,29 +4931,9 @@
    "bn": "পাসফ্রেজ",
    "pt-BR": "Frase secreta",
    "ru": "Кодовая фраза",
-   "id": "Frasa sandi"
-  },
-  "Address": {
-   "zh-Hans": "地址",
-   "hi": "पता",
-   "es": "Dirección",
-   "ar": "العنوان",
-   "fr": "Adresse",
-   "bn": "ঠিকানা",
-   "pt-BR": "Endereço",
-   "ru": "Адрес",
-   "id": "Alamat"
-  },
-  "My wallet": {
-   "zh-Hans": "我的钱包",
-   "hi": "मेरा वॉलेट",
-   "es": "Mi billetera",
-   "ar": "محفظتي",
-   "fr": "Mon portefeuille",
-   "bn": "আমার ওয়ালেট",
-   "pt-BR": "Minha carteira",
-   "ru": "Мой кошелёк",
-   "id": "Dompet saya"
+   "id": "Frasa sandi",
+   "de": "Passphrase",
+   "tr": "Parola ifadesi"
   },
   "Network": {
    "zh-Hans": "网络",
@@ -4958,7 +4944,9 @@
    "bn": "নেটওয়ার্ক",
    "pt-BR": "Rede",
    "ru": "Сеть",
-   "id": "Jaringan"
+   "id": "Jaringan",
+   "de": "Netzwerk",
+   "tr": "Ağ"
   },
   "Add exchange": {
    "zh-Hans": "添加交易所",
@@ -4969,7 +4957,9 @@
    "bn": "এক্সচেঞ্জ যোগ করুন",
    "pt-BR": "Adicionar exchange",
    "ru": "Добавить биржу",
-   "id": "Tambah bursa"
+   "id": "Tambah bursa",
+   "de": "Börse hinzufügen",
+   "tr": "Borsa ekle"
   },
   "Add wallet": {
    "zh-Hans": "添加钱包",
@@ -4980,7 +4970,9 @@
    "bn": "ওয়ালেট যোগ করুন",
    "pt-BR": "Adicionar carteira",
    "ru": "Добавить кошелёк",
-   "id": "Tambah dompet"
+   "id": "Tambah dompet",
+   "de": "Wallet hinzufügen",
+   "tr": "Cüzdan ekle"
   },
   "Invalid address format.": {
    "zh-Hans": "地址格式无效。",
@@ -4991,7 +4983,9 @@
    "bn": "অবৈধ ঠিকানা ফরম্যাট।",
    "pt-BR": "Formato de endereço inválido.",
    "ru": "Неверный формат адреса.",
-   "id": "Format alamat tidak valid."
+   "id": "Format alamat tidak valid.",
+   "de": "Ungültiges Adressformat.",
+   "tr": "Geçersiz adres biçimi."
   },
   "Network error. Check your connection.": {
    "zh-Hans": "网络错误。请检查您的连接。",
@@ -5002,7 +4996,9 @@
    "bn": "নেটওয়ার্ক ত্রুটি। সংযোগ পরীক্ষা করুন।",
    "pt-BR": "Erro de rede. Verifique sua conexão.",
    "ru": "Ошибка сети. Проверьте подключение.",
-   "id": "Kesalahan jaringan. Periksa koneksi Anda."
+   "id": "Kesalahan jaringan. Periksa koneksi Anda.",
+   "de": "Netzwerkfehler. Verbindung prüfen.",
+   "tr": "Ağ hatası. Bağlantınızı denetleyin."
   },
   "No credentials found. Add them in Settings.": {
    "zh-Hans": "未找到凭据。在设置中添加。",
@@ -5013,7 +5009,9 @@
    "bn": "কোনো ক্রিডেনশিয়াল পাওয়া যায়নি। সেটিংসে যোগ করুন।",
    "pt-BR": "Nenhuma credencial encontrada. Adicione nas Configurações.",
    "ru": "Ключи не найдены. Добавьте их в настройках.",
-   "id": "Kredensial tidak ditemukan. Tambahkan di Pengaturan."
+   "id": "Kredensial tidak ditemukan. Tambahkan di Pengaturan.",
+   "de": "Keine Zugangsdaten gefunden. In den Einstellungen hinzufügen.",
+   "tr": "Kimlik bilgisi bulunamadı. Ayarlar’dan ekleyin."
   },
   "Unexpected response from the exchange.": {
    "zh-Hans": "来自交易所的意外响应。",
@@ -5024,7 +5022,9 @@
    "bn": "এক্সচেঞ্জ থেকে অপ্রত্যাশিত প্রতিক্রিয়া।",
    "pt-BR": "Resposta inesperada da exchange.",
    "ru": "Неожиданный ответ от биржи.",
-   "id": "Respons tak terduga dari bursa."
+   "id": "Respons tak terduga dari bursa.",
+   "de": "Unerwartete Antwort der Börse.",
+   "tr": "Borsadan beklenmeyen yanıt."
   },
   "Read-only access only. Keys stored in the {store}, never sent anywhere.": {
    "zh-Hans": "仅读取权限。密钥存储在 {store}，不会发送到任何地方。",
@@ -5035,7 +5035,9 @@
    "bn": "শুধু পড়ার অ্যাক্সেস। কীগুলি {store}-এ, কোথাও পাঠানো হয় না।",
    "pt-BR": "Somente leitura. Chaves no {store}, nunca enviadas.",
    "ru": "Только чтение. Ключи хранятся в {store} и никуда не отправляются.",
-   "id": "Akses baca saja. Kunci disimpan di {store}, tidak dikirim ke mana pun."
+   "id": "Akses baca saja. Kunci disimpan di {store}, tidak dikirim ke mana pun.",
+   "de": "Nur Lesezugriff. Schlüssel im {store} gespeichert, nie irgendwohin gesendet.",
+   "tr": "Yalnızca salt okunur erişim. Anahtarlar {store} içinde saklanır, hiçbir yere gönderilmez."
   },
   "No accounts connected — add one in Settings → Integrations.": {
    "zh-Hans": "未连接账户 — 在设置 → 集成中添加。",
@@ -5046,7 +5048,9 @@
    "bn": "কোনো অ্যাকাউন্ট সংযুক্ত নেই — সেটিংস → ইন্টিগ্রেশনে একটি যোগ করুন।",
    "pt-BR": "Nenhuma conta conectada — adicione uma em Ajustes → Integrações.",
    "ru": "Нет подключённых счетов — добавьте счёт в Настройки → Интеграции.",
-   "id": "Tidak ada akun terhubung — tambahkan di Pengaturan → Integrasi."
+   "id": "Tidak ada akun terhubung — tambahkan di Pengaturan → Integrasi.",
+   "de": "Keine Konten verbunden — eines unter Einstellungen → Integrationen hinzufügen.",
+   "tr": "Bağlı hesap yok — Ayarlar → Entegrasyonlar bölümünden bir tane ekleyin."
   },
   "read-only": {
    "zh-Hans": "只读",
@@ -5057,7 +5061,9 @@
    "bn": "শুধু পড়া",
    "pt-BR": "somente leitura",
    "ru": "только чтение",
-   "id": "baca saja"
+   "id": "baca saja",
+   "de": "nur lesen",
+   "tr": "salt okunur"
   },
   "Remove {name}?": {
    "zh-Hans": "移除 {name}？",
@@ -5068,7 +5074,9 @@
    "bn": "{name} সরান?",
    "pt-BR": "Remover {name}?",
    "ru": "Удалить {name}?",
-   "id": "Hapus {name}?"
+   "id": "Hapus {name}?",
+   "de": "{name} entfernen?",
+   "tr": "{name} kaldırılsın mı?"
   },
   "Test & Save": {
    "zh-Hans": "测试并保存",
@@ -5079,7 +5087,9 @@
    "bn": "পরীক্ষা ও সংরক্ষণ",
    "pt-BR": "Testar e Salvar",
    "ru": "Проверить и сохранить",
-   "id": "Uji & Simpan"
+   "id": "Uji & Simpan",
+   "de": "Testen & speichern",
+   "tr": "Sına & kaydet"
   },
   "Testing…": {
    "zh-Hans": "正在测试…",
@@ -5090,7 +5100,9 @@
    "bn": "পরীক্ষা চলছে…",
    "pt-BR": "Testando…",
    "ru": "Проверка…",
-   "id": "Menguji…"
+   "id": "Menguji…",
+   "de": "Wird getestet…",
+   "tr": "Sınanıyor…"
   },
   "Verify & Save": {
    "zh-Hans": "验证并保存",
@@ -5101,7 +5113,9 @@
    "bn": "যাচাই ও সংরক্ষণ",
    "pt-BR": "Verificar e Salvar",
    "ru": "Проверить и сохранить",
-   "id": "Verifikasi & Simpan"
+   "id": "Verifikasi & Simpan",
+   "de": "Prüfen & speichern",
+   "tr": "Doğrula & kaydet"
   },
   "Public address only. Coucou never touches your private keys.": {
    "zh-Hans": "仅公开地址。Coucou 从不接触您的私钥。",
@@ -5112,7 +5126,9 @@
    "bn": "শুধুমাত্র পাবলিক ঠিকানা। Coucou কখনো আপনার প্রাইভেট কী স্পর্শ করে না।",
    "pt-BR": "Apenas endereço público. Coucou nunca toca suas chaves privadas.",
    "ru": "Только публичный адрес. Coucou никогда не касается ваших закрытых ключей.",
-   "id": "Hanya alamat publik. Coucou tidak pernah menyentuh kunci privat Anda."
+   "id": "Hanya alamat publik. Coucou tidak pernah menyentuh kunci privat Anda.",
+   "de": "Nur öffentliche Adresse. Coucou berührt nie private Schlüssel.",
+   "tr": "Yalnızca genel adres. Coucou özel anahtarlarınıza asla dokunmaz."
   },
   "Label (optional)": {
    "zh-Hans": "标签（可选）",
@@ -5123,7 +5139,9 @@
    "bn": "লেবেল (ঐচ্ছিক)",
    "pt-BR": "Rótulo (opcional)",
    "ru": "Название (необязательно)",
-   "id": "Label (opsional)"
+   "id": "Label (opsional)",
+   "de": "Bezeichnung (optional)",
+   "tr": "Etiket (isteğe bağlı)"
   },
   "In Binance → API Management, create a key with Read Info permission only. Do not enable Spot Trading or Withdrawals.": {
    "zh-Hans": "在 Binance → API 管理中，创建一个仅有“读取信息”权限的密钥。不要启用现货交易或提现。",
@@ -5134,7 +5152,9 @@
    "bn": "Binance → API Management-এ শুধু Read Info অনুমতি দিয়ে একটি কী তৈরি করুন। Spot Trading বা Withdrawals চালু করবেন না।",
    "pt-BR": "No Binance → Gerenciamento de API, crie uma chave apenas com a permissão Read Info. Não ative Spot Trading nem Withdrawals.",
    "ru": "В Binance → API Management создайте ключ только с разрешением Read Info. Не включайте Spot Trading и Withdrawals.",
-   "id": "Di Binance → API Management, buat kunci dengan izin Read Info saja. Jangan aktifkan Spot Trading atau Withdrawals."
+   "id": "Di Binance → API Management, buat kunci dengan izin Read Info saja. Jangan aktifkan Spot Trading atau Withdrawals.",
+   "de": "In Binance → API Management einen Schlüssel nur mit der Berechtigung Read Info erstellen. Spot Trading und Withdrawals nicht aktivieren.",
+   "tr": "Binance → API Management bölümünde yalnızca Read Info izniyle bir anahtar oluşturun. Spot Trading veya Withdrawals iznini açmayın."
   },
   "In OKX → API → Create V5 API Key. Set permission to Read only. Note your passphrase — it is shown only once.": {
    "zh-Hans": "在 OKX → API → 创建 V5 API 密钥。将权限设为“只读”。记下您的密码短语 — 它只显示一次。",
@@ -5145,7 +5165,9 @@
    "bn": "OKX → API → Create V5 API Key-এ যান। অনুমতি Read only দিন। পাসফ্রেজটি লিখে রাখুন — এটি মাত্র একবার দেখানো হয়।",
    "pt-BR": "No OKX → API → Create V5 API Key. Defina a permissão como Read only. Anote sua frase secreta — ela aparece só uma vez.",
    "ru": "В OKX → API → Create V5 API Key. Укажите разрешение Read only. Запишите кодовую фразу — она показывается только один раз.",
-   "id": "Di OKX → API → Create V5 API Key. Atur izin ke Read only. Catat frasa sandi Anda — hanya ditampilkan sekali."
+   "id": "Di OKX → API → Create V5 API Key. Atur izin ke Read only. Catat frasa sandi Anda — hanya ditampilkan sekali.",
+   "de": "In OKX → API → Create V5 API Key. Berechtigung auf Read only setzen. Passphrase notieren — sie wird nur einmal angezeigt.",
+   "tr": "OKX → API → Create V5 API Key. İzni Read only olarak ayarlayın. Parola ifadenizi not edin — yalnızca bir kez gösterilir."
   },
   "In Bybit → API Management, create a key with Read Only permissions. Uncheck all other scopes.": {
    "zh-Hans": "在 Bybit → API 管理中，创建一个具有“只读”权限的密钥。取消勾选所有其他范围。",
@@ -5156,7 +5178,9 @@
    "bn": "Bybit → API Management-এ Read Only অনুমতি দিয়ে একটি কী তৈরি করুন। বাকি সব স্কোপ বাদ দিন।",
    "pt-BR": "No Bybit → Gerenciamento de API, crie uma chave com permissões Read Only. Desmarque todos os outros escopos.",
    "ru": "В Bybit → API Management создайте ключ с правами Read Only. Снимите все остальные отметки.",
-   "id": "Di Bybit → API Management, buat kunci dengan izin Read Only. Hapus centang semua cakupan lain."
+   "id": "Di Bybit → API Management, buat kunci dengan izin Read Only. Hapus centang semua cakupan lain.",
+   "de": "In Bybit → API Management einen Schlüssel mit Read Only-Berechtigungen erstellen. Alle anderen Scopes abwählen.",
+   "tr": "Bybit → API Management bölümünde Read Only izinli bir anahtar oluşturun. Diğer tüm kapsamların işaretini kaldırın."
   },
   "In Kraken → Security → API, create a key with Query Funds permission only. Paste the Private Key (base64) as the secret.": {
    "zh-Hans": "在 Kraken → Security → API 中，创建一个仅有 Query Funds 权限的密钥。将私钥（base64）粘贴为密钥。",
@@ -5167,7 +5191,9 @@
    "bn": "Kraken → Security → API-তে শুধু Query Funds অনুমতি দিয়ে একটি কী তৈরি করুন। Private Key (base64) সিক্রেট হিসেবে পেস্ট করুন।",
    "pt-BR": "No Kraken → Security → API, crie uma chave apenas com a permissão Query Funds. Cole a Private Key (base64) como segredo.",
    "ru": "В Kraken → Security → API создайте ключ только с разрешением Query Funds. Вставьте Private Key (base64) как секрет.",
-   "id": "Di Kraken → Security → API, buat kunci dengan izin Query Funds saja. Tempel Private Key (base64) sebagai rahasia."
+   "id": "Di Kraken → Security → API, buat kunci dengan izin Query Funds saja. Tempel Private Key (base64) sebagai rahasia.",
+   "de": "In Kraken → Security → API einen Schlüssel nur mit der Berechtigung Query Funds erstellen. Den Private Key (base64) als Secret einfügen.",
+   "tr": "Kraken → Security → API bölümünde yalnızca Query Funds izniyle bir anahtar oluşturun. Private Key’i (base64) gizli anahtar olarak yapıştırın."
   },
   "On coinbase.com → Settings → API (CDP) → Create API key, signature ECDSA, permission View only. Paste the key name (organizations/…/apiKeys/…) and the whole private key (BEGIN EC PRIVATE KEY…).": {
    "zh-Hans": "在 coinbase.com → 设置 → API (CDP) → 创建 API 密钥，签名选 ECDSA，权限仅 View。粘贴密钥名称（organizations/…/apiKeys/…）和完整私钥（BEGIN EC PRIVATE KEY…）。",
@@ -5178,7 +5204,9 @@
    "bn": "coinbase.com → Settings → API (CDP) → Create API key-এ যান, signature ECDSA, অনুমতি শুধু View। কী-এর নাম (organizations/…/apiKeys/…) এবং পুরো প্রাইভেট কী (BEGIN EC PRIVATE KEY…) পেস্ট করুন।",
    "pt-BR": "Em coinbase.com → Configurações → API (CDP) → Criar chave de API, assinatura ECDSA, permissão apenas View. Cole o nome da chave (organizations/…/apiKeys/…) e a chave privada inteira (BEGIN EC PRIVATE KEY…).",
    "ru": "На coinbase.com → Settings → API (CDP) → Create API key, подпись ECDSA, разрешение только View. Вставьте имя ключа (organizations/…/apiKeys/…) и весь закрытый ключ (BEGIN EC PRIVATE KEY…).",
-   "id": "Di coinbase.com → Settings → API (CDP) → Create API key, tanda tangan ECDSA, izin View saja. Tempel nama kunci (organizations/…/apiKeys/…) dan seluruh kunci privat (BEGIN EC PRIVATE KEY…)."
+   "id": "Di coinbase.com → Settings → API (CDP) → Create API key, tanda tangan ECDSA, izin View saja. Tempel nama kunci (organizations/…/apiKeys/…) dan seluruh kunci privat (BEGIN EC PRIVATE KEY…).",
+   "de": "Auf coinbase.com → Settings → API (CDP) → Create API key, Signatur ECDSA, Berechtigung View only. Den Schlüsselnamen (organizations/…/apiKeys/…) und den gesamten privaten Schlüssel (BEGIN EC PRIVATE KEY…) einfügen.",
+   "tr": "coinbase.com → Settings → API (CDP) → Create API key, imza ECDSA, izin View only. Anahtar adını (organizations/…/apiKeys/…) ve özel anahtarın tamamını (BEGIN EC PRIVATE KEY…) yapıştırın."
   },
   "This private key can't be read. Paste the whole key, from BEGIN EC PRIVATE KEY to END EC PRIVATE KEY (ECDSA key).": {
    "zh-Hans": "无法读取此私钥。请粘贴完整密钥，从 BEGIN EC PRIVATE KEY 到 END EC PRIVATE KEY（ECDSA 密钥）。",
@@ -5189,124 +5217,9 @@
    "bn": "এই প্রাইভেট কী পড়া যাচ্ছে না। পুরো কী পেস্ট করুন, BEGIN EC PRIVATE KEY থেকে END EC PRIVATE KEY পর্যন্ত (ECDSA কী)।",
    "pt-BR": "Não foi possível ler esta chave privada. Cole a chave inteira, de BEGIN EC PRIVATE KEY a END EC PRIVATE KEY (chave ECDSA).",
    "ru": "Не удаётся прочитать этот закрытый ключ. Вставьте ключ целиком, от BEGIN EC PRIVATE KEY до END EC PRIVATE KEY (ключ ECDSA).",
-   "id": "Kunci privat ini tidak dapat dibaca. Tempel seluruh kunci, dari BEGIN EC PRIVATE KEY sampai END EC PRIVATE KEY (kunci ECDSA)."
-  },
-  "Back": {
-   "zh-Hans": "返回",
-   "hi": "वापस",
-   "es": "Atrás",
-   "ar": "رجوع",
-   "fr": "Retour",
-   "bn": "ফিরে যান",
-   "pt-BR": "Voltar",
-   "ru": "Назад",
-   "id": "Kembali",
-   "de": "Zurück",
-   "tr": "Geri"
-  },
-  "Chat with Google AI, OpenAI or OpenRouter instead of Claude: add a key here, then click the model name above the chat box to switch provider and model. Keys stay in the system keychain. These providers get no web search and no tools: they can answer, never act on this computer.": {
-   "zh-Hans": "用 Google AI、OpenAI 或 OpenRouter 代替 Claude 聊天：在这里添加密钥，然后点击聊天框上方的模型名称来切换服务商和模型。密钥保存在系统钥匙串中。这些服务商没有网页搜索和工具：它们只能回答，绝不会在这台电脑上执行操作。",
-   "hi": "Claude की जगह Google AI, OpenAI या OpenRouter से चैट करें: यहाँ एक कुंजी जोड़ें, फिर प्रदाता और मॉडल बदलने के लिए चैट बॉक्स के ऊपर मॉडल के नाम पर क्लिक करें। कुंजियाँ सिस्टम कीचेन में रहती हैं। इन प्रदाताओं को न वेब सर्च मिलता है न टूल: वे जवाब दे सकते हैं, इस कंप्यूटर पर कभी कुछ नहीं करते।",
-   "es": "Chatea con Google AI, OpenAI u OpenRouter en lugar de Claude: añade una clave aquí y luego haz clic en el nombre del modelo encima del cuadro de chat para cambiar de proveedor y modelo. Las claves se quedan en el llavero del sistema. Estos proveedores no tienen búsqueda web ni herramientas: pueden responder, nunca actuar en este equipo.",
-   "ar": "دردش مع Google AI أو OpenAI أو OpenRouter بدلًا من Claude: أضف مفتاحًا هنا، ثم انقر على اسم النموذج فوق مربع الدردشة لتبديل المزوّد والنموذج. تبقى المفاتيح في سلسلة مفاتيح النظام. لا يحصل هؤلاء المزوّدون على بحث الويب ولا على الأدوات: يمكنهم الإجابة، ولا يتصرفون أبدًا على هذا الحاسوب.",
-   "fr": "Discute avec Google AI, OpenAI ou OpenRouter à la place de Claude : ajoute une clé ici, puis clique sur le nom du modèle au-dessus de la zone de chat pour changer de fournisseur et de modèle. Les clés restent dans le trousseau du système. Ces fournisseurs n'ont ni recherche web ni outils : ils peuvent répondre, jamais agir sur cet ordinateur.",
-   "bn": "Claude-এর বদলে Google AI, OpenAI বা OpenRouter-এর সঙ্গে চ্যাট করুন: এখানে একটি কী যোগ করুন, তারপর প্রদানকারী ও মডেল বদলাতে চ্যাট বক্সের উপরে মডেলের নামে ক্লিক করুন। কী সিস্টেম কীচেইনে থাকে। এই প্রদানকারীরা ওয়েব সার্চ বা টুল পায় না: তারা উত্তর দিতে পারে, এই কম্পিউটারে কখনো কিছু করে না।",
-   "pt-BR": "Converse com Google AI, OpenAI ou OpenRouter em vez do Claude: adicione uma chave aqui e clique no nome do modelo acima da caixa de chat para trocar de provedor e de modelo. As chaves ficam no chaveiro do sistema. Esses provedores não têm busca na web nem ferramentas: podem responder, nunca agir neste computador.",
-   "ru": "Общайтесь с Google AI, OpenAI или OpenRouter вместо Claude: добавьте ключ здесь, затем нажмите на название модели над полем чата, чтобы сменить провайдера и модель. Ключи хранятся в системной связке ключей. У этих провайдеров нет веб-поиска и инструментов: они могут отвечать, но никогда не действуют на этом компьютере.",
-   "id": "Mengobrol dengan Google AI, OpenAI, atau OpenRouter sebagai ganti Claude: tambahkan kunci di sini, lalu klik nama model di atas kotak obrolan untuk mengganti penyedia dan model. Kunci tetap di keychain sistem. Penyedia ini tidak punya pencarian web maupun alat: mereka bisa menjawab, tidak pernah bertindak di komputer ini.",
-   "de": "Chatte mit Google AI, OpenAI oder OpenRouter statt mit Claude: Hinterlege hier einen Schlüssel und klicke dann auf den Modellnamen über dem Chatfeld, um Anbieter und Modell zu wechseln. Schlüssel bleiben im Systemschlüsselbund. Diese Anbieter erhalten weder Websuche noch Werkzeuge: Sie können antworten, aber auf diesem Computer keine Aktionen ausführen.",
-   "tr": "Claude yerine Google AI, OpenAI veya OpenRouter ile sohbet et: buraya bir anahtar ekle, ardından sağlayıcı ve model değiştirmek için sohbet kutusunun üstündeki model adına tıkla. Anahtarlar sistemin anahtar zincirinde kalır. Bu sağlayıcılarda web araması ve araçlar yoktur: yanıt verebilirler, bu bilgisayarda işlem yapamazlar."
-  },
-  "Code": {
-   "zh-Hans": "代码",
-   "hi": "कोड",
-   "es": "Código",
-   "ar": "شيفرة",
-   "fr": "Code",
-   "bn": "কোড",
-   "pt-BR": "Código",
-   "ru": "Код",
-   "id": "Kode",
-   "de": "Code",
-   "tr": "Kod"
-  },
-  "No response text.": {
-   "zh-Hans": "没有回复内容。",
-   "hi": "जवाब में कोई टेक्स्ट नहीं।",
-   "es": "La respuesta no tiene texto.",
-   "ar": "لا يوجد نص في الرد.",
-   "fr": "La réponse ne contient pas de texte.",
-   "bn": "উত্তরে কোনো লেখা নেই।",
-   "pt-BR": "A resposta não tem texto.",
-   "ru": "В ответе нет текста.",
-   "id": "Tidak ada teks balasan.",
-   "de": "Kein Antworttext.",
-   "tr": "Yanıt metni yok."
-  },
-  "Pick a model above the chat box first.": {
-   "zh-Hans": "请先在聊天框上方选择一个模型。",
-   "hi": "पहले चैट बॉक्स के ऊपर एक मॉडल चुनें।",
-   "es": "Elige primero un modelo encima del cuadro de chat.",
-   "ar": "اختر نموذجًا فوق مربع الدردشة أولًا.",
-   "fr": "Choisis d'abord un modèle au-dessus de la zone de chat.",
-   "bn": "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।",
-   "pt-BR": "Escolha primeiro um modelo acima da caixa de chat.",
-   "ru": "Сначала выберите модель над полем чата.",
-   "id": "Pilih model di atas kotak obrolan terlebih dahulu.",
-   "de": "Wähle zuerst ein Modell über dem Chatfeld aus.",
-   "tr": "Önce sohbet kutusunun üstünden bir model seç."
-  },
-  "Pick up to {max} pills to show next to Mochi — {used}/{max} in use. Keys are stored in the {store}, never on disk.": {
-   "zh-Hans": "最多选择 {max} 个标签显示在 Mochi 旁边 — 已用 {used}/{max}。密钥保存在 {store} 中，绝不写入磁盘。",
-   "hi": "Mochi के बगल में दिखाने के लिए अधिकतम {max} टैब चुनें — {used}/{max} उपयोग में। कुंजियाँ {store} में रखी जाती हैं, डिस्क पर कभी नहीं।",
-   "es": "Elige hasta {max} pestañas para mostrar junto a Mochi — {used}/{max} en uso. Las claves se guardan en {store}, nunca en el disco.",
-   "ar": "اختر حتى {max} تبويبات لعرضها بجانب Mochi — {used}/{max} مستخدمة. تُحفظ المفاتيح في {store}، ولا تُكتب على القرص أبدًا.",
-   "fr": "Choisis jusqu'à {max} onglets à afficher à côté de Mochi — {used}/{max} utilisés. Les clés sont stockées dans {store}, jamais sur le disque.",
-   "bn": "Mochi-র পাশে দেখাতে সর্বোচ্চ {max}টি ট্যাব বেছে নিন — {used}/{max} ব্যবহৃত। কী {store}-এ রাখা হয়, কখনো ডিস্কে নয়।",
-   "pt-BR": "Escolha até {max} abas para mostrar ao lado do Mochi — {used}/{max} em uso. As chaves ficam em {store}, nunca no disco.",
-   "ru": "Выберите до {max} вкладок рядом с Mochi — занято {used}/{max}. Ключи хранятся в {store}, никогда на диске.",
-   "id": "Pilih hingga {max} tab untuk ditampilkan di samping Mochi — {used}/{max} terpakai. Kunci disimpan di {store}, tidak pernah di disk.",
-   "de": "Wähle bis zu {max} Pills neben Mochi — {used}/{max} belegt. Schlüssel werden im {store} gespeichert, niemals auf der Festplatte.",
-   "tr": "Mochi'nin yanında gösterilecek en fazla {max} araç seç — {used}/{max} kullanımda. Anahtarlar {store} içinde saklanır, diske yazılmaz."
-  },
-  "The server refused the key. Check it, then connect again.": {
-   "zh-Hans": "服务器拒绝了该密钥。请检查后重新连接。",
-   "hi": "सर्वर ने कुंजी अस्वीकार कर दी। उसे जाँचें, फिर दोबारा कनेक्ट करें।",
-   "es": "El servidor rechazó la clave. Revísala y vuelve a conectar.",
-   "ar": "رفض الخادم المفتاح. تحقّق منه ثم اتصل مجددًا.",
-   "fr": "Le serveur a refusé la clé. Vérifie-la, puis reconnecte-toi.",
-   "bn": "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।",
-   "pt-BR": "O servidor recusou a chave. Verifique-a e conecte de novo.",
-   "ru": "Сервер отклонил ключ. Проверьте его и подключитесь снова.",
-   "id": "Server menolak kunci. Periksa, lalu hubungkan lagi.",
-   "de": "Der Server hat den Schlüssel abgelehnt. Prüfe ihn und verbinde dich erneut.",
-   "tr": "Sunucu anahtarı reddetti. Kontrol edip tekrar bağlan."
-  },
-  "{used}/{max} slots in use — the main tool doesn't take one.": {
-   "zh-Hans": "已用 {used}/{max} 个位置 — 主要工具不占位置。",
-   "hi": "{used}/{max} स्लॉट उपयोग में — मुख्य टूल कोई स्लॉट नहीं लेता।",
-   "es": "{used}/{max} espacios en uso — la herramienta principal no ocupa ninguno.",
-   "ar": "{used}/{max} من الخانات مستخدمة — الأداة الرئيسية لا تشغل خانة.",
-   "fr": "{used}/{max} emplacements utilisés — l'outil principal n'en prend pas.",
-   "bn": "{used}/{max} স্লট ব্যবহৃত — প্রধান টুল কোনো স্লট নেয় না।",
-   "pt-BR": "{used}/{max} espaços em uso — a ferramenta principal não ocupa nenhum.",
-   "ru": "Занято мест: {used}/{max} — основной инструмент место не занимает.",
-   "id": "{used}/{max} slot terpakai — alat utama tidak memakai slot.",
-   "de": "{used}/{max} Plätze belegt — das Hauptwerkzeug belegt keinen.",
-   "tr": "{used}/{max} yuva kullanımda — ana araç yuva kullanmaz."
-  },
-  "A key is only sent over https, or to a server on this computer.": {
-   "zh-Hans": "密钥只会通过 https 发送，或发送到本机上的服务器。",
-   "hi": "कुंजी केवल https पर, या इसी कंप्यूटर के सर्वर को भेजी जाती है।",
-   "es": "La clave solo se envía por https o a un servidor de este ordenador.",
-   "ar": "لا يُرسَل المفتاح إلا عبر https، أو إلى خادم على هذا الحاسوب.",
-   "fr": "La clé n'est envoyée qu'en https, ou à un serveur sur cet ordinateur.",
-   "bn": "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।",
-   "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
-   "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
-   "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini.",
-   "de": "Ein Schlüssel wird nur über HTTPS oder an einen Server auf diesem Computer gesendet.",
-   "tr": "Anahtar yalnızca https üzerinden veya bu bilgisayardaki bir sunucuya gönderilir."
+   "id": "Kunci privat ini tidak dapat dibaca. Tempel seluruh kunci, dari BEGIN EC PRIVATE KEY sampai END EC PRIVATE KEY (kunci ECDSA).",
+   "de": "Dieser private Schlüssel ist nicht lesbar. Den ganzen Schlüssel einfügen, von BEGIN EC PRIVATE KEY bis END EC PRIVATE KEY (ECDSA-Schlüssel).",
+   "tr": "Bu özel anahtar okunamıyor. Anahtarın tamamını BEGIN EC PRIVATE KEY’den END EC PRIVATE KEY’e kadar yapıştırın (ECDSA anahtarı)."
   },
   "Show clock in the island": {
    "zh-Hans": "在灵动岛中显示时钟",
