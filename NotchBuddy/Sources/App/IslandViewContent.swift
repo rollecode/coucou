@@ -46,6 +46,12 @@ struct IslandViewContent: View {
             #else
             EmptyView()
             #endif
+        case .update:
+            #if !APPSTORE
+            UpdateCardView()
+            #else
+            EmptyView()
+            #endif
         }
     }
 }
@@ -292,6 +298,12 @@ struct OverviewView: View {
             #if !APPSTORE
             MailController.shared.openMail()
             #endif
+        case "integration_whatsapp":
+            #if !APPSTORE
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "net.whatsapp.WhatsApp") {
+                NSWorkspace.shared.openApplication(at: url, configuration: .init(), completionHandler: nil)
+            }
+            #endif
         case "integration_crypto":
             let exchange = CryptoSettings.exchange
             if let first = CryptoSettings.coins.first,
@@ -427,25 +439,41 @@ struct ApprovalView: View {
         // Captured when the card is drawn: a click answers the request that was on screen,
         // and is ignored if the queue has moved on since.
         let shownId = approval?.id
+        let isPlan = approval?.tool == "ExitPlanMode"
         ZStack {
             CardBackground(wash: .amber)
             VStack(alignment: .leading, spacing: 5) {
-                AgentWho(task: state.focusTask, label: approvalLabel)
+                AgentWho(task: state.focusTask, label: isPlan ? "has a plan ready" : approvalLabel)
                 CodeBlock(text: approval?.command ?? approval?.tool ?? "…")
-                HStack(spacing: 8) {
-                    SecondaryButton("Deny") {
-                        if let id = shownId { HookServer.shared.clickApproval("deny", for: id) }
+                if isPlan {
+                    // The terminal's plan dialog choices, not a tool permission.
+                    HStack(spacing: 8) {
+                        SecondaryButton("Change plan") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_change", for: id) }
+                        }
+                        PrimaryButton("Auto mode") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_auto", for: id) }
+                        }
+                        SecondaryButton("Manual") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_default", for: id) }
+                        }
                     }
-                    PrimaryButton("Allow") {
-                        if let id = shownId { HookServer.shared.clickApproval("allow", for: id) }
-                    }
-                    // Codex, Copilot CLI and Muse Code do not support updatedPermissions
-                    let hideAlways = approval?.pillId == "agent_codex"
-                        || approval?.pillId == "agent_copilot"
-                        || approval?.pillId == "agent_muse"
-                    if !hideAlways {
-                        SecondaryButton("Always") {
-                            if let id = shownId { HookServer.shared.clickApproval("always", for: id) }
+                } else {
+                    HStack(spacing: 8) {
+                        SecondaryButton("Deny") {
+                            if let id = shownId { HookServer.shared.clickApproval("deny", for: id) }
+                        }
+                        PrimaryButton("Allow") {
+                            if let id = shownId { HookServer.shared.clickApproval("allow", for: id) }
+                        }
+                        // Codex, Copilot CLI and Muse Code do not support updatedPermissions
+                        let hideAlways = approval?.pillId == "agent_codex"
+                            || approval?.pillId == "agent_copilot"
+                            || approval?.pillId == "agent_muse"
+                        if !hideAlways {
+                            SecondaryButton("Always") {
+                                if let id = shownId { HookServer.shared.clickApproval("always", for: id) }
+                            }
                         }
                     }
                 }
@@ -2161,6 +2189,12 @@ struct IntegrationCardView: View {
             #else
             return false
             #endif
+        case "integration_whatsapp":
+            #if !APPSTORE
+            return WhatsAppSettings.enabled
+            #else
+            return false
+            #endif
         case "integration_crypto":
             return true  // public market data: no key, nothing to set up
         case "integration_portfolio":
@@ -2484,6 +2518,12 @@ struct IntegrationCardView: View {
         } else if task.id == "integration_portfolio" {
             PortfolioCardView()
                 .transition(.opacity)
+        } else if task.id == "integration_whatsapp" {
+            // Its own card in every state (not linked, no message, conversations).
+            #if !APPSTORE
+            WhatsAppCardView()
+                .transition(.opacity)
+            #endif
         } else if mailHasData {
             #if !APPSTORE
             MailCardView()

@@ -6,10 +6,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     private(set) var islandController: IslandWindowController?
     private var demoMenuItem: NSMenuItem?
+    #if !APPSTORE
+    /// "Update Coucou to 0.6.0…", shown only when a new version is out.
+    private var updateMenuItem: NSMenuItem?
+    #endif
 
     func applicationWillTerminate(_ notification: Notification) {
         #if !APPSTORE
         NoteTaker.shared.shutdown()
+        // The GOWA gateway Coucou started never outlives it.
+        WhatsAppGOWAProcess.shared.stopNow()
         #endif
         DemoEngine.shared.stop()
         HotKeyCenter.shared.unregisterAll()
@@ -111,6 +117,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(demoItem)
         menu.addItem(.separator())
         menu.addItem(withTitle: NSLocalizedString("Open Coucou", comment: ""), action: #selector(openIsland), keyEquivalent: "")
+        #if !APPSTORE
+        let updateItem = NSMenuItem(title: "", action: #selector(openUpdate), keyEquivalent: "")
+        updateItem.isHidden = true
+        updateMenuItem = updateItem
+        menu.addItem(updateItem)
+        #endif
         menu.addItem(.separator())
         menu.addItem(withTitle: NSLocalizedString("Weekly recap", comment: ""), action: #selector(openWeeklyRecap), keyEquivalent: "")
         #if !APPSTORE
@@ -140,6 +152,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     #if !APPSTORE
+    @objc private func openUpdate() {
+        MacUpdater.shared.show()
+    }
+
     @objc private func openFlowHub() {
         if AppState.shared.mode == .expanded { islandController?.collapse() }
         FlowHubController.shared.show(.dictation)
@@ -299,6 +315,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = MusicController.shared
         _ = SpotifyController.shared
         MailController.shared.start()
+        WhatsAppController.shared.start()
+        MacUpdater.shared.start()
+        ClaudeDesktopChatWatcher.shared.start()
         #endif
         CryptoController.shared.start()
         PortfolioController.shared.start()
@@ -312,5 +331,13 @@ extension AppDelegate: NSMenuDelegate {
         demoMenuItem?.title = DemoEngine.shared.isActive
             ? NSLocalizedString("demo.stop", comment: "")
             : NSLocalizedString("Demo mode", comment: "")
+        #if !APPSTORE
+        if let r = MacUpdater.shared.latest, MacUpdate.isNewer(r.version, than: MacUpdater.currentVersion) {
+            updateMenuItem?.title = String(format: String(localized: "update.menu %@"), r.version)
+            updateMenuItem?.isHidden = false
+        } else {
+            updateMenuItem?.isHidden = true
+        }
+        #endif
     }
 }

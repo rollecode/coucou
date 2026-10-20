@@ -118,6 +118,8 @@ export interface Settings {
   expandOnActivity: boolean;
   /** The island steps aside while a full-screen app fills its display (src-tauri platform). */
   hideInFullScreen: boolean;
+  /** Date and time in the middle of the compact island. */
+  showClock: boolean;
   absenceInterval: number;
   /** Declared pills next to the main one (at most 4), in the order they were added. */
   activeIntegrations: string[];
@@ -211,6 +213,7 @@ export const DEFAULT_SETTINGS: Settings = {
   followActivity: false,
   expandOnActivity: false,
   hideInFullScreen: false,
+  showClock: false,
   absenceInterval: 180,
   activeIntegrations: [
     "integration_resend", "integration_n8n", "integration_vercel", "integration_github",

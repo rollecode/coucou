@@ -62,7 +62,7 @@ You can also [build it yourself](#build-it-yourself).
 | Click a Claude Code session's card (once it has edited a file or run a command) | The code view: the turn's phases, the last edit in place with a few lines of the file around it, the last command and its last lines of output; ‹ goes back |
 | `Esc` | Closes the island |
 | Put a file named like one of Mochi's sounds (`finish.wav`, `approval.mp3`, `greet.m4a`…) in the sounds folder | It replaces that sound after **Settings → General → Reload sounds**. **Open sounds folder** shows the folder: `~/.config/coucou/sounds` on Linux, `%APPDATA%\Coucou\sounds` on Windows |
-| Tray icon | Open, Weekly recap, Wardrobe…, Settings…, Pause, Quit |
+| Tray icon | Open, Weekly recap, Wardrobe…, Settings…, Pause, Quit — and **Update Coucou to X…** while a new version is out |
 | `Ctrl+Alt+Space` | Opens the chat, from any app |
 | `Ctrl+Alt+A` | Jumps to the waiting permission or question |
 | `Ctrl+Alt+T` | Brings the session's window forward ("Open terminal") |
@@ -230,9 +230,10 @@ Weekly recap** turns it off or clears it.
 
 ## Languages
 
-Coucou speaks the same ten languages as the Mac app: English, 简体中文, हिन्दी,
-Español, العربية, Français, বাংলা, Português (Brasil), Русский and Bahasa
-Indonesia. **Settings… → General → Language** picks one; **System** (the
+Coucou speaks twelve of the Mac app's languages: English, 简体中文, हिन्दी,
+Español, العربية, Français, বাংলা, Português (Brasil), Русский, Bahasa
+Indonesia, Deutsch and Türkçe (Traditional Chinese and Thai are on the Mac
+only for now). **Settings… → General → Language** picks one; **System** (the
 default) follows your system's language when it is one of these, English
 otherwise. The island, the settings window and the tray menu switch at once —
 nothing restarts, and the island keeps its sessions, steps and chat.
@@ -286,7 +287,8 @@ goes where you told Coucou to send it. The gateway's host is written to the log
 once; the key never is.
 
 No telemetry. The only network requests Coucou makes are to the services you
-configure yourself.
+configure yourself, and — once you agree — to GitHub's releases API, to tell you
+about new versions (see [New versions](#new-versions)).
 
 ## GitHub
 
@@ -319,6 +321,48 @@ never reach the interface. The card shows each account's holdings in USD, with
 the 24 h change and a 7-day curve from Coinbase's public prices. Balances are
 read every 2 minutes, and as soon as you open the card on data older than 30
 seconds; nothing is fetched while the pill is off or Coucou is paused.
+
+## New versions
+
+Coucou can tell you when a new version is out, and on Windows install it in one
+click. Nothing goes to GitHub before you agree: about 30 seconds after launch the
+island asks once, **Get new versions from the island?** (asked again a day later
+at most if you leave the card unanswered, never over a permission or a question).
+**Settings → General → Updates** has the same switch, and **Check now**, which
+looks once even with the switch off.
+
+Once allowed, Coucou asks GitHub at launch and every 6 hours:
+`GET https://api.github.com/repos/Louis-CFM/coucou/releases?per_page=30`,
+unauthenticated, no cookies, nothing about you. It keeps the published
+`windows-vX.Y.Z` releases (`linux-vX.Y.Z` on Linux — never the rolling
+`windows-latest` / `linux-latest`, drafts or prereleases) and takes the highest.
+When it is newer than yours, the island opens on it once a day at most, with
+Mochi surprised: **Coucou X is out**, the first line of its *What's new*, and the
+version you have; **Update now · What's new · Later**. The tray menu offers
+**Update Coucou to X…** for as long as it is out.
+
+**Update now** (Windows) uses the installer this copy came from:
+
+- the per-user `setup.exe` (Coucou in `%LOCALAPPDATA%\Coucou`, with its
+  `uninstall.exe`): `Coucou-Windows-X.Y.Z-setup.exe /P /UPDATE /R` — passive,
+  no "reinstall or uninstall?" step, the old uninstaller never runs, your
+  shortcuts and settings stay, and the installer starts Coucou again;
+- the per-machine `.msi` (Coucou in `Program Files\Coucou`):
+  `msiexec /i Coucou-Windows-X.Y.Z.msi /passive AUTOLAUNCHAPP=True`, which asks
+  for admin rights as installing it by hand does, then starts Coucou again;
+- anything else — the portable exe, a build — gets **Get it on GitHub**, the
+  release page, instead.
+
+The installer is downloaded into a temporary folder, following redirects only to
+`github.com`, `api.github.com` and `*.githubusercontent.com`, and checked
+against the SHA-256 GitHub publishes for that file (the asset's `digest`). No
+checksum, or one that doesn't match, and nothing is installed. Then it runs and
+Coucou quits. The checksum proves the file is exactly the one on the release
+page; like a download by hand, it doesn't prove who uploaded it (the installer
+isn't code-signed yet).
+
+On Linux the card and the tray item point to the release page: AppImage, .deb,
+.rpm and the Arch package are updated the way you installed them.
 
 ## Build it yourself
 
@@ -496,6 +540,10 @@ own window.
   a window to attach it as context. On the Mac, email goes through Resend or
   Apple Mail's scripting; neither has a safe equivalent that attaches a file
   here, and the drop card would need a third button it doesn't have.
+- New versions: the Mac checks the downloaded app's Developer ID signature and
+  notarization; the Windows installer isn't code-signed yet, so it is checked
+  against the SHA-256 GitHub publishes for it, and the installer (not Coucou)
+  replaces the app and starts it again.
 - Cal.com shows the next bookings as a list rather than the Mac's calendar.
 - The Calendar pill reads a secret iCal address (Google Calendar → Settings →
   your calendar → Integrate calendar, or any iCal link) instead of the Mac's
@@ -685,6 +733,9 @@ What changes on Linux:
   where it is missing, the island says so and Save still works.
 - What the Windows build leaves out, this one does too: sending a file by
   email and dragging Mochi onto a window.
+- **New versions** are announced (once you agree), but **Update now** opens
+  the release page: update the AppImage, .deb, .rpm or Arch package the way
+  you installed it.
 - **Open terminal** walks up from the relay through `/proc` (stopping at
   systemd, logins, ssh, session managers and panels, and at any process of
   another user) to the terminal or editor the session runs in, then brings its

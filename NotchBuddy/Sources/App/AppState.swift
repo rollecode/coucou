@@ -471,6 +471,10 @@ final class AppState: ObservableObject {
     @Published var hideInFullScreen: Bool = false {
         didSet { UserDefaults.standard.set(hideInFullScreen, forKey: "hideInFullScreen") }
     }
+    /// A pill other than the one shown finishes or fails: show its card for a moment (#683).
+    @Published var alertsFromAllPills: Bool = false {
+        didSet { UserDefaults.standard.set(alertsFromAllPills, forKey: "alertsFromAllPills") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
     }
@@ -787,6 +791,7 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "quietOnScreenShare") as? Bool { quietOnScreenShare = v }
         if let v = ud.object(forKey: "compactAgentsWorkingOnly") as? Bool { compactAgentsWorkingOnly = v }
         if let v = ud.object(forKey: "hideInFullScreen") as? Bool { hideInFullScreen = v }
+        if let v = ud.object(forKey: "alertsFromAllPills") as? Bool { alertsFromAllPills = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }

@@ -142,6 +142,8 @@ pub struct Settings {
     pub quiet_on_screen_share: bool,
     /// The Portfolio pill's self-custody wallets: public addresses, not secrets. Owned by Rust (portfolio.rs).
     pub portfolio_wallets: Vec<crate::portfolio::Wallet>,
+    /// The date and time in the middle of the compact island. Off by default.
+    pub show_clock: bool,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -243,6 +245,7 @@ impl Default for Settings {
             quiet_on_mic: true,
             quiet_on_screen_share: true,
             portfolio_wallets: Vec::new(),
+            show_clock: false,
         }
     }
 }
@@ -560,7 +563,8 @@ mod tests {
   "quietOnCamera": false,
   "quietOnMic": false,
   "quietOnScreenShare": false,
-  "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }]
+  "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }],
+  "showClock": true
 }"##;
 
     fn custom() -> Value {
@@ -1088,6 +1092,7 @@ mod tests {
                 "quietOnMic",
                 "quietOnScreenShare",
                 "portfolioWallets",
+                "showClock",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);

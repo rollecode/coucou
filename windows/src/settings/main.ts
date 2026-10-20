@@ -14,6 +14,7 @@ import { COMPACT_PADDING, COMPACT_PADDING_MAX, type CompactPadding } from "../co
 import { AGENT_ERROR, AGENT_FINISHED, ALERT_PILLS } from "../core/alerts";
 import { DEFAULT_SETTINGS, type Settings } from "../core/state";
 import { SOUND_NAMES, SOUND_VOLUME_MAX } from "../core/sound";
+import type { UpdateStatus } from "../core/update";
 import {
   PILL_CATEGORIES, availablePills, chooseMainPill, isComingSoon, mainPillChoices,
   sanitizeDeclared, toggleDeclared, type PillDefinition,
@@ -25,6 +26,7 @@ import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
 import { portfolioSettings } from "./portfolio";
 import { PORTFOLIO_ID } from "../core/portfolio";
+import { updateRows, updatesListener } from "./updates";
 import { colorDot } from "./colors";
 import { sshDestination } from "../core/ssh";
 import { renderDiff, statusDot } from "./parts";
@@ -1281,6 +1283,11 @@ function generalSection(): HTMLElement {
     ),
     h("div", { class: "hint", text: t("The island steps aside while a full-screen app, a game or a video, fills its display.") }),
     h("div", { class: "row" },
+      h("label", { text: t("Show clock in the island") }),
+      toggle(settings.showClock, (v) => { settings.showClock = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("The date and the time in the middle of the island when it is compact.") }),
+    h("div", { class: "row" },
       h("label", { text: t("Auto-close") }),
       autoClose,
       h("span", { class: "hint", text: t("seconds after you leave the island") }),
@@ -1320,6 +1327,7 @@ function generalSection(): HTMLElement {
       toggle(settings.autostart, (v) => { settings.autostart = v; void save(); }),
     ),
     ...recapRows(),
+    ...updateRows(toggle, version),
     languageRow(),
   );
 }
@@ -1668,6 +1676,7 @@ async function main() {
 
   void onEvent<ShortcutsReport>("shortcuts-status", (fresh) => shortcutsListener?.report(fresh));
   void onEvent<RemoteStatus[]>("remote-status", (s) => remoteListener?.(s));
+  void onEvent<UpdateStatus>("update-status", (fresh) => updatesListener?.(fresh));
   void onEvent<Settings>("settings-changed", (s) => {
     const before = `${settings.chatProvider}|${settings.ollamaUrl}|${settings.lmstudioUrl}|${settings.customUrl}|${settings.openWebuiUrl}`;
     settings = { ...settings, ...s };

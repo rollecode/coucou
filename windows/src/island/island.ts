@@ -72,6 +72,8 @@ export class Island {
   /** Narrowest compact island that fits the stats beside Mochi and the mini grid; 0 without stats. */
   private statsMinW = 0;
   private compactCodexShown = false;
+  private clockEl!: HTMLElement;
+  private clockTimer?: number;
   private countdown!: HTMLElement;
   private wakeStrip!: HTMLElement;
 
@@ -285,6 +287,7 @@ export class Island {
     this.greetingCanvas = h("canvas", { id: "greeting-canvas" });
     this.miniGrid = h("div", { id: "mini-grid" });
     this.compactStats = h("div", { id: "compact-stats" });
+    this.clockEl = h("div", { id: "island-clock" });
     this.countdown = h("div", { id: "countdown" });
 
     this.header = buildHeader(actions);
@@ -320,6 +323,7 @@ export class Island {
       this.botCanvas,
       this.miniGrid,
       this.compactStats,
+      this.clockEl,
       this.countdown,
     );
 
@@ -725,6 +729,7 @@ export class Island {
     this.miniGrid.style.top = `${pad.top + COMPACT_BOT_HALF - MINI_GRID_HALF}px`;
     this.compactStats.style.right = `${pad.right + 2 * MINI_GRID_HALF + 10}px`;
     this.compactStats.style.top = `${pad.top + COMPACT_BOT_HALF}px`;
+    this.clockEl.style.height = `${hh}px`;
     this.greetingCanvas.style.left = `${(w - EXPANDED_W) / 2}px`;
     this.uploadCanvas.el.style.left = `${(w - EXPANDED_W) / 2}px`;
 
@@ -1309,9 +1314,22 @@ export class Island {
       refreshCodexPlanUsage();
     }
     this.compactCodexShown = codexShown;
+    this.updateClock();
 
     syncMiniBotStates(State.tasks);
     this.engine.setState(State.effectiveState);
+  }
+
+  /** The clock sits in the middle of the compact island, where the notch is on a Mac. */
+  private updateClock() {
+    const on = State.mode === "compact" && State.settings.showClock;
+    this.clockEl.style.opacity = on ? "1" : "0";
+    if (!on) return;
+    const now = new Date();
+    const date = now.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const text = `${date}  ${time}`;
+    if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
   }
 
   /** Applies settings coming from Rust at boot. */
@@ -1324,6 +1342,8 @@ export class Island {
     this.applyAutoHide(State.settings.autoHide);
     this.syncCall();
     State.notify();
+    // ponytail: one timer for the life of the window; a minute is the clock's finest tick.
+    this.clockTimer ??= window.setInterval(() => this.updateClock(), 10_000);
   }
 
   /** Before launch the greeting shows the island anyway. */

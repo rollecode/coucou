@@ -137,8 +137,8 @@ targets:
         CFBundleName: Coucou
         CFBundleDisplayName: Coucou
         CFBundleIdentifier: fr.louisraille.NotchBuddy
-        CFBundleVersion: "16"
-        CFBundleShortVersionString: "0.4.0"
+        CFBundleVersion: "19"
+        CFBundleShortVersionString: "0.5.2"
         CFBundlePackageType: APPL
         LSUIElement: YES
         NSHighResolutionCapable: YES
@@ -150,19 +150,24 @@ targets:
         NSAccessibilityUsageDescription: "Pour lire le titre de la fenêtre active et l'attacher comme contexte."
         NSContactsUsageDescription: "Coucou looks up an email address when you ask it, by voice, to prepare an email."
         NSCalendarsFullAccessUsageDescription: "Coucou shows your next meeting in the notch and reminds you 5 minutes before it starts."
+        NSFocusStatusUsageDescription: "Coucou stays quiet about new WhatsApp messages while a Focus is on."
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleLocalizations:
           - en
           - ar
           - bn
+          - de
           - es
           - fr
           - hi
           - id
           - pt-BR
           - ru
+          - th
+          - tr
           - zh-Hans
+          - zh-Hant
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fr.louisraille.NotchBuddy
@@ -236,13 +241,17 @@ targets:
           - en
           - ar
           - bn
+          - de
           - es
           - fr
           - hi
           - id
           - pt-BR
           - ru
+          - th
+          - tr
           - zh-Hans
+          - zh-Hant
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fr.louisraille.Coucou
