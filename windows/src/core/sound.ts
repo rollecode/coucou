@@ -1,11 +1,16 @@
 // SoundEngine — port of SoundEngine.swift.
 // The 29 WAVs are the macOS app's own files (see SOUNDS_DIR in vite.config.ts);
-// they are served at /sounds/<name>.wav. Default volume 0.12, slider range 0–0.2,
-// exactly like the Mac player, and several sounds may overlap.
+// they are served at /sounds/<name>.wav. Default volume 0.12, slider range
+// 0–SOUND_VOLUME_MAX, exactly like the Mac player, and several sounds may overlap.
 // A file of the user's own in the sounds folder (src-tauri/src/sounds.rs)
 // replaces a sound; one that doesn't decode falls back to the built-in one.
 
 import { Bridge } from "./bridge";
+
+export const SOUND_VOLUME_MAX = 1;
+
+/** Quiet time before the audio output is suspended: past a burst of sounds. */
+const IDLE_SUSPEND_MS = 30_000;
 
 export const SOUND_NAMES = [
   "peek", "open", "close", "hover", "blip", "slap", "annoyed", "dizzy", "greet",
@@ -98,27 +103,32 @@ class SoundEngine {
    * up as a steady trickle of CPU on a machine that is supposed to be idle.
    *
    * The delay covers the tail of whatever just played — suspending mid-sound
-   * would clip it — and `play()` resumes the context on its own.
+   * would clip it — and `play()` resumes the context on its own. It also spans
+   * a burst of sounds: on Linux each resume opens a new PipeWire stream, and a
+   * desktop shell can take that churn for a volume change (a volume OSD).
    */
   idle() {
     if (!this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
     this.idleTimer = window.setTimeout(() => {
       this.idleTimer = null;
       void this.ctx?.suspend();
-    }, 1500);
+    }, IDLE_SUSPEND_MS);
   }
 
   setVolume(v: number) {
-    this.volume = Math.max(0, Math.min(0.2, v));
+    this.volume = Math.max(0, Math.min(SOUND_VOLUME_MAX, v));
     if (this.master) this.master.gain.value = this.volume;
   }
+
+  /** A call is on: no sound at all until it ends. */
+  quiet = false;
 
   setEnabled(on: boolean) {
     this.enabled = on;
   }
 
   play(name: SoundName | string) {
-    if (!this.enabled) return;
+    if (!this.enabled || this.quiet) return;
     const ctx = this.ctx;
     const master = this.master;
     const buf = this.buffers.get(name);

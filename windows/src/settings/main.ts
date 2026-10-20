@@ -1,24 +1,34 @@
-// Settings window — the place where anything that writes to disk is confirmed.
-// Stage 2 covers the Claude Code hooks and the general preferences; API keys and
-// integrations land here too in a later stage.
+// The Coucou window (settings.html): Flow dictation, the Notetaker and, under
+// Notch, every setting of the island — the place where anything that writes to
+// disk is confirmed. The window's frame and the Flow pages live in ../hub; the
+// island's settings are drawn here, one Notch page at a time.
 
 import "./settings.css";
-import { Bridge, onEvent, type HookPreview, type HookStatus, type ShortcutsReport } from "../core/bridge";
-import { CUSTOM_SERVER_KEY, providerDef, urlExposure } from "../core/providers";
+import { Bridge, onEvent, type HookPreview, type HookStatus, type RemoteStatus, type ShortcutsReport } from "../core/bridge";
+import { CLAUDE_CODE_EFFORTS, SERVER_KEYS, providerDef, urlExposure } from "../core/providers";
 import {
   ISLAND_SHORTCUTS, SHORTCUTS, SHORTCUT_TEXT, activeKeys, displayKeys, duplicates, effective,
   recordPress, type Binding,
 } from "../core/shortcuts";
+import { COMPACT_PADDING, COMPACT_PADDING_MAX, type CompactPadding } from "../core/layout";
+import { AGENT_ERROR, AGENT_FINISHED, ALERT_PILLS } from "../core/alerts";
 import { DEFAULT_SETTINGS, type Settings } from "../core/state";
-import { SOUND_NAMES } from "../core/sound";
+import { SOUND_NAMES, SOUND_VOLUME_MAX } from "../core/sound";
+import type { UpdateStatus } from "../core/update";
 import {
-  MAX_DECLARED, PILL_CATEGORIES, availablePills, chooseMainPill, isComingSoon, mainPillChoices,
+  PILL_CATEGORIES, availablePills, chooseMainPill, isComingSoon, mainPillChoices,
   sanitizeDeclared, toggleDeclared, type PillDefinition,
 } from "../core/pills";
 import { h, clear } from "../views/dom";
+import { startHub, type PageId } from "../hub/shell";
+import { FLOW_PAGE_RENDERERS } from "../hub/pages";
 import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
+import { portfolioSettings } from "./portfolio";
+import { PORTFOLIO_ID } from "../core/portfolio";
+import { updateRows, updatesListener } from "./updates";
 import { colorDot } from "./colors";
+import { sshDestination } from "../core/ssh";
 import { renderDiff, statusDot } from "./parts";
 import {
   LANGUAGES, N_, isRtl, onLanguageChange, resolveLanguage, setLanguage, systemLanguages, t, tn,
@@ -32,7 +42,10 @@ const KEY_STORE = navigator.userAgent.includes("Windows")
 let settings: Settings = { ...DEFAULT_SETTINGS };
 let version = "";
 
-const root = document.getElementById("settings-root")!;
+const windowRoot = document.getElementById("hub")!;
+/** Where the Notch page being shown draws its sections. */
+let root: HTMLElement = windowRoot;
+let hub: { redraw(): void; current(): PageId } | null = null;
 
 async function save() {
   await Bridge.saveSettings(settings);
@@ -229,6 +242,110 @@ function claudeSection(status: HookStatus): HTMLElement {
   return section;
 }
 
+// ── Remote hosts section (Linux) ──────────────────────────────────────────────
+
+/** What `ssh` takes as a destination and never as an option (remote.rs valid_host). */
+/** The hooks change of one host's ~/.claude/settings.json, over SSH. */
+function remoteChange(host: string): Change {
+  return {
+    preview: (install) => Bridge.remotePreview(host, install),
+    apply: (install, fingerprint) => Bridge.remoteApply(host, install, fingerprint),
+    get installText() { return t("The changes to settings.json on {host}. Coucou also copies its relay to ~/.local/share/coucou/bin there.", { host }); },
+    get removeText() { return HOOKS_CHANGE.removeText; },
+    get installButton() { return t("Back up and write"); },
+    get removeButton() { return t("Back up and remove"); },
+    done: HOOKS_CHANGE.done,
+  };
+}
+
+function remoteSection(): HTMLElement {
+  const body = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
+  const section = h(
+    "section",
+    {},
+    h("h2", {}, h("span", { text: t("Remote hosts") })),
+    h("div", {
+      class: "hint",
+      text: t("Claude Code sessions on other machines, over SSH with your keys and ~/.ssh/config. Connect to each host once in a terminal first so its host key is known."),
+    }),
+    body,
+  );
+  let statuses: RemoteStatus[] = [];
+  /** A diff is on screen: status changes wait, or they would wipe it. */
+  let reviewing = false;
+
+  const redraw = () => {
+    reviewing = false;
+    clear(body);
+    for (const host of settings.remoteHosts) body.append(hostBlock(host));
+    body.append(addRow());
+  };
+
+  function hostBlock(host: string): HTMLElement {
+    const status = statuses.find((s) => s.host === host);
+    const state = status?.state ?? "connecting";
+    const block = h("div", { style: "display:flex;flex-direction:column;gap:6px" });
+    const words = state === "connected" ? t("Connected") : state === "error" ? t("Not connected") : t("Connecting…");
+    block.append(
+      h("div", { class: "row" },
+        statusDot(state === "connected"),
+        h("label", { text: host }),
+        h("span", { class: "hint", text: words }),
+        h("button", { class: "primary", text: t("Install hooks…"), onclick: () => review(block, host, true) }),
+        h("button", { text: t("Uninstall hooks…"), onclick: () => review(block, host, false) }),
+        h("button", {
+          class: "danger",
+          text: t("Remove"),
+          onclick: () => {
+            settings.remoteHosts = settings.remoteHosts.filter((x) => x !== host);
+            void save().then(redraw);
+          },
+        }),
+      ),
+    );
+    if (state === "error" && status?.error) block.append(h("div", { class: "notice err", text: status.error }));
+    return block;
+  }
+
+  function review(block: HTMLElement, host: string, install: boolean) {
+    reviewing = true;
+    void reviewChange(block, remoteChange(host), install, redraw, redraw);
+  }
+
+  function addRow(): HTMLElement {
+    const input = h("input", {
+      type: "text",
+      placeholder: t("devbox or user@host, as you type it after ssh"),
+      style: "flex:1 1 auto;min-width:0",
+      spellcheck: "false",
+      autocomplete: "off",
+    }) as HTMLInputElement;
+    const add = h("button", { class: "primary", text: t("Add") });
+    const submit = () => {
+      const host = sshDestination(input.value);
+      if (!host) {
+        input.setCustomValidity(t("Not a host name"));
+        input.reportValidity();
+        return;
+      }
+      if (!settings.remoteHosts.includes(host)) settings.remoteHosts = [...settings.remoteHosts, host];
+      void save().then(redraw);
+    };
+    input.addEventListener("input", () => input.setCustomValidity(""));
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+    add.addEventListener("click", submit);
+    return h("div", { class: "row" }, input, add);
+  }
+
+  remoteListener = (s) => {
+    statuses = s;
+    if (!reviewing) redraw();
+  };
+  void Bridge.remoteStatus().then((s) => remoteListener?.(s ?? []));
+  redraw();
+  return section;
+}
+
 // ── Plan usage section ────────────────────────────────────────────────────────
 
 /**
@@ -410,7 +527,6 @@ function apiSection(hasKey: boolean): HTMLElement {
  * want as pills. Services are declared in Integrations below, next to their keys.
  */
 function activePillsSection(connected: Record<string, boolean>): HTMLElement {
-  const slots = h("div", { class: "hint" });
   const main = h("select", {}) as HTMLSelectElement;
   for (const def of mainPillChoices()) main.append(h("option", { value: def.id, text: def.name }));
   main.addEventListener("change", () => {
@@ -434,8 +550,7 @@ function activePillsSection(connected: Record<string, boolean>): HTMLElement {
   function row(def: PillDefinition): HTMLElement {
     const isMain = def.id === settings.mainPill;
     const on = settings.activeIntegrations.includes(def.id);
-    const full = !isMain && !on && settings.activeIntegrations.length >= MAX_ACTIVE;
-    const el = h("div", { class: full ? "pill-row full" : "pill-row" },
+    const el = h("div", { class: "pill-row" },
       colorDot(def, "width:10px;height:10px", () => settings.pillColors, pickColor),
       h("span", { class: "name", text: def.name }),
     );
@@ -446,7 +561,6 @@ function activePillsSection(connected: Record<string, boolean>): HTMLElement {
     const why = hint(def);
     el.append(h("span", { class: "state", text: why ?? "" }));
     const sw = h("button", { class: on ? "switch on" : "switch" }) as HTMLButtonElement;
-    sw.disabled = full;
     sw.addEventListener("click", () => {
       const next = toggleDeclared(settings, def.id);
       if (!next) return;
@@ -458,9 +572,6 @@ function activePillsSection(connected: Record<string, boolean>): HTMLElement {
   }
 
   function draw() {
-    const used = settings.activeIntegrations.length;
-    slots.textContent = t("{used}/{max} slots in use — the main tool doesn't take one.", { used, max: MAX_ACTIVE });
-    slots.classList.toggle("full", used >= MAX_ACTIVE);
     main.value = settings.mainPill;
     clear(groups);
     for (const cat of PILL_CATEGORIES) {
@@ -478,7 +589,6 @@ function activePillsSection(connected: Record<string, boolean>): HTMLElement {
     {},
     h("h2", {}, h("span", { text: t("Active pills") })),
     h("div", { class: "hint", text: t("Choose the tools you use. Coucou only shows what you declare here.") }),
-    slots,
     h("div", { class: "row" }, h("label", { text: t("Main tool") }), main),
     groups,
   );
@@ -488,7 +598,7 @@ function activePillsSection(connected: Record<string, boolean>): HTMLElement {
 
 const CHAT_STRINGS = {
   get providersTitle() { return t("Chat providers"); },
-  get providersHint() { return t("Chat with Google AI, OpenAI or OpenRouter instead of Claude: add a key here, then click the model name above the chat box to switch provider and model. Keys stay in the system keychain. These providers get no web search and no tools: they can answer, never act on this computer."); },
+  get providersHint() { return t("Chat with Google AI, OpenAI, OpenRouter, DeepSeek, Qwen or Moonshot instead of Claude: add a key here, then click the model name above the chat box to switch provider and model. Keys stay in the system keychain. These providers get no web search and no tools: they can answer, never act on this computer."); },
   get stored() { return `••••••••  ${t("(stored)")}`; },
   get save() { return t("Save"); },
   get remove() { return t("Remove"); },
@@ -500,6 +610,10 @@ const CHAT_STRINGS = {
   get useInChat() { return t("Use in chat"); },
   get inUse() { return t("In use"); },
   get keyOptional() { return t("API key (optional)"); },
+  get apiKey() { return t("API key"); },
+  get webSearch() { return t("Web search"); },
+  get webSearchHint() { return t("Open WebUI searches the web before answering, where its admin has turned web search on."); },
+  get openWebuiHint() { return t("Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one."); },
   get localOnly() { return t("Nothing leaves your PC: the server runs on this computer."); },
   get remote() { return t("This address is another machine: what you ask is sent to it."); },
   get remoteHttp() { return t("This address is another machine, over plain http: what you ask travels unencrypted."); },
@@ -510,7 +624,7 @@ const CHAT_STRINGS = {
 };
 
 interface CloudDef {
-  id: "google" | "openai" | "openrouter";
+  id: "google" | "openai" | "openrouter" | "deepseek" | "qwen" | "moonshot";
   name: string;
   placeholder: string;
   where: string;
@@ -520,6 +634,9 @@ const CLOUD: CloudDef[] = [
   { id: "google", name: "Google AI", placeholder: "AIza…", where: "aistudio.google.com" },
   { id: "openai", name: "OpenAI", placeholder: "sk-…", where: "platform.openai.com" },
   { id: "openrouter", name: "OpenRouter", placeholder: "sk-or-…", where: "openrouter.ai/keys" },
+  { id: "deepseek", name: "DeepSeek", placeholder: "sk-…", where: "platform.deepseek.com" },
+  { id: "qwen", name: "Qwen (Alibaba)", placeholder: "sk-…", where: "bailian.console.aliyun.com" },
+  { id: "moonshot", name: "Moonshot (Kimi)", placeholder: "sk-…", where: "platform.moonshot.cn" },
 ];
 
 function chatProvidersSection(
@@ -588,12 +705,67 @@ function chatProvidersSection(
     h("h2", {}, h("span", { text: CHAT_STRINGS.providersTitle })),
     h("div", { class: "hint", text: CHAT_STRINGS.providersHint }),
     list,
+    claudeCodeBlock(),
+  );
+}
+
+/** Claude Code in the chat: what it starts with. The picker above the chat box changes the same values. */
+function claudeCodeBlock(): HTMLElement {
+  const p = providerDef("claudecode");
+  const current = settings.chatModels.claudecode || p.defaultModel;
+  const model = h("select", {}, h("option", { value: current, text: current })) as HTMLSelectElement;
+  // The list comes from claude_code.rs, so both sides offer the same models.
+  void Bridge.chatModels("claudecode").then((models) => {
+    clear(model);
+    for (const m of models) model.append(h("option", { value: m.id, text: m.label }));
+    model.value = current;
+  }).catch(() => {});
+  model.addEventListener("change", () => {
+    settings.chatModels = { ...settings.chatModels, claudecode: model.value };
+    void save();
+  });
+
+  const effort = h("select", {}) as HTMLSelectElement;
+  for (const level of ["", ...CLAUDE_CODE_EFFORTS]) {
+    effort.append(h("option", { value: level, text: level || t("Claude Code's default") }));
+  }
+  effort.value = settings.claudeCodeEffort;
+  effort.addEventListener("change", () => {
+    settings.claudeCodeEffort = effort.value;
+    void save();
+  });
+
+  const folder = h("input", {
+    type: "text",
+    value: settings.claudeCodeDir,
+    placeholder: t("Coucou's chat folder"),
+    spellcheck: "false",
+    autocomplete: "off",
+    style: "flex:1 1 auto;min-width:0",
+  }) as HTMLInputElement;
+  folder.addEventListener("change", () => {
+    settings.claudeCodeDir = folder.value.trim();
+    void save();
+  });
+
+  return h("div", { style: "display:flex;flex-direction:column;gap:8px;margin-top:14px" },
+    h("div", { class: "row" },
+      h("label", {},
+        h("i", { class: "dot", style: `background:${p.accent};margin-right:8px` }),
+        h("span", { text: p.name }),
+      ),
+      h("span", { class: "hint", text: t("Uses Claude Code with its sign-in, MCP servers, skills and hooks. No API key needed.") }),
+    ),
+    h("div", { class: "row" }, h("label", { text: t("Model") }), model),
+    h("div", { class: "row" }, h("label", { text: t("Effort") }), effort),
+    h("div", { class: "row" }, h("label", { text: t("Working folder") }), folder),
+    h("div", { class: "hint", text: t("Leave empty to use Coucou's chat folder. Pick a project folder to let Claude Code work on that project.") }),
   );
 }
 
 // ── Local models section ──────────────────────────────────────────────────────
 
-type LocalId = "ollama" | "lmstudio" | "custom";
+type LocalId = "ollama" | "lmstudio" | "custom" | "openwebui";
 
 /** Redraws the local models section after a change made elsewhere (the island). */
 let localRedraw: (() => void) | null = null;
@@ -603,6 +775,7 @@ const LOCAL: Record<LocalId, { name: string; usual: string }> = {
   lmstudio: { name: "LM Studio", usual: "http://127.0.0.1:1234" },
   // No usual address: any server that speaks the OpenAI API.
   custom: { name: N_("OpenAI-compatible"), usual: "" },
+  openwebui: { name: "Open WebUI", usual: "" },
 };
 
 /** What an address means for the user's data, as a hint line. */
@@ -621,7 +794,10 @@ function exposureNotice(url: string, withKey: boolean): HTMLElement | null {
   }
 }
 
-function localSection(customKey: boolean): HTMLElement {
+/** Whether each keyed server has its key in the credential store. */
+type StoredKeys = Partial<Record<LocalId, boolean>>;
+
+function localSection(stored: StoredKeys): HTMLElement {
   const body = h("div", { style: "display:flex;flex-direction:column;gap:14px" });
   const section = h(
     "section",
@@ -638,6 +814,8 @@ function localSection(customKey: boolean): HTMLElement {
   function serverBlock(id: LocalId): HTMLElement {
     const def = LOCAL[id];
     const p = providerDef(id);
+    const keyEntry = SERVER_KEYS[id];
+    const hasKey = stored[id] ?? false;
     const field = p.urlField!;
     const connected = settings[field] !== "";
     const status = h("div", {});
@@ -660,9 +838,9 @@ function localSection(customKey: boolean): HTMLElement {
       disconnect.addEventListener("click", async () => {
         settings[field] = "";
         if (settings.chatProvider === id) settings.chatProvider = "anthropic";
-        if (id === "custom") {
-          await Bridge.secretClear(CUSTOM_SERVER_KEY).catch(() => {});
-          customKey = false;
+        if (keyEntry) {
+          await Bridge.secretClear(keyEntry).catch(() => {});
+          stored[id] = false;
         }
         await save();
         redraw();
@@ -671,7 +849,16 @@ function localSection(customKey: boolean): HTMLElement {
         h("div", { class: "row" }, label, h("span", { class: "path", text: settings[field] }), statusDot(true), use, disconnect),
         status,
       );
-      exposure.append(exposureNotice(settings[field], id === "custom" && customKey) ?? "");
+      if (id === "openwebui") {
+        block.append(
+          h("div", { class: "row" },
+            h("label", { text: CHAT_STRINGS.webSearch }),
+            toggle(settings.openWebuiWebSearch, (v) => { settings.openWebuiWebSearch = v; void save(); }),
+          ),
+          h("div", { class: "hint", text: CHAT_STRINGS.webSearchHint }),
+        );
+      }
+      exposure.append(exposureNotice(settings[field], hasKey) ?? "");
       block.append(exposure);
       return block;
     }
@@ -683,10 +870,11 @@ function localSection(customKey: boolean): HTMLElement {
       spellcheck: "false",
       autocomplete: "off",
     }) as HTMLInputElement;
-    // A custom server may want a key; it goes to the keychain, never to settings.json.
+    // A custom server may want a key and Open WebUI needs one; it goes to the
+    // keychain, never to settings.json.
     const key = h("input", {
       type: "password",
-      placeholder: customKey ? CHAT_STRINGS.stored : CHAT_STRINGS.keyOptional,
+      placeholder: hasKey ? CHAT_STRINGS.stored : id === "openwebui" ? CHAT_STRINGS.apiKey : CHAT_STRINGS.keyOptional,
       style: "flex:1 1 auto;min-width:0",
       autocomplete: "off",
       spellcheck: "false",
@@ -695,7 +883,7 @@ function localSection(customKey: boolean): HTMLElement {
 
     const showExposure = () => {
       clear(exposure);
-      const withKey = id === "custom" && (customKey || key.value.trim() !== "");
+      const withKey = keyEntry !== undefined && (hasKey || key.value.trim() !== "");
       const notice = exposureNotice(input.value || def.usual, withKey);
       if (notice) exposure.append(notice);
     };
@@ -707,11 +895,11 @@ function localSection(customKey: boolean): HTMLElement {
       clear(status);
       status.append(h("div", { class: "hint", text: CHAT_STRINGS.connecting }));
       try {
-        if (id === "custom" && key.value.trim()) {
+        if ((id === "custom" || id === "openwebui") && key.value.trim()) {
           // Stored with this address: the key is only ever sent there.
-          await Bridge.localSetKey(input.value || def.usual, key.value.trim());
+          await Bridge.localSetKey(id, input.value || def.usual, key.value.trim());
           key.value = "";
-          customKey = true;
+          stored[id] = true;
         }
         const server = await Bridge.localConnect(id, input.value);
         if (!server.models.length) {
@@ -734,7 +922,8 @@ function localSection(customKey: boolean): HTMLElement {
     });
 
     block.append(h("div", { class: "row" }, label, input, connect));
-    if (id === "custom") block.append(h("div", { class: "row" }, h("label", { text: "" }), key));
+    if (keyEntry) block.append(h("div", { class: "row" }, h("label", { text: "" }), key));
+    if (id === "openwebui") block.append(h("div", { class: "hint", text: CHAT_STRINGS.openWebuiHint }));
     block.append(status, exposure);
     showExposure();
     return block;
@@ -776,11 +965,36 @@ const INTEGRATIONS: IntegrationDef[] = [
     fields: [{ key: "notion-api-key", label: N_("Integration token"), placeholder: "ntn_…", secret: true }] },
   { id: "integration_calcom", name: "Cal.com", color: "#C9956A",
     fields: [{ key: "calcom-api-key", label: N_("API key"), placeholder: "cal_…", secret: true }] },
-  // Nothing to enter: Spotify is read over D-Bus (Linux only, see core/pills.ts).
+  { id: "integration_calendar", name: "Calendar", color: "#4F9DF7",
+    fields: [{ key: "calendar-ical-url", label: N_("Secret address in iCal format"),
+      placeholder: "https://calendar.google.com/calendar/ical/…/basic.ics", secret: true }],
+    hint: N_("Google Calendar → Settings → your calendar → Integrate calendar. Any iCal link works: Outlook, iCloud, Fastmail.") },
+  // OAuth: the user's own Timely app; timelyRow() below trades its code for tokens.
+  { id: "integration_timely", name: "Timely", color: "#F5A524",
+    fields: [
+      { key: "timely-client-id", label: N_("Client ID"), placeholder: "…", secret: false },
+      { key: "timely-client-secret", label: N_("Client secret"), placeholder: "…", secret: true },
+    ],
+    hint: N_("In Timely, open Settings → Devs and register an app with the redirect URI urn:ietf:wg:oauth:2.0:oob. Enter its client ID and secret, connect, then paste the code Timely shows.") },
+  { id: "integration_slack", name: "Slack", color: "#E01E5A",
+    fields: [{ key: "slack-token", label: N_("Token"), placeholder: "xoxp-…", secret: true }],
+    hint: N_("A user token from a Slack app with the scopes im:read, users:read and search:read.") },
+  { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF",
+    fields: [
+      { key: "betterstack-token", label: N_("Token"), placeholder: "…", secret: true },
+      // Not returned by the API, and every page link needs it.
+      { key: "betterstack-team", label: N_("Team ID (optional)"), placeholder: "t1234", secret: false },
+    ],
+    hint: N_("Better Stack → API tokens → Team-based tokens: an Uptime API token.") },
+  { id: "integration_linear", name: "Linear", color: "#5E6AD2",
+    fields: [{ key: "linear-api-key", label: N_("API key"), placeholder: "…", secret: true }],
+    hint: N_("Personal API key from Linear: Settings → Account → Security & access.") },
+  // Nothing to enter: Spotify is read from the OS (src-tauri/src/spotify.rs).
   { id: "integration_spotify", name: "Spotify", color: "#1DB954", fields: [] },
+  // Exchanges and wallets of its own, below (./portfolio.ts).
+  { id: PORTFOLIO_ID, name: "Portfolio", color: "#FFD700", fields: [] },
 ];
 
-const MAX_ACTIVE = MAX_DECLARED;
 
 /** Everything that shows the declared pills, redrawn when any of them changes. */
 const declaredViews: (() => void)[] = [];
@@ -794,11 +1008,7 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
   const note = h("div", { class: "hint" });
   const list = h("div", { style: "display:flex;flex-direction:column;gap:14px" });
 
-  function updateNote() {
-    const used = settings.activeIntegrations.length;
-    note.textContent = t("Pick up to {max} pills to show next to Mochi — {used}/{max} in use. Keys are stored in the {store}, never on disk.", { max: MAX_ACTIVE, used, store: KEY_STORE });
-  }
-  declaredViews.push(updateNote);
+  note.textContent = t("Keys are stored in the {store}, never on disk.", { store: KEY_STORE });
 
   const offered = new Set(availablePills().map((p) => p.id));
   for (const def of INTEGRATIONS.filter((d) => offered.has(d.id))) {
@@ -809,7 +1019,6 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
       if (on) {
         settings.activeIntegrations = settings.activeIntegrations.filter((x) => x !== def.id);
       } else {
-        if (settings.activeIntegrations.length >= MAX_ACTIVE) return;
         settings.activeIntegrations = [...settings.activeIntegrations, def.id];
       }
       sw.classList.toggle("on", !on);
@@ -847,7 +1056,9 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
       );
     }
 
+    if (def.id === "integration_timely") rows.append(timelyRow(present));
     if (def.hint) rows.append(h("div", { class: "hint", text: t(def.hint) }));
+    if (def.id === PORTFOLIO_ID) rows.append(portfolioSettings(KEY_STORE));
     if (def.id === "integration_spotify") {
       // As on the Mac's row: said only when there is no Spotify to launch.
       const hint = h("div", { class: "hint", style: "padding-top:5px" });
@@ -869,15 +1080,59 @@ function integrationsSection(present: Record<string, boolean>): HTMLElement {
     );
   }
 
-  updateNote();
   return h("section", {}, h("h2", {}, h("span", { text: t("Integrations") })), note, list);
+}
+
+/** Timely's sign-in: Connect opens its consent page, which shows a code to paste back. */
+function timelyRow(present: Record<string, boolean>): HTMLElement {
+  const row = h("div", { class: "row" });
+  const status = h("div", { class: "hint" });
+
+  function draw() {
+    clear(row);
+    if (present["timely-access-token"]) {
+      const disconnect = h("button", { text: t("Disconnect") });
+      disconnect.addEventListener("click", async () => {
+        await Bridge.timelyDisconnect();
+        present["timely-access-token"] = false;
+        status.textContent = "";
+        draw();
+      });
+      row.append(h("span", { style: "color:#22c55e;min-width:104px", text: t("Connected") }), disconnect);
+      return;
+    }
+
+    const connect = h("button", { text: t("Connect") });
+    connect.addEventListener("click", () => void Bridge.timelyAuthorize());
+    const code = h("input", {
+      type: "text", placeholder: t("Authorization code"), autocomplete: "off", spellcheck: "false",
+      style: "flex:1 1 auto;min-width:0",
+    }) as HTMLInputElement;
+    const save = h("button", { text: t("Save") });
+    save.addEventListener("click", async () => {
+      const value = code.value.trim();
+      if (!value) return;
+      try {
+        await Bridge.timelyConnect(value);
+        present["timely-access-token"] = true;
+        status.textContent = t("✓ Timely connected.");
+        draw();
+      } catch {
+        status.textContent = t("❌ Timely did not accept the code. Check the client ID and secret, then connect again.");
+      }
+    });
+    row.append(h("span", { style: "min-width:104px" }), connect, code, save);
+  }
+
+  draw();
+  return h("div", { style: "display:flex;flex-direction:column;gap:4px" }, row, status);
 }
 
 // ── General section ───────────────────────────────────────────────────────────
 
 function generalSection(): HTMLElement {
   const volume = h("input", {
-    type: "range", min: "0", max: "0.2", step: "0.005",
+    type: "range", min: "0", max: String(SOUND_VOLUME_MAX), step: "0.005",
     value: String(settings.soundVolume),
   }) as HTMLInputElement;
   volume.addEventListener("input", () => {
@@ -907,6 +1162,42 @@ function generalSection(): HTMLElement {
   autoClose.addEventListener("change", () => {
     settings.autoCloseInterval = Math.max(5, Math.min(120, Number(autoClose.value) || 15));
     autoClose.value = String(settings.autoCloseInterval);
+    void save();
+  });
+
+  const paddingField = (side: keyof CompactPadding, label: string) => {
+    const input = h("input", {
+      type: "number", min: "0", max: String(COMPACT_PADDING_MAX), step: "0.5",
+      value: String(Math.round(settings.compactPadding[side])),
+      title: label,
+    }) as HTMLInputElement;
+    input.addEventListener("change", () => {
+      const v = Number(input.value);
+      const value = Number.isFinite(v) && input.value !== ""
+        ? Math.max(0, Math.min(COMPACT_PADDING_MAX, Math.round(v * 2) / 2))
+        : COMPACT_PADDING[side];
+      settings.compactPadding = { ...settings.compactPadding, [side]: value };
+      input.value = String(value);
+      void save();
+    });
+    return [h("span", { class: "hint", text: label }), input];
+  };
+
+  const numberOnly = toggle(settings.compactAgentsNumberOnly, (v) => { settings.compactAgentsNumberOnly = v; void save(); }) as HTMLButtonElement;
+  numberOnly.disabled = !settings.compactShowAgents;
+  const workingOnly = toggle(settings.compactAgentsWorkingOnly, (v) => { settings.compactAgentsWorkingOnly = v; void save(); }) as HTMLButtonElement;
+  workingOnly.disabled = !settings.compactShowAgents;
+  const showAgents = toggle(settings.compactShowAgents, (v) => {
+    settings.compactShowAgents = v;
+    numberOnly.disabled = !v;
+    workingOnly.disabled = !v;
+    void save();
+  });
+  const expandSwitch = toggle(settings.expandOnActivity, (v) => { settings.expandOnActivity = v; void save(); }) as HTMLButtonElement;
+  expandSwitch.disabled = !settings.followActivity;
+  const followSwitch = toggle(settings.followActivity, (v) => {
+    settings.followActivity = v;
+    expandSwitch.disabled = !v;
     void save();
   });
 
@@ -947,15 +1238,85 @@ function generalSection(): HTMLElement {
     ),
     h("div", { class: "row" }, soundsFolder, reloadSounds, customCount),
     h("div", { class: "hint", text: t("Drop a file named like one of Mochi's sounds (finish.wav, approval.mp3, greet.m4a…) in the sounds folder to replace it, then Reload.") }),
+    h("div", { class: "row" }, h("label", { text: t("Calls") })),
+    h("div", { class: "row" },
+      h("label", { text: t("Camera on") }),
+      toggle(settings.quietOnCamera, (v) => { settings.quietOnCamera = v; void save(); }),
+    ),
+    h("div", { class: "row" },
+      h("label", { text: t("Microphone on") }),
+      toggle(settings.quietOnMic, (v) => { settings.quietOnMic = v; void save(); }),
+    ),
+    h("div", { class: "row", title: t("A screen shared by an app that is also on the mic or the camera. A recorder or a screenshot tool does not count.") },
+      h("label", { text: t("Screen sharing") }),
+      toggle(settings.quietOnScreenShare, (v) => { settings.quietOnScreenShare = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("The island hides and goes silent while one of these is in use.") }),
     h("div", { class: "row" },
       h("label", { text: t("Open on hover") }),
       toggle(settings.openOnHover, (v) => { settings.openOnHover = v; void save(); }),
     ),
     h("div", { class: "hint", text: t("Hovering the island opens it; it folds again shortly after the pointer leaves. Click inside to keep it open.") }),
+    ...alertRows(),
+    h("div", { class: "row" },
+      h("label", { text: t("Auto-hide") }),
+      toggle(settings.autoHide, (v) => { settings.autoHide = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("The small island hides a minute after the last activity. Off: it stays at the top of the screen.") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Follow edits live") }),
+      toggle(settings.followEdits, (v) => { settings.followEdits = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Follow the latest activity") }),
+      followSwitch,
+    ),
+    h("div", { class: "hint", text: t("The card shows the agent that did something last") }),
+    h("div", { class: "row sub" },
+      h("label", { text: t("Open the island on new activity") }),
+      expandSwitch,
+    ),
+    h("div", { class: "row" },
+      h("label", { text: t("Hide in full screen") }),
+      toggle(settings.hideInFullScreen, (v) => { settings.hideInFullScreen = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("The island steps aside while a full-screen app, a game or a video, fills its display.") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Show clock in the island") }),
+      toggle(settings.showClock, (v) => { settings.showClock = v; void save(); }),
+    ),
+    h("div", { class: "hint", text: t("The date and the time in the middle of the island when it is compact.") }),
     h("div", { class: "row" },
       h("label", { text: t("Auto-close") }),
       autoClose,
       h("span", { class: "hint", text: t("seconds after you leave the island") }),
+    ),
+    h("div", { class: "row" },
+      h("label", { text: t("Padding") }),
+      h("div", { class: "padding-grid" },
+        ...paddingField("top", t("Top")),
+        ...paddingField("bottom", t("Bottom")),
+        ...paddingField("left", t("Left")),
+        ...paddingField("right", t("Right")),
+      ),
+    ),
+    h("div", { class: "hint", text: t("pixels between the folded island's edges and Mochi or the pills") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Show the number of agents in the folded island") }),
+      showAgents,
+    ),
+    h("div", { class: "row sub" },
+      h("label", { text: t("Show the number only") }),
+      numberOnly,
+    ),
+    h("div", { class: "row sub" },
+      h("label", { text: t("Count working agents only") }),
+      workingOnly,
+    ),
+    h("div", { class: "row" },
+      h("label", { text: t("Show plan usage in the folded island") }),
+      toggle(settings.compactShowPlan, (v) => { settings.compactShowPlan = v; void save(); }),
     ),
     h("div", { class: "row" },
       h("label", { text: t("Island lives on") }),
@@ -966,6 +1327,7 @@ function generalSection(): HTMLElement {
       toggle(settings.autostart, (v) => { settings.autostart = v; void save(); }),
     ),
     ...recapRows(),
+    ...updateRows(toggle, version),
     languageRow(),
   );
 }
@@ -1203,6 +1565,27 @@ function shortcutsSection(initial: ShortcutsReport | null): HTMLElement {
   );
 }
 
+/** Settings → General: the alerts that open the island instead of peeking (core/alerts.ts). */
+function alertRows(): HTMLElement[] {
+  const alerts: [string, string][] = [
+    [AGENT_FINISHED, t("Agent finished")],
+    [AGENT_ERROR, t("Agent error")],
+    ...availablePills().filter((p) => ALERT_PILLS.includes(p.id)).map((p): [string, string] => [p.id, p.name]),
+  ];
+  return [
+    h("div", { class: "subhead", text: t("Alerts that open the island") }),
+    ...alerts.map(([key, label]) =>
+      h("div", { class: "row" },
+        h("label", { text: label }),
+        toggle(settings.expandOnAlert.includes(key), (on) => {
+          const others = settings.expandOnAlert.filter((k) => k !== key);
+          settings.expandOnAlert = on ? [...others, key] : others;
+          void save();
+        }),
+      )),
+  ];
+}
+
 /** Settings → General → Weekly recap. The prefs live with the history in Rust. */
 function recapRows(): HTMLElement[] {
   const T = {
@@ -1251,6 +1634,7 @@ function recapRows(): HTMLElement[] {
 // ── Language ──────────────────────────────────────────────────────────────────
 
 /** The shortcuts section on screen, told about the events listened to once in main. */
+let remoteListener: ((statuses: RemoteStatus[]) => void) | null = null;
 let shortcutsListener: { report(fresh: ShortcutsReport): void; settingsChanged(): void } | null = null;
 
 /**
@@ -1263,30 +1647,7 @@ function applyLanguage() {
 
 function applyDirection() {
   document.documentElement.dir = isRtl() ? "rtl" : "ltr";
-  document.title = t("Settings — Coucou");
-}
-
-let rendering: Promise<void> | null = null;
-let renderAgain = false;
-
-/** Redraws every section from fresh state, keeping the scroll position. */
-async function rerender() {
-  if (rendering) {
-    renderAgain = true;
-    return;
-  }
-  const scroll = document.scrollingElement?.scrollTop ?? 0;
-  rendering = render();
-  try {
-    await rendering;
-  } finally {
-    rendering = null;
-  }
-  if (document.scrollingElement) document.scrollingElement.scrollTop = scroll;
-  if (renderAgain) {
-    renderAgain = false;
-    await rerender();
-  }
+  document.title = "Coucou";
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -1299,25 +1660,38 @@ async function main() {
   }
   setLanguage(resolveLanguage(settings.language, systemLanguages()));
   applyDirection();
+  hub = await startHub(windowRoot, {
+    version,
+    flowPages: FLOW_PAGE_RENDERERS,
+    renderNotch: async (page, container) => {
+      notchPage = page;
+      root = container;
+      await render();
+    },
+  });
   onLanguageChange(() => {
     applyDirection();
-    void rerender();
+    hub?.redraw();
   });
-  await render();
 
   void onEvent<ShortcutsReport>("shortcuts-status", (fresh) => shortcutsListener?.report(fresh));
+  void onEvent<RemoteStatus[]>("remote-status", (s) => remoteListener?.(s));
+  void onEvent<UpdateStatus>("update-status", (fresh) => updatesListener?.(fresh));
   void onEvent<Settings>("settings-changed", (s) => {
-    const before = `${settings.chatProvider}|${settings.ollamaUrl}|${settings.lmstudioUrl}|${settings.customUrl}`;
+    const before = `${settings.chatProvider}|${settings.ollamaUrl}|${settings.lmstudioUrl}|${settings.customUrl}|${settings.openWebuiUrl}`;
     settings = { ...settings, ...s };
     shortcutsListener?.settingsChanged();
     for (const redraw of declaredViews) redraw();
-    const after = `${settings.chatProvider}|${settings.ollamaUrl}|${settings.lmstudioUrl}|${settings.customUrl}`;
+    const after = `${settings.chatProvider}|${settings.ollamaUrl}|${settings.lmstudioUrl}|${settings.customUrl}|${settings.openWebuiUrl}`;
     if (before !== after) localRedraw?.();
     applyLanguage();
   });
 }
 
-/** Reads what the sections show and draws them all. */
+/** The Notch page being shown. */
+let notchPage: PageId = "general";
+
+/** Reads what the sections of the Notch page show and draws them. */
 async function render() {
   const status = (await Bridge.hooksStatus()) ?? {
     installed: false, planRelayInstalled: false, settingsPath: "", hookPath: "", hookReady: false,
@@ -1329,7 +1703,8 @@ async function render() {
 
   const keys = [
     "stripe-api-key", "github-token", "vercel-token",
-    "n8n-url", "n8n-api-key", "resend-api-key", "notion-api-key", "calcom-api-key",
+    "n8n-url", "n8n-api-key", "resend-api-key", "notion-api-key", "calcom-api-key", "linear-api-key", "betterstack-token", "betterstack-team", "slack-token",
+    "timely-client-id", "timely-client-secret", "timely-access-token", "calendar-ical-url",
   ];
   const present: Record<string, boolean> = {};
   for (const k of keys) present[k] = (await Bridge.secretPresent(k)) ?? false;
@@ -1354,30 +1729,38 @@ async function render() {
     const key = providerDef(def.id).key!;
     chatKeys[key] = (await Bridge.secretPresent(key)) ?? false;
   }
-  const customKey = (await Bridge.secretPresent(CUSTOM_SERVER_KEY)) ?? false;
+  const serverKeys: StoredKeys = {};
+  for (const [id, entry] of Object.entries(SERVER_KEYS)) {
+    serverKeys[id as LocalId] = (await Bridge.secretPresent(entry)) ?? false;
+  }
 
   declaredViews.length = 0;
   localRedraw = null;
   shortcutsListener = null;
+  remoteListener = null;
   clear(root);
-  root.append(
-    h("h1", {}, h("span", { text: "Coucou" }), h("span", { class: "version", text: version })),
-    claudeSection(status),
-    agentsSection(agents),
-    planSection(status),
-    apiSection(hasKey),
-    chatProvidersSection(chatKeys, keyChanged),
-    localSection(customKey),
-    activePillsSection(connected),
-    integrationsSection(present),
-    phoneSection(settings.phoneLink ?? false, toggle, settings),
-    generalSection(),
-    shortcutsSection(shortcutReport),
-    h("div", {
+  const sections: Partial<Record<PageId, () => HTMLElement[]>> = {
+    general: () => [generalSection()],
+    pills: () => [activePillsSection(connected)],
+    agents: () => [
+      claudeSection(status),
+      agentsSection(agents),
+      // The tunnel is ssh -R to a Unix socket: Linux only for now.
+      ...(navigator.userAgent.includes("Windows") ? [] : [remoteSection()]),
+      planSection(status),
+    ],
+    chat: () => [apiSection(hasKey), chatProvidersSection(chatKeys, keyChanged), localSection(serverKeys)],
+    integrations: () => [integrationsSection(present)],
+    phone: () => [phoneSection(settings.phoneLink ?? false, toggle, settings)],
+    shortcuts: () => [shortcutsSection(shortcutReport)],
+  };
+  root.append(...(sections[notchPage]?.() ?? []));
+  if (notchPage === "general") {
+    root.append(h("div", {
       class: "hint",
       text: t("No telemetry. Network requests only go to the services you configure yourself."),
-    }),
-  );
+    }));
+  }
 }
 
 void main();

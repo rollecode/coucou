@@ -13,6 +13,8 @@ final class AppState: ObservableObject {
 
     // Tasks
     @Published var tasks: [AgentTask] = []
+    /// Pills of sessions found running that have sent no event since Coucou started.
+    @Published var quietSessionPills: Set<String> = []
     @Published var focusId: String? = nil
 
     // Bot state override
@@ -136,6 +138,17 @@ final class AppState: ObservableObject {
     @Published var lmstudioChatModel: String = ChatProvider.lmstudio.defaultModel {
         didSet { UserDefaults.standard.set(lmstudioChatModel, forKey: "lmstudioChatModel") }
     }
+    /// Claude Code in the chat: its model ("default" = its own), effort ("" = its
+    /// own) and working folder ("" = Coucou's own, so nothing lands in $HOME).
+    @Published var claudeCodeChatModel: String = ChatProvider.claudecode.defaultModel {
+        didSet { UserDefaults.standard.set(claudeCodeChatModel, forKey: "claudeCodeChatModel") }
+    }
+    @Published var claudeCodeEffort: String = "" {
+        didSet { UserDefaults.standard.set(claudeCodeEffort, forKey: "claudeCodeEffort") }
+    }
+    @Published var claudeCodeDir: String = "" {
+        didSet { UserDefaults.standard.set(claudeCodeDir, forKey: "claudeCodeDir") }
+    }
     @Published var deepseekChatModel: String = ChatProvider.deepseek.defaultModel {
         didSet { UserDefaults.standard.set(deepseekChatModel, forKey: "deepseekChatModel") }
     }
@@ -151,6 +164,18 @@ final class AppState: ObservableObject {
     @Published var lmstudioServerURL: String = "" {
         didSet { UserDefaults.standard.set(lmstudioServerURL, forKey: "lmstudioServerURL") }
     }
+    @Published var openWebUIChatModel: String = "" {
+        didSet { UserDefaults.standard.set(openWebUIChatModel, forKey: "openWebUIChatModel") }
+    }
+    @Published var openWebUIServerURL: String = "" {
+        didSet { UserDefaults.standard.set(openWebUIServerURL, forKey: "openWebUIServerURL") }
+    }
+    /// Open WebUI searches the web for each question, where its admin has web search on.
+    @Published var openWebUIWebSearch: Bool = true {
+        didSet { UserDefaults.standard.set(openWebUIWebSearch, forKey: "openWebUIWebSearch") }
+    }
+    /// The picker's sections for Open WebUI's models, by model id.
+    @Published var openWebUIModelGroups: [String: OpenWebUI.Group] = [:]
 
     // The always-on workspace pill (default: VS Code). Persisted.
     @Published var mainPillId: String = PillCatalog.defaultMainPillId {
@@ -167,6 +192,15 @@ final class AppState: ObservableObject {
     func fetchModelsIfNeeded(for provider: ChatProvider) {
         guard !loadingProviderModels.contains(provider),
               fetchedProviderModels[provider] == nil else { return }
+        if provider == .openwebui {
+            fetchOpenWebUIModels()
+            return
+        }
+        // Claude Code: the aliases its --model takes, nothing to ask anyone.
+        if provider == .claudecode {
+            fetchedProviderModels[provider] = ClaudeCodeChat.modelList
+            return
+        }
         // Local providers: fetch from server URL (no API key needed)
         if provider.isLocal {
             let baseURL = provider == .ollama ? ollamaServerURL : lmstudioServerURL
@@ -217,7 +251,7 @@ final class AppState: ObservableObject {
             case .deepseek:  models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://api.deepseek.com/v1", apiKey: apiKey)
             case .qwen:      models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: apiKey)
             case .moonshot:  models = await ClaudeService.fetchOpenAICompatibleModels(baseURL: "https://api.moonshot.cn/v1", apiKey: apiKey)
-            case .ollama, .lmstudio: models = []  // handled above
+            case .ollama, .lmstudio, .openwebui, .claudecode: models = []  // handled above
             }
             loadingProviderModels.remove(provider)
             if models.isEmpty {
@@ -249,7 +283,7 @@ final class AppState: ObservableObject {
                     if !models.contains(where: { $0.id == moonshotChatModel }) {
                         moonshotChatModel = models.first!.id
                     }
-                case .ollama, .lmstudio: break
+                case .ollama, .lmstudio, .openwebui, .claudecode: break
                 }
             }
         }
@@ -263,13 +297,57 @@ final class AppState: ObservableObject {
         case .openai:    return openAIChatModel
         case .ollama:    return ollamaChatModel
         case .lmstudio:  return lmstudioChatModel
+        case .openwebui: return openWebUIChatModel
+        case .claudecode: return claudeCodeChatModel
         case .deepseek:  return deepseekChatModel
         case .qwen:      return qwenChatModel
         case .moonshot:  return moonshotChatModel
         }
     }
 
-    // Sound volume (0–0.2) — persisted, synced to SoundEngine
+    /// Open WebUI's models, ranked: its most used, its workspace models, the rest.
+    private func fetchOpenWebUIModels() {
+        let provider = ChatProvider.openwebui
+        let baseURL = LocalChat.normaliseURL(openWebUIServerURL)
+        guard !baseURL.isEmpty else {
+            providerModelFetchError[provider] = "Connect Open WebUI in Settings → Chat first."
+            return
+        }
+        guard let key = OpenWebUI.key(stored: KeychainStore.shared.get(OpenWebUI.keychainKey), url: baseURL) else {
+            providerModelFetchError[provider] = String(localized: "Add an Open WebUI API key in Settings → Local models first.")
+            return
+        }
+        loadingProviderModels.insert(provider)
+        providerModelFetchError.removeValue(forKey: provider)
+        Task {
+            do {
+                let models = try await OpenWebUI.rankedModels(baseURL: baseURL, key: key)
+                loadingProviderModels.remove(provider)
+                fetchedProviderModels[provider] = models.map { (id: $0.id, label: $0.label) }
+                openWebUIModelGroups = Dictionary(models.compactMap { m in m.group.map { (m.id, $0) } },
+                                                  uniquingKeysWith: { first, _ in first })
+                if let first = models.first, !models.contains(where: { $0.id == openWebUIChatModel }) {
+                    openWebUIChatModel = first.id
+                }
+            } catch let e as LocalChatError {
+                loadingProviderModels.remove(provider)
+                providerModelFetchError[provider] = e.localizedDescription
+            } catch {
+                loadingProviderModels.remove(provider)
+                providerModelFetchError[provider] = error.localizedDescription
+            }
+        }
+    }
+
+    /// The model button's text: Claude Code's shows its effort too.
+    var chatModelLabel: String {
+        chatProvider == .claudecode
+            ? ClaudeCodeChat.label(model: claudeCodeChatModel, effort: claudeCodeEffort)
+            : activeChatModel
+    }
+
+    // Sound volume (0–soundVolumeMax) — persisted, synced to SoundEngine
+    static let soundVolumeMax: Double = 1
     @Published var soundVolume: Double = 0.12 {
         didSet {
             UserDefaults.standard.set(soundVolume, forKey: "soundVolume")
@@ -301,8 +379,112 @@ final class AppState: ObservableObject {
     @Published var openOnHover: Bool = false {
         didSet { UserDefaults.standard.set(openOnHover, forKey: "openOnHover") }
     }
+    // Folded island: space between each edge and Mochi or the pills — persisted
+    @Published var compactPaddingTop: Double = Double(CompactPadding.standard.top) {
+        didSet { let v = Self.clampedPadding(compactPaddingTop, key: "compactPaddingTop"); if v != compactPaddingTop { compactPaddingTop = v } }
+    }
+    @Published var compactPaddingRight: Double = Double(CompactPadding.standard.right) {
+        didSet { let v = Self.clampedPadding(compactPaddingRight, key: "compactPaddingRight"); if v != compactPaddingRight { compactPaddingRight = v } }
+    }
+    @Published var compactPaddingBottom: Double = Double(CompactPadding.standard.bottom) {
+        didSet { let v = Self.clampedPadding(compactPaddingBottom, key: "compactPaddingBottom"); if v != compactPaddingBottom { compactPaddingBottom = v } }
+    }
+    @Published var compactPaddingLeft: Double = Double(CompactPadding.standard.left) {
+        didSet { let v = Self.clampedPadding(compactPaddingLeft, key: "compactPaddingLeft"); if v != compactPaddingLeft { compactPaddingLeft = v } }
+    }
+    var compactPadding: CompactPadding {
+        CompactPadding(top: CGFloat(compactPaddingTop), right: CGFloat(compactPaddingRight),
+                       bottom: CGFloat(compactPaddingBottom), left: CGFloat(compactPaddingLeft))
+    }
+    // Reassign only when clamped: a @Published didSet that always writes back recurses forever
+    private static func clampedPadding(_ value: Double, key: String) -> Double {
+        let v = min(IslandConst.compactPaddingMax, max(0, value))
+        UserDefaults.standard.set(v, forKey: key)
+        return v
+    }
+    // The compact island hides a minute after the last activity — persisted, on by default
+    @Published var autoHide: Bool = true {
+        didSet { UserDefaults.standard.set(autoHide, forKey: "autoHide") }
+    }
+    // Each Claude Code file edit opens the island on its diff as it happens — persisted, off by default
+    @Published var followEdits: Bool = false {
+        didSet { UserDefaults.standard.set(followEdits, forKey: "followEdits") }
+    }
+    @Published var liveDiff: LiveDiff? = nil
+    /// Pills whose live diff was closed: not followed again until their next prompt.
+    var liveStopped: Set<String> = []
+
+    /// The live diff was closed: that session is not followed until its next prompt.
+    func stopFollowing() {
+        if let live = liveDiff { liveStopped.insert(live.pillId) }
+        liveDiff = nil
+    }
+
+    /// A session's turn ends or starts anew: it stops being followed, or may be again.
+    func endFollow(_ pillId: String) {
+        if liveDiff?.pillId == pillId { liveDiff = nil }
+        liveStopped.remove(pillId)
+    }
+    // Folded island: the agent count, and whether it drops the "Agents" label — persisted
+    @Published var compactShowAgents: Bool = true {
+        didSet { UserDefaults.standard.set(compactShowAgents, forKey: "compactShowAgents") }
+    }
+    @Published var compactAgentsNumberOnly: Bool = false {
+        didSet { UserDefaults.standard.set(compactAgentsNumberOnly, forKey: "compactAgentsNumberOnly") }
+    }
+    // The card follows the agent that did something last; with expandOnActivity the island opens on it — persisted, off by default
+    /// The pointer is over the island: following leaves the card under it alone.
+    var pointerInIsland = false
+    @Published var followActivity: Bool = false {
+        didSet { UserDefaults.standard.set(followActivity, forKey: "followActivity") }
+    }
+    @Published var expandOnActivity: Bool = false {
+        didSet { UserDefaults.standard.set(expandOnActivity, forKey: "expandOnActivity") }
+    }
+    // Settings → General → Calls: the island hides and goes silent while one of these is in use
+    @Published var quietOnCamera: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnCamera, forKey: "quietOnCamera"); updateInCall() }
+    }
+    @Published var quietOnMic: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnMic, forKey: "quietOnMic"); updateInCall() }
+    }
+    @Published var quietOnScreenShare: Bool = true {
+        didSet { UserDefaults.standard.set(quietOnScreenShare, forKey: "quietOnScreenShare"); updateInCall() }
+    }
+    /// `cam`, `mic`, `scr` held by another app right now (CallWatcher).
+    var callSensors: Set<String> = [] {
+        didSet { updateInCall() }
+    }
+    /// A call is on: nothing reveals, no alert, no sound, until it ends.
+    @Published private(set) var inCall = false
+    private func updateInCall() {
+        let on = quietOnCamera && callSensors.contains("cam")
+            || quietOnMic && callSensors.contains("mic")
+            || quietOnScreenShare && callSensors.contains("scr")
+        if on != inCall { inCall = on }
+    }
+    // The agents count leaves out idle ones — persisted, off by default
+    @Published var compactAgentsWorkingOnly: Bool = false {
+        didSet { UserDefaults.standard.set(compactAgentsWorkingOnly, forKey: "compactAgentsWorkingOnly") }
+    }
+    // The island steps aside on full-screen Spaces — persisted, off by default
+    @Published var hideInFullScreen: Bool = false {
+        didSet { UserDefaults.standard.set(hideInFullScreen, forKey: "hideInFullScreen") }
+    }
+    /// A pill other than the one shown finishes or fails: show its card for a moment (#683).
+    @Published var alertsFromAllPills: Bool = false {
+        didSet { UserDefaults.standard.set(alertsFromAllPills, forKey: "alertsFromAllPills") }
+    }
     @Published var autoCloseInterval: TimeInterval = 15 {
         didSet { UserDefaults.standard.set(autoCloseInterval, forKey: "autoCloseInterval") }
+    }
+    // Alerts that open the island instead of peeking (AlertExpansion), persisted, none by default
+    @Published var expandOnAlert: Set<String> = [] {
+        didSet {
+            if let data = try? JSONEncoder().encode(Array(expandOnAlert)) {
+                UserDefaults.standard.set(data, forKey: "expandOnAlert")
+            }
+        }
     }
 
     // Absence interval — persisted
@@ -349,6 +531,17 @@ final class AppState: ObservableObject {
         }
     }
 
+    // Calendar filter — empty = every calendar of the Calendar app
+    @Published var calendarFilter: Set<String> = [] {
+        didSet {
+            if let data = try? JSONEncoder().encode(Array(calendarFilter)) {
+                UserDefaults.standard.set(data, forKey: "calendarFilter")
+            }
+            // Also set while AppState.shared is being made, which refresh() reads.
+            DispatchQueue.main.async { CalendarWatcher.shared.refresh() }
+        }
+    }
+
     // Active integration pills (main workspace pill excluded). Max 4.
     @Published var activeIntegrations: Set<String> = ["integration_resend", "integration_n8n", "integration_vercel", "integration_github"] {
         didSet {
@@ -359,6 +552,10 @@ final class AppState: ObservableObject {
             if !activeIntegrations.contains("integration_github") && oldValue.contains("integration_github") {
                 githubPulse = nil
                 githubActivity = nil
+            }
+            if activeIntegrations.contains(CalendarWatcher.pillId) && !oldValue.contains(CalendarWatcher.pillId) {
+                // Also set while AppState.shared is being made, which refresh() reads.
+                DispatchQueue.main.async { CalendarWatcher.shared.refresh() }
             }
         }
     }
@@ -391,10 +588,38 @@ final class AppState: ObservableObject {
     @Published var calcomLoaded: Bool = false
     @Published var calcomError: String? = nil
 
+    // Calendar (populated by CalendarWatcher)
+    @Published var calendarMeetings: [CalendarMeeting] = []
+    @Published var calendarLoaded: Bool = false
+
+    // Timely (populated by TimelyPoller)
+    @Published var timelyDay: TimelyDay? = nil
+    @Published var timelyLoaded: Bool = false
+    @Published var timelyError: String? = nil
+
+    // Better Stack (populated by BetterStackPoller)
+    @Published var betterstackIncidents: [BetterStackIncident] = []
+    @Published var betterstackDownMonitors: [BetterStackMonitor] = []
+    @Published var betterstackLoaded: Bool = false
+    @Published var betterstackError: String? = nil
+
     // Notion (populated by NotionPoller)
     @Published var notionPages: [NotionPage] = []
     @Published var notionLoaded: Bool = false
     @Published var notionError: String? = nil
+
+    // Slack (populated by SlackPoller)
+    @Published var slackMessages: [SlackMessage] = []
+    @Published var slackUnreadDMs: Int = 0
+    @Published var slackMentionCount: Int = 0
+    @Published var slackLoaded: Bool = false
+    @Published var slackError: String? = nil
+    var slackTeamId: String = ""
+    var slackWorkspaceURL: String = ""
+
+    // Linear (populated by LinearPoller)
+    @Published var linearInbox: LinearInbox? = nil
+    @Published var linearError: String? = nil
 
     // n8n — the last executions, newest first (for the iPhone; the notch shows only the latest)
     @Published var n8nRuns: [N8nRun] = []
@@ -409,6 +634,9 @@ final class AppState: ObservableObject {
     @Published var pendingQuestion: AskQuestion? = nil {
         didSet { QuestionLayout.height = pendingQuestion?.estimatedIslandHeight }
     }
+
+    /// The code view's data, by pill (see CodeSession.swift).
+    @Published var codeSessions: [String: CodeSession] = [:]
 
     // Per-pill flat list of FileDiffs, in order of reception.
     // Not @Published — steps[] changes already trigger redraws.
@@ -490,6 +718,10 @@ final class AppState: ObservableObject {
     @Published var showCodexPlanInNotch: Bool = false {
         didSet { UserDefaults.standard.set(showCodexPlanInNotch, forKey: "showCodexPlanInNotch") }
     }
+    // Folded island: the plan usage beside the mini grid — persisted
+    @Published var compactShowPlan: Bool = true {
+        didSet { UserDefaults.standard.set(compactShowPlan, forKey: "compactShowPlan") }
+    }
     @Published var codexPlanUsage: CodexPlanUsage? = nil
     // Which card showingPlanDetail opens
     @Published var planDetailIsCodex: Bool = false
@@ -531,13 +763,35 @@ final class AppState: ObservableObject {
         if let v = ud.string(forKey: "openAIChatModel"), !v.isEmpty { openAIChatModel = v }
         if let v = ud.string(forKey: "ollamaChatModel"), !v.isEmpty { ollamaChatModel = v }
         if let v = ud.string(forKey: "lmstudioChatModel"), !v.isEmpty { lmstudioChatModel = v }
+        if let v = ud.string(forKey: "claudeCodeChatModel"), !v.isEmpty { claudeCodeChatModel = v }
+        if let v = ud.string(forKey: "claudeCodeEffort") { claudeCodeEffort = v }
+        if let v = ud.string(forKey: "claudeCodeDir") { claudeCodeDir = v }
         if let v = ud.string(forKey: "deepseekChatModel"), !v.isEmpty { deepseekChatModel = v }
         if let v = ud.string(forKey: "qwenChatModel"),     !v.isEmpty { qwenChatModel     = v }
         if let v = ud.string(forKey: "moonshotChatModel"), !v.isEmpty { moonshotChatModel = v }
         if let v = ud.string(forKey: "ollamaServerURL"), !v.isEmpty { ollamaServerURL = v }
         if let v = ud.string(forKey: "lmstudioServerURL"), !v.isEmpty { lmstudioServerURL = v }
+        if let v = ud.string(forKey: "openWebUIChatModel"), !v.isEmpty { openWebUIChatModel = v }
+        if let v = ud.string(forKey: "openWebUIServerURL"), !v.isEmpty { openWebUIServerURL = v }
+        if let v = ud.object(forKey: "openWebUIWebSearch") as? Bool { openWebUIWebSearch = v }
         // Migrate old 60s default → 15s
         if let v = ud.object(forKey: "openOnHover") as? Bool { openOnHover = v }
+        if let v = ud.object(forKey: "compactPaddingTop") as? Double { compactPaddingTop = v }
+        if let v = ud.object(forKey: "compactPaddingRight") as? Double { compactPaddingRight = v }
+        if let v = ud.object(forKey: "compactPaddingBottom") as? Double { compactPaddingBottom = v }
+        if let v = ud.object(forKey: "compactPaddingLeft") as? Double { compactPaddingLeft = v }
+        if let v = ud.object(forKey: "autoHide") as? Bool { autoHide = v }
+        if let v = ud.object(forKey: "followEdits") as? Bool { followEdits = v }
+        if let v = ud.object(forKey: "compactShowAgents") as? Bool { compactShowAgents = v }
+        if let v = ud.object(forKey: "compactAgentsNumberOnly") as? Bool { compactAgentsNumberOnly = v }
+        if let v = ud.object(forKey: "followActivity") as? Bool { followActivity = v }
+        if let v = ud.object(forKey: "expandOnActivity") as? Bool { expandOnActivity = v }
+        if let v = ud.object(forKey: "quietOnCamera") as? Bool { quietOnCamera = v }
+        if let v = ud.object(forKey: "quietOnMic") as? Bool { quietOnMic = v }
+        if let v = ud.object(forKey: "quietOnScreenShare") as? Bool { quietOnScreenShare = v }
+        if let v = ud.object(forKey: "compactAgentsWorkingOnly") as? Bool { compactAgentsWorkingOnly = v }
+        if let v = ud.object(forKey: "hideInFullScreen") as? Bool { hideInFullScreen = v }
+        if let v = ud.object(forKey: "alertsFromAllPills") as? Bool { alertsFromAllPills = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v
         }
@@ -551,6 +805,10 @@ final class AppState: ObservableObject {
            let a = try? JSONDecoder().decode([String].self, from: d) { vercelProjectFilter = Set(a) }
         if let d = ud.data(forKey: "n8nWorkflowFilter"),
            let a = try? JSONDecoder().decode([String].self, from: d) { n8nWorkflowFilter = Set(a) }
+        if let d = ud.data(forKey: "calendarFilter"),
+           let a = try? JSONDecoder().decode([String].self, from: d) { calendarFilter = Set(a) }
+        if let d = ud.data(forKey: "expandOnAlert"),
+           let a = try? JSONDecoder().decode([String].self, from: d) { expandOnAlert = Set(a) }
         if let d = ud.data(forKey: "activeIntegrations"),
            let a = try? JSONDecoder().decode([String].self, from: d) { activeIntegrations = Set(a) }
         if let v = ud.string(forKey: "mainPill"), !v.isEmpty,
@@ -562,6 +820,7 @@ final class AppState: ObservableObject {
         #if !APPSTORE
         if let v = ud.object(forKey: "showPlanInNotch") as? Bool { showPlanInNotch = v }
         if let v = ud.object(forKey: "showCodexPlanInNotch") as? Bool { showCodexPlanInNotch = v }
+        if let v = ud.object(forKey: "compactShowPlan") as? Bool { compactShowPlan = v }
         planRelayInstalled = HookServer.statusLineInstalled()
         #endif
 
@@ -631,6 +890,21 @@ final class AppState: ObservableObject {
         tasks[idx].pillBadge = badge
     }
 
+    /// Settings asks this alert to open the island, and nothing open or waiting stands in the way.
+    func opensOnAlert(_ key: String) -> Bool {
+        expandOnAlert.contains(key) && isPresent && mode != .expanded
+            && pendingApproval == nil && pendingQuestion == nil
+    }
+
+    /// Opens the island on the pill's card when Settings asks for it; false when it did not.
+    @discardableResult
+    func openForAlert(_ key: String, pill id: String, view: IslandView = .overview) -> Bool {
+        guard opensOnAlert(key), tasks.contains(where: { $0.id == id }) else { return false }
+        setFocus(id)
+        NotificationCenter.default.post(name: .alertExpand, object: view)
+        return true
+    }
+
     /// Called on main thread after each GitHub pulse poll. Fires badge + sound based on events.
     func handleGitHubEvents(_ events: [GitHubEvent]) {
         guard !events.isEmpty else { return }
@@ -651,13 +925,14 @@ final class AppState: ObservableObject {
         // Only set badge when the GitHub pill is not currently in focus
         if let b = badge, focusId != "integration_github" { setPillBadge(b, for: "integration_github") }
         if let s = sound { SoundEngine.shared.play(s) }
+        openForAlert("integration_github", pill: "integration_github")
     }
 
     func syncMode() {
         // If no tasks and not expanded/peek, go hidden
         if tasks.isEmpty && mode == .compact {
             mode = .hidden
-        } else if !tasks.isEmpty && mode == .hidden && isPresent {
+        } else if !tasks.isEmpty && mode == .hidden && isPresent && !inCall {
             mode = .compact
         }
     }
@@ -720,7 +995,6 @@ final class AppState: ObservableObject {
             tasks.removeAll { $0.id == id }
             if focusId == id { focusId = mainPillId }
         } else {
-            guard activeIntegrations.count < 4 else { return }
             activeIntegrations.insert(id)
             if let def = PillCatalog.available.first(where: { $0.id == id }),
                !tasks.contains(where: { $0.id == id }) {
@@ -735,6 +1009,22 @@ final class AppState: ObservableObject {
 
     /// Sort tasks so catalog pills are in catalog order, undeclared pills sit right after
     /// integration_claude (matching HookServer insertion behaviour), and the rest follows.
+    /// The pills that are not in front, the ones with something going on first:
+    /// an alert, then a running session, then the rest in catalog order.
+    var othersByActivity: [AgentTask] {
+        func rank(_ t: AgentTask) -> Int {
+            if t.pillBadge != nil { return 0 }
+            switch t.state {
+            case .approval, .question, .error: return 0
+            case .working, .thinking, .searching: return 1
+            default: return 2
+            }
+        }
+        return tasks.filter { $0.id != focusId }.enumerated()
+            .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
+            .map(\.element)
+    }
+
     private func sortTasksByCatalog() {
         let order = PillCatalog.available.enumerated()
             .reduce(into: [String: Int]()) { $0[$1.element.id] = $1.offset }
@@ -756,6 +1046,18 @@ final class AppState: ObservableObject {
 }
 
 // MARK: - Supporting types
+
+/// Keys of `AppState.expandOnAlert`, besides an integration's pill ID. Same as Windows and Linux (src/core/alerts.ts).
+enum AlertExpansion {
+    static let agentFinished = "agentFinished"
+    static let agentError = "agentError"
+    /// The integration pills whose alerts can open the island.
+    static let pills: Set<String> = [
+        "integration_n8n", "integration_vercel", "integration_github", "integration_stripe",
+        "integration_music", "integration_spotify", "integration_betterstack", "integration_slack",
+        "integration_linear", "integration_calendar",
+    ]
+}
 
 enum PromptContext {
     case window(appName: String, title: String, url: String?)

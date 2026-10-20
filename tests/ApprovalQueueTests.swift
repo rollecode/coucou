@@ -63,6 +63,19 @@ enum ApprovalQueueTests {
         _ = same.enqueue(entry(1)); _ = same.enqueue(entry(2, tool: "Edit"))
         precondition(!same.hasMixedSources)
 
+        // A card ignores clicks for a moment after a new request takes its place:
+        // a double-click on Allow for one request must not answer the next.
+        var guardian = ClickGuard()
+        let first = UUID(), next = UUID()
+        guardian.show(first, at: 10)
+        precondition(!guardian.accepts(first, at: 10.3))
+        precondition(guardian.accepts(first, at: 10.61))
+        guardian.show(next, at: 11)
+        precondition(!guardian.accepts(next, at: 11.2))
+        precondition(!guardian.accepts(first, at: 12), "a click for a request no longer shown")
+        guardian.show(next, at: 11.5)
+        precondition(guardian.accepts(next, at: 11.61), "the same request keeps its clock")
+
         print("pass")
     }
 }

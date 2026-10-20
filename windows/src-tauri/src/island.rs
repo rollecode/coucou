@@ -280,6 +280,58 @@ mod display_tests {
     }
 }
 
+/// Calculates the zoom correction factor so that 1 CSS pixel equals 1 window logical pixel.
+/// If WebView2's devicePixelRatio differs from the window's scale factor (e.g. system text
+/// scaling or multi-monitor DPI mismatch), adjusting the webview zoom ensures the island
+/// canvas (PANEL_W / EXPANDED_W) fits within the window without clipping.
+pub fn calculate_zoom_correction(current_zoom: f64, scale: f64, dpr: f64) -> Option<f64> {
+    if dpr <= 0.0 || !dpr.is_finite() || scale <= 0.0 || !scale.is_finite() {
+        return None;
+    }
+    if (dpr - scale).abs() / scale < 0.02 {
+        return None;
+    }
+    let new_zoom = (current_zoom * (scale / dpr)).clamp(0.25, 4.0);
+    Some(new_zoom)
+}
+
+#[cfg(test)]
+mod zoom_tests {
+    use super::*;
+
+    #[test]
+    fn zoom_correction_is_none_when_dpr_matches_window_scale() {
+        assert_eq!(calculate_zoom_correction(1.0, 1.0, 1.0), None);
+        assert_eq!(calculate_zoom_correction(1.0, 1.25, 1.25), None);
+        // Within 2% threshold
+        assert_eq!(calculate_zoom_correction(1.0, 1.0, 1.01), None);
+    }
+
+    #[test]
+    fn zoom_correction_adjusts_for_dpi_mismatch() {
+        // Issue #346: 100% scale display (scale 1.0) but WebView2 dpr = 1.25
+        let zoom = calculate_zoom_correction(1.0, 1.0, 1.25);
+        assert_eq!(zoom, Some(0.8));
+
+        // 125% display with 125% text scale (dpr 1.5625 vs scale 1.25)
+        let zoom = calculate_zoom_correction(1.0, 1.25, 1.5625);
+        assert_eq!(zoom, Some(0.8));
+
+        // 150% display with 100% webview dpr
+        let zoom = calculate_zoom_correction(1.0, 1.5, 1.0);
+        assert_eq!(zoom, Some(1.5));
+    }
+
+    #[test]
+    fn zoom_correction_handles_invalid_inputs() {
+        assert_eq!(calculate_zoom_correction(1.0, 0.0, 1.0), None);
+        assert_eq!(calculate_zoom_correction(1.0, 1.0, -1.0), None);
+        assert_eq!(calculate_zoom_correction(1.0, f64::NAN, 1.0), None);
+        assert_eq!(calculate_zoom_correction(1.0, 1.0, f64::INFINITY), None);
+    }
+}
+
+
 pub fn screen_info(app: &AppHandle, pref: &str) -> ScreenInfo {
     match target_monitor(app, pref) {
         Some(m) => {
@@ -327,6 +379,19 @@ pub fn apply_geometry(app: &AppHandle, pref: &str, collapsed: bool) {
     // Moving across displays can rescale the window: re-assert the physical size.
     let _ = win.set_size(PhysicalSize::new(pw, ph));
     let _ = win.set_always_on_top(true);
+
+    // On Windows, moving across displays or waking from the strip can clamp or lag
+    // the resize. If the physical inner size differs from what was requested, retry once.
+    if let Ok(got) = win.inner_size() {
+        if got.width != pw || got.height != ph {
+            crate::log::line(format!(
+                "window size mismatch: wanted {pw}x{ph}, got {}x{} (scale {scale}, monitor {}x{})",
+                got.width, got.height, ms.width, ms.height
+            ));
+            let _ = win.set_size(PhysicalSize::new(pw, ph));
+            let _ = win.set_position(PhysicalPosition::new(x, y));
+        }
+    }
 }
 
 /// Position, size and scale of the monitor the island lives on. Any change here
@@ -342,6 +407,22 @@ fn current_screen_key(app: &AppHandle) -> Option<(i32, i32, u32, u32, u64)> {
     Some((p.x, p.y, size.width, size.height, m.scale_factor().to_bits()))
 }
 
+/// Logical origin and width of the island's display.
+fn display_logical(app: &AppHandle) -> Option<(f64, f64, f64)> {
+    let pref = app
+        .try_state::<crate::Shared>()
+        .map(|s| s.settings.lock().unwrap().screen.clone())
+        .unwrap_or_else(|| "primary".into());
+    let m = target_monitor(app, &pref)?;
+    let (x, y) = logical_origin(&m);
+    Some((x as f64, y as f64, m.size().width as f64 / m.scale_factor()))
+}
+
+/// A global logical point in the island window, which sits centred at the top of its display.
+fn island_local(global: (f64, f64), display: (f64, f64, f64), width: f64) -> (f64, f64) {
+    (global.0 - (display.0 + (display.2 - width) / 2.0), global.1 - display.1)
+}
+
 /// Emits `cursor` (window-logical coordinates) at ~60 Hz while the island is
 /// visible. Parked on a condvar the rest of the time.
 pub fn spawn_cursor_poll(app: AppHandle, gate: Arc<PollGate>) {
@@ -353,7 +434,17 @@ pub fn spawn_cursor_poll(app: AppHandle, gate: Arc<PollGate>) {
         // Without a cursor to read (Linux) the loop only watches the display
         // layout, and twice a second is plenty for that: waking at 60 Hz just to
         // find no cursor costs CPU for nothing.
-        let (period, screen_every) = if platform::CURSOR_POLL { (16, 30) } else { (500, 1) };
+        // Linux: a compositor that reports the pointer (driftwm, Hyprland) is read at 20 Hz for Mochi's eyes.
+        let pointer = platform::pointer_source();
+        if pointer.is_some() {
+            crate::log::line("pointer: read from the compositor for Mochi's eyes");
+        }
+        let (period, screen_every) = match (platform::CURSOR_POLL, pointer.is_some()) {
+            (true, _) => (16, 30),
+            (false, true) => (50, 10),
+            (false, false) => (500, 1),
+        };
+        let mut display: Option<(f64, f64, f64)> = None;
         loop {
             gate.wait_until_active();
             let mut last = (f64::MIN, f64::MIN);
@@ -379,6 +470,23 @@ pub fn spawn_cursor_poll(app: AppHandle, gate: Arc<PollGate>) {
                 }
 
                 let Some(win) = window(&app) else { continue };
+                if !platform::CURSOR_POLL {
+                    let Some(p) = &pointer else { continue };
+                    if display.is_none() || ticks % screen_every == 0 {
+                        display = display_logical(&app);
+                    }
+                    let (Some(d), Some(g)) = (display, p.read()) else { continue };
+                    if (g.0 - last.0).abs() < 1.0 && (g.1 - last.1).abs() < 1.0 {
+                        continue;
+                    }
+                    last = g;
+                    let scale = win.scale_factor().unwrap_or(1.0);
+                    let width = win.inner_size().map(|s| s.width as f64 / scale).unwrap_or(PANEL_W);
+                    let (x, y) = island_local(g, d, width);
+                    let _ = win.emit("pointer-global", CursorPayload { x, y });
+                    crate::desktop::gaze(&app, g, (d.0, d.1));
+                    continue;
+                }
                 let Ok(origin) = win.outer_position() else { continue };
                 let scale = win.scale_factor().unwrap_or(1.0);
                 let Some((cx, cy)) = cursor_physical() else { continue };
@@ -467,11 +575,30 @@ pub fn refresh_click_through(app: &AppHandle, gate: &PollGate) {
             Some((x0, y0, x1 - x0, y1 - y0))
         }
     };
-    platform::set_input_region(&win, region);
+    // `set_input_region` reaches into raw GTK/gtk-layer-shell FFI through
+    // `win.gtk_window()`, which Tauri documents as main-thread-only — but this
+    // function is reached from `#[tauri::command]` handlers, which run on a
+    // Tokio worker thread, never the GTK main thread. Calling GTK off-thread
+    // is a race that can corrupt GDK's Wayland state (seen as a
+    // `gdk_wayland_window_get_wl_surface` assertion followed by a fatal
+    // Wayland protocol error and the compositor killing the connection).
+    let _ = app.run_on_main_thread(move || platform::set_input_region(&win, region));
 }
 
 pub fn set_ignore_cursor(app: &AppHandle, ignore: bool) {
     if let Some(win) = window(app) {
         let _ = win.set_ignore_cursor_events(ignore);
+    }
+}
+
+#[cfg(test)]
+mod pointer_tests {
+    use super::island_local;
+
+    #[test]
+    fn a_global_point_lands_in_the_centred_island_window() {
+        // A 1920-wide display right of a 1440 one; the island window is 720 wide.
+        assert_eq!(island_local((1440.0 + 960.0, 30.0), (1440.0, 0.0, 1920.0), 720.0), (360.0, 30.0));
+        assert_eq!(island_local((10.0, 500.0), (1440.0, 0.0, 1920.0), 720.0), (10.0 - 1440.0 - 600.0, 500.0));
     }
 }

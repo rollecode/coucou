@@ -64,6 +64,7 @@ Vérifier dans la doc la liste exacte des événements et leurs champs.
 | `TERM_PROGRAM=iTerm.app` + `ITERM_SESSION_ID` | AppleScript iTerm : sélectionner la session, activer |
 | `TERM_PROGRAM=vscode` | ouvrir le dossier `cwd` dans VS Code ou Cursor (selon `__CFBundleIdentifier`) |
 | Ghostty, Warp, autre | activer l'app |
+| Conductor (`__CFBundleIdentifier=com.conductor.app`, sans `TERM_PROGRAM`) | activer Conductor (pas de lien documenté vers un workspace précis) |
 | rien (app Claude) | activer l'app Claude |
 Demande l'autorisation Automatisation la première fois (normal).
 
@@ -202,6 +203,125 @@ Priorité : failure > review demandée > success. Un seul badge/son par cycle.
 
 ---
 
+## 1quinquies. Slack (messages directs et mentions)
+
+**Plateforme** : macOS (`SlackPoller.swift`, `SlackParsing.swift`), Windows et Linux (`windows/src-tauri/src/slack.rs`).
+
+**Token** : token utilisateur (`xoxp-…`) d'une app Slack créée par l'utilisateur dans son propre espace de travail. Stocké dans le Trousseau / Gestionnaire d'identifiants / Secret Service (`slack-token`). Aucun serveur, aucun OAuth côté Coucou.
+
+### Créer l'app Slack
+
+1. https://api.slack.com/apps → **Create New App** → **From scratch**, choisir l'espace de travail.
+2. **OAuth & Permissions** → **User Token Scopes**, ajouter exactement :
+   - `im:read` : liste des messages directs et leur nombre de non-lus (`conversations.list`, `conversations.info`) ;
+   - `users:read` : nom des personnes (`users.info`) ;
+   - `search:read` : mentions récentes (`search.messages`).
+   - facultatif, `channels:read`, `groups:read`, `mpim:read` : ce qui a déjà été lu dans les canaux (`conversations.info`), pour n'afficher que les mentions non lues. Sans eux, toutes les mentions des dernières 24 h restent.
+3. **Install to Workspace**, autoriser, copier le **User OAuth Token** (`xoxp-…`).
+4. Coucou : Réglages → Integrations → Slack, coller le token, enregistrer. Déclarer la pastille Slack dans Active pills.
+
+Aucun scope `*:history` : le dernier message d'un message direct vient de `conversations.info` (champ `latest`), ce qui évite aussi la limite d'1 requête/minute de `conversations.history` pour les apps distribuées hors Marketplace.
+
+### Appels et limites
+
+Un poll par minute, **uniquement si la pastille Slack est déclarée** (et rien en pause / mode démo). Limites relues sur https://docs.slack.dev/apis/web-api/rate-limits :
+
+| Méthode | Quand | Palier Slack |
+|---|---|---|
+| `auth.test` | une fois par token (identifiant, équipe, URL de l'espace) | spécial, des centaines/min |
+| `conversations.list?types=im` | toutes les 10 min, `limit=200`, sans les archivés | Tier 2 (20+/min) |
+| `conversations.info` | 15 messages directs par poll (les plus proches selon `priority`) + ceux non lus au poll précédent | Tier 3 (50+/min) |
+| `search.messages` `query=<@MOI>`, tri par date | 1 par poll, 20 résultats | Tier 2 (20+/min) |
+| `conversations.info` | 1 par canal où l'on est mentionné, pour son `last_read` | Tier 3 (50+/min) |
+| `users.info` | une fois par personne, gardé en cache | Tier 4 (100+/min) |
+
+HTTP 429 : on respecte `Retry-After` (60 s par défaut) avant toute nouvelle requête.
+
+Un message direct dont le dernier message est une réponse dans un fil (`thread_ts` ≠ `ts`, hors `thread_broadcast`) n'est pas compté : Slack le compte non lu, son app le range dans Fils et laisse la conversation lue. `unread_count_display` n'existe que pour les messages directs (doc de `conversations.info`), et seulement un canal à la fois : d'où la sélection par `priority`. Un message direct avec quelqu'un hors des 15 plus proches n'est vu que si son canal a déjà été vu non lu.
+
+**Non vérifié sans vrai token** : que `search.messages` avec `<@ID>` retrouve bien les mentions. La doc décrit `in:<@UserID>` et `from:<@UserID>`, pas la recherche d'une mention dans le texte.
+
+### Affichage
+
+- Carte : « Slack · Messages », compteurs non-lus (bulle) et mentions (`@`), puis 3 lignes : messages directs non lus d'abord, puis mentions non lues des dernières 24 h (plus récentes que le `last_read` du canal), chacun du plus récent au plus ancien. Ligne = auteur (ou `auteur · #canal`), extrait du texte (balises `<@U…>`, `<#C…|nom>`, `<url|texte>` rendues lisibles), âge.
+- Clic sur une ligne : `slack://channel?team=T…&id=C…` (+ `&message=` et `&thread_ts=` tirés du permalien d'une mention, paramètres absents de la doc) si une app gère `slack://` (macOS `urlForApplication(toOpen:)`, Linux `xdg-mime query default x-scheme-handler/slack`, Windows clé `HKCR\slack`), sinon le permalien `https` du message (mentions) ou `https://slack.com/app_redirect?channel=…&team=…` (doc : https://docs.slack.dev/interactivity/deep-linking).
+- Bouton ↗ : `slack://open`, sinon l'URL de l'espace renvoyée par `auth.test`.
+
+### Alertes
+
+Premier poll : silencieux. Ensuite, un message plus récent que le dernier annoncé (comparaison exacte des `ts`) → état `finished`, ligne du défilé = auteur, badge `.finished` si la pastille n'est pas au premier plan, son `finish`, révélation de l'île ; remise à zéro après 60 s, comme Vercel.
+
+---
+
+## 1sexies. Better Stack (incidents)
+
+**Plateformes** : macOS, Windows et Linux.
+
+**Token** : un token de l'API Uptime, créé dans Better Stack → API tokens → Team-based tokens. Stocké dans le Trousseau, le Gestionnaire d'identifiants Windows ou le Secret Service (`betterstack-token`). Coucou ne fait que lire.
+
+### Données récupérées
+
+Deux requêtes GET, en-tête `Authorization: Bearer <token>`, réponses au format JSON:API (`data[].id` + `data[].attributes`) :
+- **Incidents ouverts** : `https://incidents.betterstack.com/api/v3/incidents?resolved=false&per_page=50` ([doc](https://betterstack.com/docs/uptime/api/list-all-incidents/)). On garde `name`, `cause`, `started_at` et `acknowledged_at` (présent = pris en compte). Une ligne avec `resolved_at` est écartée.
+- **Moniteurs en panne** : `https://incidents.betterstack.com/api/v2/monitors?per_page=250` ([doc](https://betterstack.com/docs/uptime/api/list-all-existing-monitors/)), filtrés sur `status == "down"`. Nom = `pronounceable_name`, sinon `url`.
+
+**Cadence** : 60 s, première requête 10 s après le lancement. Aucune requête tant que la pastille n'est pas déclarée (Réglages → Active pills) ou sans token.
+
+### Carte
+
+Trois lignes au plus : les incidents ouverts (point rouge, orange s'il est pris en compte, cause et ancienneté), puis les moniteurs en panne qu'aucun incident ne nomme déjà. Rien d'ouvert : « All monitors up ». Un clic ouvre `https://uptime.betterstack.com/incidents/{id}` ou `…/monitors/{id}`.
+
+### Alertes
+
+Premier poll après lancement (ou après un changement de token) : silencieux. Ensuite :
+
+| Événement | État / badge | Son |
+|---|---|---|
+| Nouvel incident | `error` (rouge), défilé = nom + cause | `error` |
+| Dernier incident résolu (plus rien d'ouvert) | `finished` (vert), défilé = nom + « Resolved » | `finish` |
+
+Un nouvel incident l'emporte sur une résolution dans le même poll. Comme les autres services, l'état repasse à `idle` après 60 s ; la carte continue de lister ce qui est ouvert.
+
+---
+
+## 1septies. Linear (boîte de réception)
+
+**Plateforme** : macOS, Windows et Linux
+
+**Clé** : clé API personnelle, créée dans Linear → Settings → Account → Security & access. Stockée dans le Trousseau, le Gestionnaire d'identification ou le Secret Service (`linear-api-key`). Envoyée telle quelle dans l'en-tête `Authorization`, **sans** `Bearer`. Une clé invalide répond HTTP 401 avec `AUTHENTICATION_ERROR` (vérifié).
+
+### Données récupérées
+
+Une requête GraphQL (POST `https://api.linear.app/graphql`), validée contre le schéma publié par Linear (`packages/sdk/src/schema.graphql`) :
+- **Boîte de réception** : `notifications` créées depuis 14 jours, lues par les deux bouts (`first: 100` et `last: 100`, doublons retirés) (`createdAt: { gt: "-P14D" }`) : `id`, `category`, `readAt`, `snoozedUntilAt`, `createdAt`, `actor.name`, et selon le type `issue { identifier title url }` ou `project { name url }`.
+- **Espace** : `viewer.organization.urlKey`, pour ouvrir `https://linear.app/{urlKey}/inbox`.
+
+Les champs `title`, `subtitle`, `url` et `inboxUrl` de `Notification` sont marqués `[Internal]` dans le schéma : non utilisés. La doc ne dit pas dans quel sens `first` compte : en lisant les deux bouts, les 100 plus récentes y sont toujours ; le tri se fait côté app.
+
+Non lu = `readAt` nul et pas reporté (`snoozedUntilAt` absent ou passé). Une entrée archivée n'est pas renvoyée (`includeArchived` faux par défaut).
+
+**Cadence** : 60 s, première requête 11 s après le lancement, seulement si la pastille Linear est déclarée (Réglages → Pastilles actives).
+
+### Carte
+
+En-tête « Linear · N unread ». Trois lignes au plus : les entrées non lues les plus récentes. Clic sur une ligne → le ticket ou le projet dans le navigateur.
+
+| `category`           | Icône (Mac)          |
+|----------------------|----------------------|
+| `mentions`           | `at`                 |
+| `assignments`        | `person.crop.circle` |
+| `commentsAndReplies` | `bubble.left`        |
+| `statusChanges`      | `circle.dashed`      |
+| `reactions`          | `face.smiling`       |
+| `reminders`          | `bell`               |
+| autre                | `tray`               |
+
+### Alertes
+
+Premier poll : silencieux (il mémorise les identifiants non lus). Ensuite, une entrée non lue absente du poll précédent → pastille `finished`, badge vert si la pastille n'a pas le focus, son `finish`, île compacte révélée ; retour à `idle` après 60 s. Une nouvelle clé repart en silence.
+
+---
+
 ## 2. n8n (workflows de Louis)
 
 - Réglages : URL de l'instance (probablement `https://n8nlouis.dcsys.tech`, **à confirmer avec Louis**) et clé API n8n (Trousseau). La clé se crée dans n8n : Settings → n8n API.
@@ -216,6 +336,66 @@ Priorité : failure > review demandée > success. Un seul badge/son par cycle.
   - « Relancer » → endpoint de retry de l'API publique (vérifier sa présence et son chemin dans le playground de l'instance). S'il n'existe pas : ouvrir l'exécution dans n8n.
   - « Ouvrir dans n8n » → ouvrir `{URL}/workflow/{workflowId}/executions/{executionId}` dans le navigateur par défaut.
 - Réglage « workflows suivis » : tous par défaut, liste à cocher.
+
+---
+
+## 2bis. Timely (suivi du temps)
+
+**Plateformes** : macOS, Windows et Linux. Code : `TimelyAPI.swift` + `TimelyPoller.swift` (Mac), `src-tauri/src/timely.rs` + `integrations.rs` (Windows/Linux).
+
+### Créer l'app OAuth dans Timely
+
+L'API Timely n'a pas de clé personnelle : elle passe par OAuth 2, avec une app que l'utilisateur crée dans son propre compte.
+
+1. Dans Timely : **Settings → Devs** → enregistrer une app.
+2. Redirect URI : `urn:ietf:wg:oauth:2.0:oob` (code affiché par Timely, à recopier).
+3. Copier l'**ID client** et le **secret** dans Coucou : Réglages → Intégrations → Timely.
+4. **Connect** ouvre `https://api.timelyapp.com/1.1/oauth/authorize?response_type=code&redirect_uri=urn:ietf:wg:oauth:2.0:oob&client_id=…` dans le navigateur ; se connecter, autoriser, puis coller le code affiché dans le champ « Authorization code » et **Save**.
+
+Sources : [guide Timely « Getting started with Timely's API »](https://www.timely.com/help/handbook/tips-tricks/getting-started-with-timelys-api/). La référence complète (https://developer.timely.com/) demande une connexion.
+
+### Jetons
+
+- Échange du code : `POST /1.1/oauth/token`, corps JSON `grant_type=authorization_code`, `client_id`, `client_secret`, `code`, `redirect_uri`.
+- Rafraîchissement : même URL, `grant_type=refresh_token` + `refresh_token`. Fait **une seule fois** quand une requête répond 401, puis la requête est rejouée. Si la réponse n'a pas de `refresh_token`, l'ancien est gardé.
+- Stockage : Trousseau / Credential Manager / Secret Service, clés `timely-client-id`, `timely-client-secret`, `timely-access-token`, `timely-refresh-token`. **Disconnect** efface les deux jetons.
+
+### Données récupérées
+
+Toutes les 60 s, seulement si la pastille Timely est active (première requête 9 s après le lancement) :
+- `GET /1.1/accounts` → premier compte ; `GET /1.1/{compte}/users/current` → utilisateur. Gardés en mémoire jusqu'au prochain jeton.
+- `GET /1.1/{compte}/users/{id}/capacities` → `daily_capacity` de la période `current: true`. Une fois par jour.
+- `GET /1.1/{compte}/users/{id}/events?since=…&upto=…` → entrées du jour. Champs lus : `id`, `day`, `note`, `project.name`, `project.color`, `project.client.name`, `duration.total_seconds`, `timer_state`, `timer_started_on`.
+  - Mac : `since` = `upto` = jour local.
+  - Windows/Linux : Rust n'a pas le fuseau, il demande la veille et le lendemain (UTC) ; l'île garde les entrées du jour local.
+
+Minuteur en cours : `timer_state` ≠ `stop` et `timer_started_on` > 0. Temps affiché = `duration.total_seconds` + (maintenant − `timer_started_on`).
+
+### Carte
+
+- En-tête : « Timely · Today » + total du jour / capacité (`3:20 / 7:30`), ou le total seul sans capacité.
+- Première ligne : minuteur en cours (projet, note, durée), sinon « No timer running ».
+- Puis les deux dernières entrées arrêtées (projet, durée).
+- Mac : la carte se met à jour toutes les 30 s tant qu'elle est visible (`TimelineView`). Windows/Linux : à chaque poll.
+- ↗ et « Open Timely » ouvrent `https://app.timelyapp.com`.
+- Erreurs : 401 après rafraîchissement → « Invalid API key (401) » ; autre code → « API error N ».
+
+Pas de badge ni de son : Timely n'a pas d'événement qui mérite d'interrompre.
+
+---
+
+## 2ter. Calendrier (pill `integration_calendar`)
+
+- **Mac : EventKit**, aucune clé, aucun appel réseau de Coucou. Tous les calendriers de l'app Calendrier, y compris les comptes Google ajoutés dans Réglages Système → Comptes internet. `CalendarWatcher.swift`.
+  - Accès demandé au clic sur « Allow calendar access » (Réglages → Integrations), jamais au lancement : `requestFullAccessToEvents` (macOS 14+). `Info.plist` : `NSCalendarsFullAccessUsageDescription`. Entitlement `com.apple.security.personal-information.calendars` dans les cinq fichiers `.entitlements` du Mac (Hardened Runtime et sandbox App Store).
+  - Accès refusé ou « écriture seule » : bouton « Open Settings… » vers Confidentialité → Calendriers. Accès retiré plus tard : la carte se vide.
+  - Filtre « Calendars » (liste à cocher, tous par défaut) : `calendarFilter` dans les préférences, libellé « Titre (Compte) ».
+  - Lecture d'aujourd'hui et de demain : au lancement, à chaque `EKEventStoreChanged`, toutes les 5 min, à l'activation de la pill. Rien si la pill n'est pas déclarée.
+- **Windows et Linux : adresse iCal secrète.** Google Agenda → Paramètres → (le calendrier, colonne de gauche) → *Intégrer l'agenda* → **Adresse secrète au format iCal**. N'importe quel lien iCal marche (Outlook, iCloud en `webcal://`, Fastmail).
+  - L'adresse est un secret : Credential Manager / Secret Service (`calendar-ical-url`), jamais dans le front. Rust (`poll_calendar`) la télécharge toutes les 5 min (8 Mo max) et n'envoie à l'island que le texte du flux.
+  - L'island lit le flux (`windows/src/core/calendar.ts`) : fuseaux par `Intl` (tous les fuseaux IANA, `TZID` façon Mozilla compris), journées entières, `RRULE` (DAILY/WEEKLY/MONTHLY/YEARLY, INTERVAL, COUNT, UNTIL, BYDAY avec rang, BYMONTHDAY, BYMONTH, WKST), `EXDATE`, occurrences déplacées ou annulées (`RECURRENCE-ID`). Heure sautée au passage à l'heure d'été : décalage d'avant le saut ; heure doublée : première occurrence (RFC 5545). Tests : `windows/tests/calendar.test.mjs`.
+- Carte : prochaine réunion (en cours ou à venir, aujourd'hui ou demain) avec heure, titre, compte à rebours (« Now », « in 12 min », « in 2 h 5 », « Tomorrow ») et bouton **Join** si un lien Meet, Zoom ou Teams est trouvé (`X-GOOGLE-CONFERENCE`, URL, lieu, description). En dessous, le reste de la journée puis les événements « All day », 3 lignes au plus. Le compte à rebours ne tourne que quand la carte est affichée.
+- Rappel : un seul minuteur, réarmé à chaque changement, **5 min avant** la prochaine réunion : pill en `question` (le Mochi du bureau rentre), badge `approval` si la pill n'est pas au premier plan, son `question`, island révélée. Effacé 1 min après le début. Le ↗ ouvre le lien de la réunion, sinon Calendrier (Mac) ou Google Agenda.
 
 ---
 
@@ -321,6 +501,23 @@ Réglages → Chat → Local models → **Disconnect**. Efface l'URL sauvegardé
 
 ---
 
+## 6bis. WhatsApp (expérimental, build GitHub uniquement)
+
+Pas d'API WhatsApp pour un compte perso : Coucou parle à une **passerelle locale non officielle** que l'utilisateur lance sur son Mac, [GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice) (par défaut) ou [OpenWA](https://github.com/rmyndharis/OpenWA). Tout le code est sous `#if !APPSTORE` ; la pill `integration_whatsapp` (#25D366) est `githubOnly`.
+
+- **Fichiers** : `WhatsAppModels.swift` (boîte en mémoire, filtres, garde-fous, requête HTTP), `WhatsAppGateway.swift` (payloads et réponses des deux passerelles, HMAC), `WhatsAppProvider.swift` (`GOWAProvider`, `OpenWAProvider`), `WhatsAppWebhook.swift` (serveur 127.0.0.1), `WhatsAppController.swift`, `WhatsAppViews.swift` (carte, conversation, Réglages), `WhatsAppGOWAProcess.swift` (GOWA lancé par Coucou). Tests : `scripts/test-whatsapp.sh`.
+- **GOWA** : `http://127.0.0.1:3000`, auth basique `user:pass` facultative. Coucou prend l'appareil connecté, sinon crée `coucou` (`POST /devices`) ; QR = PNG de `GET /devices/{id}/login`, récupéré sur la passerelle elle-même ; webhook déclaré par `PATCH /devices/{id}/webhook` (événement `message`), signé `X-Hub-Signature-256: sha256=<hex>`. Messages : `GET /chats`, `GET /chat/{jid}/messages` ; envoi `POST /send/message` ; lu `POST /message/{id}/read`. Pas de liste de mentions : `@<mon numéro>` dans le texte.
+- **OpenWA** : `http://127.0.0.1:2785/api`, en-tête `X-API-Key`, moteur `ENGINE_TYPE=baileys`. Session prête, sinon `coucou` créée et démarrée ; QR = data-URL de `GET /sessions/{id}/qr` ; webhook `POST /sessions/{id}/webhooks` (`message.received`, `message.sent`), signé `X-OpenWA-Signature`. Il faut `SSRF_ALLOWED_HOSTS=127.0.0.1` côté OpenWA, sinon il refuse l'adresse locale (Coucou passe alors au polling).
+- **Temps réel** : `NWListener` lié à `127.0.0.1` (port 47823 par défaut), pairs non-loopback refusés, signature HMAC-SHA256 vérifiée sur le corps brut avec un secret aléatoire du Keychain. Sans livraison depuis 5 min : polling toutes les 20 s. Statut toutes les 5 s tant que ce n'est pas lié, toutes les minutes ensuite, toutes les 30 s après une minute de panne. Réveil : on redemande tout.
+- **Pill** : une ligne par conversation (initiales, nom, aperçu, non-lus), médias en libellé. Nouveau message : émote `happy`, son `pop` (réglage son global), état `finished` comme Stripe (règles d'ouverture habituelles), seulement le nom de la conversation dans la pill, jamais le texte. Passerelle en panne deux fois de suite : badge rouge, rien de plus.
+- **Répondre** : clic → 10 derniers messages + champ (Entrée envoie, Maj+Entrée saut de ligne, Échap ferme ; le brouillon garde l'île ouverte). Réponse seulement dans une conversation déjà là, 4 096 caractères max, 6 par minute. Lu à l'ouverture (option) ou à la réponse, jamais à la réception.
+- **Filtres** : groupes muets sauf mention, chats ignorés (clic droit ou Réglages), Concentration via `INFocusStatusCenter` (demande la capability Communication Notifications ; sans elle, le réglage s'affiche indisponible).
+- **Vie privée** : rien d'autre que la passerelle locale (pas de photo de profil, elles sont sur les serveurs de WhatsApp), historique en mémoire seulement (20 messages par conversation), vidé à la fermeture ou à la désactivation, aucun contenu dans les logs ni sur disque. URL, identifiants et secret dans le Keychain.
+- **Installer WhatsApp (un clic)** : `WhatsAppGOWAInstaller` lit la dernière release de GOWA (`api.github.com/repos/aldinokemal/go-whatsapp-web-multidevice/releases/latest`), prend `whatsapp_<version>_darwin_<arm64|amd64>.zip`, vérifie son SHA-256 avec `checksums-macos.txt` (sinon le `digest` de GitHub ; sans empreinte, rien n'est installé), dézippe avec `/usr/bin/ditto`, range le binaire `darwin-<arch>` sous `~/Library/Application Support/Coucou/GOWA/gowa` (chmod 755, sans quarantaine), puis active « Lancer GOWA automatiquement » et redémarre l'intégration : le QR suit. Redirections acceptées vers github.com et *.githubusercontent.com seulement. C'est le seul appel réseau hors passerelle, et seulement au clic.
+- **Lancer GOWA automatiquement** : processus enfant `rest --host=127.0.0.1 --port=<port de l'URL> --auto-download-media=false`, identifiant passé par `APP_BASIC_AUTH` (pas sur la ligne de commande), sortie vers `/dev/null`, dossier `~/Library/Application Support/Coucou/GOWA`, arrêté à la fermeture de Coucou ou quand l'option est coupée, redémarré seulement si son binaire, son adresse ou son mot de passe change (en attendant que l'ancien soit parti), relancé s'il tombe (une fois par minute au plus). Aucune requête ne suit de redirection : rien ne part ailleurs que vers la passerelle.
+
+---
+
 ## 7. Permissions macOS demandées (récapitulatif pour Louis)
 
 | Permission | Pourquoi | Quand |
@@ -329,8 +526,10 @@ Réglages → Chat → Local models → **Disconnect**. Efface l'URL sauvegardé
 | Automatisation → Terminal / iTerm / navigateur | sauter au bon onglet, lire l'URL | première utilisation |
 | Automatisation → Musique *(GitHub only)* | contrôler la lecture Apple Music | première commande depuis le notch |
 | Automatisation → Spotify *(GitHub only)* | lire la position, le shuffle, le volume ; piloter la lecture | activation de la pill Spotify, ou première ouverture de sa carte |
+| Calendriers (accès complet) | prochaine réunion et rappel (pill Calendrier) | clic sur « Allow calendar access » |
 | Enregistrement de l'écran | capturer la fenêtre attrapée | première attache |
 | Micro + Reconnaissance vocale (optionnel) | dictée | premier clic sur le micro |
+| État de Concentration *(GitHub only)* | WhatsApp reste discret pendant une Concentration | activation de WhatsApp, si « Rester discret pendant une Concentration » est coché |
 
 Aucune permission Accessibilité nécessaire.
 

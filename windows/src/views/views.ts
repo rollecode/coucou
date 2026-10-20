@@ -17,11 +17,14 @@ import {
   PlanCard, buildPlanPill, claudePillVisible, codexPillVisible, planCardOpen, refreshCodexPlanUsage,
 } from "./usage";
 import { buildDiffCard } from "./diff";
+import { buildCodeView, hasCode } from "./session";
 import { lastTextStep } from "../core/diff";
 import { Bridge } from "../core/bridge";
 import { buildRecap } from "./recap";
 import { buildWardrobe } from "./wardrobe";
+import { buildUpdate } from "./update";
 import { buildSpotifyCard, buildSpotifyPill, type SpotifyPillHost } from "./spotify";
+import { SOUND_VOLUME_MAX } from "../core/sound";
 import { SPOTIFY_ID } from "../core/spotify";
 import type { Outfit, OutfitSelection } from "../mochi/wardrobe";
 import { language, t, tl, type Msg } from "../i18n/i18n";
@@ -89,6 +92,20 @@ function btn(
 }
 
 /** AgentWho — coloured dot + task name + grey label. */
+/**
+ * "needs permission", with "1 of N" while others wait behind the card, and the
+ * agent when they come from different sessions or agents (Mac #157).
+ */
+function approvalLabel(): string {
+  const shown = State.pendingApproval;
+  const total = State.approvalCount;
+  if (!shown || total < 2) return t("needs permission");
+  const parts = [t("needs permission"), t("{index} of {total}", { index: 1, total })];
+  const mixed = State.approvalQueue.some((a) => a.sessionId !== shown.sessionId || a.pillId !== shown.pillId);
+  if (mixed) parts.push(pillDefinition(shown.pillId)?.name ?? shown.pillId);
+  return parts.join(" · ");
+}
+
 function agentWho(task: AgentTask | null, label: string): HTMLElement {
   const row = h("div", { class: "who-row" });
   if (task) {
@@ -136,7 +153,7 @@ export function buildHeader(actions: ViewActions): ViewHost {
     el,
     sync() {
       const v = State.view;
-      tabHome.classList.toggle("on", v === "overview" || v === "empty");
+      tabHome.classList.toggle("on", v === "overview" || v === "empty" || v === "code");
       tabChat.classList.toggle("on", v === "prompt");
       tabDrop.classList.toggle("on", v === "upload");
       gearBtn.classList.toggle("on", v === "settings");
@@ -174,9 +191,14 @@ function buildOverview(actions: ViewActions): ViewHost {
   const closeDiff = () => {
     if (activeDiffId == null) return;
     activeDiffId = null;
+    // Closing a live diff stops following that session until its next prompt.
+    State.stopFollowing();
     State.notify();
   };
+  /** Set by a click on a diff row, so the same click does not also open the code view. */
+  let diffTapped = false;
   const ticker = new Ticker((diffId) => {
+    diffTapped = true;
     actions.blip();
     activeDiffId = diffId;
     State.notify();
@@ -189,7 +211,24 @@ function buildOverview(actions: ViewActions): ViewHost {
     { class: "icon-btn jump", title: tl("Open"), onclick: () => actions.openTarget() },
     svg(ICONS.arrowUpRight, 8),
   );
-  const left = card(null, leftBody, jump);
+  // </> next to ↗, as on the Mac; a click anywhere on the card opens it too.
+  const codeBtn = h(
+    "button",
+    { class: "icon-btn code-open", title: tl("Code"), onclick: () => { actions.blip(); actions.setView("code"); } },
+    svg(ICONS.code, 9, { stroke: 2.2 }),
+  );
+  const left = card(null, leftBody, jump, codeBtn);
+  // A Claude Code session that has edited a file or run a command: its card opens
+  // the code view. Only on a click, nothing opens by itself.
+  const codeOpens = () => mode === "ticker" && hasCode(State.focusTask?.id);
+  left.addEventListener("click", (e) => {
+    const tapped = diffTapped;
+    diffTapped = false;
+    if (tapped || !codeOpens()) return;
+    if ((e.target as Element | null)?.closest?.(".jump, .code-open")) return;
+    actions.blip();
+    actions.setView("code");
+  });
   const pills = h("div", { class: "pills" });
   const right = card(null, pills);
   // Opened from a plan pill in the header: stands in for the left card.
@@ -210,6 +249,8 @@ function buildOverview(actions: ViewActions): ViewHost {
   let lastFocus: string | null = null;
   let mode: "ticker" | "card" | "plan" | "diff" | "spotify" | null = null;
   let cardKey = "";
+  /** Whether the diff card on screen follows edits live. */
+  let liveCardShown = false;
   /** The list row highlighted at the last sync, to scroll only when it moves. */
   let shownSelection: number | null = null;
 
@@ -309,6 +350,10 @@ function buildOverview(actions: ViewActions): ViewHost {
       }
       syncPlanTimer(planOpen);
 
+      // Following edits live: the focused session's latest edit is the one open.
+      const live = State.liveDiff != null && task?.id === State.liveDiff.pillId;
+      if (live && State.mode === "expanded") activeDiffId = State.liveDiff!.diffId;
+
       // A diff that has since been dropped (cap, expiry, session end) just closes.
       const diff = task && activeDiffId != null ? State.findDiff(task.id, activeDiffId) : null;
       if (!diff) activeDiffId = null;
@@ -321,10 +366,13 @@ function buildOverview(actions: ViewActions): ViewHost {
         }
         plan.sync();
       } else if (task && diff) {
-        const key = `diff~${task.id}~${diff.id}`;
+        const key = `diff~${task.id}~${diff.id}~${live}`;
         if (key !== cardKey) {
           cardKey = key;
+          // A live edit replacing a live card: cross-fade, no slide.
+          const swap = live && mode === "diff" && liveCardShown;
           mode = "diff";
+          liveCardShown = live;
           clear(leftBody);
           leftBody.append(buildDiffCard(diff, {
             dismiss: () => {
@@ -332,6 +380,8 @@ function buildOverview(actions: ViewActions): ViewHost {
               closeDiff();
             },
             open: (path) => void Bridge.openFileInVSCode(path),
+            live,
+            swap,
           }));
         }
       } else if (task && sessionActive) {
@@ -368,7 +418,7 @@ function buildOverview(actions: ViewActions): ViewHost {
       } else if (task) {
         const info = State.integrations[task.id];
         const key = [
-          language(), task.id, task.color, detailOpen, task.state, task.steps.join("|"),
+          language(), task.id, task.sessionId, task.color, detailOpen, task.state, task.steps.join("|"),
           info?.loaded, info?.error, info?.configured,
           JSON.stringify(info?.data ?? {}),
         ].join("~");
@@ -381,6 +431,9 @@ function buildOverview(actions: ViewActions): ViewHost {
       }
 
       jump.style.display = detailOpen || mode === "plan" || mode === "diff" ? "none" : "";
+      left.classList.toggle("expandable", codeOpens());
+      codeBtn.style.display = codeOpens() && jump.style.display !== "none" ? "" : "none";
+      who.classList.toggle("with-code", codeBtn.style.display !== "none");
 
       // Ctrl+↓ Ctrl+↑ walk the open GitHub list (cardItemCount / cardSelection).
       const rows = mode === "card" ? listRows(leftBody) : [];
@@ -389,10 +442,11 @@ function buildOverview(actions: ViewActions): ViewHost {
       highlightRow(rows, State.cardSelection, State.cardSelection !== shownSelection);
       shownSelection = State.cardSelection;
 
-      const others = State.otherTasks.slice(0, 4);
+      const others = State.othersByActivity;
       const pillKey = others.map((t) => `${t.id}:${t.color}:${t.pillBadge ?? ""}`).join("|");
       if (pillKey !== pillIds) {
         pillIds = pillKey;
+        pills.classList.toggle("many", others.length > 4);
         clear(pills);
         spotifyPill = null;
         for (const t of others) {
@@ -425,7 +479,7 @@ export function hasSessionTicker(task: AgentTask): boolean {
 }
 
 function buildPill(task: AgentTask, actions: ViewActions): HTMLElement {
-  const label = task.id === "integration_claude" ? "VS Code" : task.name;
+  const label = task.id === "integration_claude" ? pillDefinition(task.id)!.name : task.name;
   const canvas = createMiniBot(task, 24);
   const pill = h(
     "div",
@@ -516,6 +570,9 @@ function buildApproval(actions: ViewActions): ViewHost {
   let shownAt = 0;
   const guarded = (d: "allow" | "deny") => () => {
     if (performance.now() - shownAt < CLICK_GUARD_MS) return;
+    // Decide the request actually on screen: pendingApproval can already point
+    // at a newer request one frame ahead of the next sync().
+    if (!shownFor || State.pendingApproval?.requestId !== shownFor) return;
     actions.decide(d);
   };
   return {
@@ -527,7 +584,7 @@ function buildApproval(actions: ViewActions): ViewHost {
         shownAt = performance.now();
       }
       clear(who);
-      who.append(agentWho(State.focusTask, t("needs permission")));
+      who.append(agentWho(State.focusTask, approvalLabel()));
       // The whole point of approving here rather than in the terminal: this line
       // is the command, the file path or the URL being authorised, not just the
       // name of the tool asking.
@@ -712,13 +769,21 @@ function buildConfused(): ViewHost {
 
 // ── Note ──────────────────────────────────────────────────────────────────────
 
-function buildNote(): ViewHost {
+function buildNote(actions: ViewActions): ViewHost {
   const title = h("div", { class: "title" });
   const el = h("div", { class: "view" }, card(null, h("div", { class: "stack", style: "padding:0 18px 0 98px" }, title)));
+  let timer: number | null = null;
   return {
     el,
     sync() {
       title.textContent = State.noteMessage ?? "";
+      // A notice answers nothing and nobody is asked to dismiss it, so it goes
+      // away by itself. Scheduled once: sync runs on every state change.
+      if (timer != null) return;
+      timer = window.setTimeout(() => {
+        timer = null;
+        if (State.view === "note") actions.setView(State.defaultView());
+      }, 5000);
     },
   };
 }
@@ -728,7 +793,7 @@ function buildNote(): ViewHost {
 function buildSettings(actions: ViewActions): ViewHost {
   const soundSwitch = h("button", { class: "switch", onclick: () => actions.toggleSound() });
   const volume = h("input", {
-    type: "range", min: "0", max: "0.2", step: "0.005",
+    type: "range", min: "0", max: String(SOUND_VOLUME_MAX), step: "0.005",
     oninput: (e: Event) => actions.setVolume(Number((e.target as HTMLInputElement).value)),
   }) as HTMLInputElement;
   const autoLabel = h("span", {});
@@ -807,13 +872,14 @@ export function buildViews(
 ): Map<IslandViewName, ViewHost> {
   const map = new Map<IslandViewName, ViewHost>();
   map.set("overview", buildOverview(actions));
+  map.set("code", buildCodeView(actions));
   map.set("empty", buildEmpty(actions));
   map.set("approval", buildApproval(actions));
   map.set("question", buildQuestion(actions));
   map.set("error", buildError(actions));
   map.set("finished", buildFinished(actions));
   map.set("confused", buildConfused());
-  map.set("note", buildNote());
+  map.set("note", buildNote(actions));
   map.set("settings", buildSettings(actions));
   map.set("prompt", buildPrompt(onChatHeightChange));
   map.set("upload", buildUpload());
@@ -821,6 +887,7 @@ export function buildViews(
   map.set("choose", buildChoose(actions));
   map.set("recap", buildRecap(actions));
   map.set("wardrobe", buildWardrobe(actions));
+  map.set("update", buildUpdate());
   // Not in the Windows v1: sending a file by email, window attach + web result.
   map.set("mail", buildPlaceholder(tl("Sending by email isn't in this version."), ""));
   map.set("searching", buildPlaceholder(tl("Claude is searching…"), ""));

@@ -54,7 +54,7 @@ test("a provider without a key is never asked for its models", async () => {
   $(".model-btn").fire("click");
   await flush();
   assert.ok($(".chat-body").classList.contains("picking"));
-  assert.deepEqual(chips(), ["Anthropic", "Google", "OpenAI", "OpenRouter"]);
+  assert.deepEqual(chips(), ["Anthropic", "Claude Code", "Google", "OpenAI", "OpenRouter", "DeepSeek", "Qwen", "Moonshot"]);
   assert.deepEqual(sent("secret_present"), [{ key: "anthropic-api-key" }]);
   assert.deepEqual(sent("chat_models"), []);
   assert.match($(".picker-status").textContent, /No API key/);
@@ -83,7 +83,7 @@ test("switching provider saves it and asks the new provider only", async () => {
   $(".model-btn").fire("click");
   await flush();
   assert.deepEqual(sent("chat_models"), []);
-  view.el.find(".picker-chip")[1].fire("click");
+  view.el.find(".picker-chip")[2].fire("click");
   await flush();
   assert.equal(State.settings.chatProvider, "google");
   assert.deepEqual(sent("chat_models"), [{ provider: "google" }]);
@@ -121,4 +121,31 @@ test("a local answer streams into one reply, then the finished text replaces it"
   assert.equal(view.el.find(".reply")[0].textContent, "Hello there!");
   assert.deepEqual(State.chatHistory.map((m) => m.role), ["user", "assistant"]);
   assert.ok(!$(".model-btn").disabled);
+});
+
+test("a file attached mid-conversation goes with the next question, New chat clears it", async () => {
+  answers.chat_send = { text: "ok" };
+  const ask = async (q) => {
+    $(".chat-input").value = q;
+    $(".send-btn").fire("click");
+    await flush();
+    view.sync();
+  };
+  const newChat = () => view.el.find(".new-chat-btn")[0];
+  assert.ok(newChat().hidden, "nothing to start over from yet");
+
+  await ask("hi");
+  assert.equal(sent("chat_send")[0].context, null);
+  assert.ok(!newChat().hidden);
+
+  State.droppedFile = { name: "a.pdf", path: "/inbox/a.pdf" };
+  await ask("and this?");
+  assert.deepEqual(sent("chat_send")[1].context, { kind: "file", name: "a.pdf", path: "/inbox/a.pdf" });
+
+  newChat().fire("click");
+  view.sync();
+  assert.deepEqual(State.chatHistory, []);
+  assert.equal(State.droppedFile, null);
+  assert.equal(sent("chat_reset").length, 1);
+  assert.ok(newChat().hidden);
 });

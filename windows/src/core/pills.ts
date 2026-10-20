@@ -25,7 +25,7 @@ export const PILL_CATEGORIES: { id: PillCategory; title: string }[] = [
  * Whether the pill does anything on this build:
  * - `yes`: works on Windows and Linux;
  * - `windows`: Windows only (the app behind it has no Linux build);
- * - `linux`: Linux only (what drives it is Linux's: Spotify through MPRIS);
+ * - `linux`: Linux only (what drives it is Linux's);
  * - `soon`: can be declared, shows "Coming soon" (macOS has it, this build not yet);
  * - `no`: macOS only, never offered here.
  */
@@ -39,6 +39,8 @@ export type PillConnect =
   | { kind: "key"; key: string }
   /** A model server the chat is connected to (Settings → Local models). */
   | { kind: "server"; field: "ollamaUrl" | "lmstudioUrl" }
+  /** An exchange account or a wallet in Settings → Integrations → Portfolio. */
+  | { kind: "portfolio" }
   /** Nothing to set up. */
   | { kind: "none" };
 
@@ -72,7 +74,7 @@ const ACCENT = {
 
 export const PILL_CATALOG: readonly PillDefinition[] = [
   // ── Where you code ─────────────────────────────────────────────────────────
-  { id: "integration_claude", name: "VS Code", color: "#F5F6F8", category: "workspace",
+  { id: "integration_claude", name: "Claude Code", color: "#F5F6F8", category: "workspace",
     subtitle: N_("Integration"), source: "claudeCode", support: "yes", connect: hooks },
   // Claude Code in Cursor's terminal: the same hooks as Claude Code.
   { id: "agent_cursor", name: "Cursor", color: "#C0C4CC", category: "workspace",
@@ -81,6 +83,9 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
     subtitle: N_("Integration"), source: "agent", support: "yes", connect: hooks },
   { id: "agent_codex", name: "Codex", color: "#2DD4BF", category: "workspace",
     subtitle: N_("Integration"), source: "agent", support: "yes", connect: hooks },
+  // Claude Code in a plain terminal, as the main tool for those who code there.
+  { id: "workspace_claude", name: "Claude Code", color: "#E07950", category: "workspace",
+    subtitle: N_("Terminal"), source: "claudeCode", support: "yes", connect: hooks },
   // ── Agents ─────────────────────────────────────────────────────────────────
   { id: "agent_gemini", name: "Gemini CLI", color: "#8AB4F8", category: "agent",
     subtitle: N_("Agent"), source: "agent", support: "yes", connect: hooks },
@@ -126,21 +131,33 @@ export const PILL_CATALOG: readonly PillDefinition[] = [
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("notion-api-key") },
   { id: "integration_calcom", name: "Cal.com", color: "#C9956A", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calcom-api-key") },
+  // The Mac reads EventKit; here, a secret iCal address (src/core/calendar.ts).
+  { id: "integration_calendar", name: "Calendar", color: "#4F9DF7", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("calendar-ical-url") },
   { id: "integration_stripe", name: "Stripe", color: "#0570DE", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("stripe-api-key") },
+  // Connected once Settings has traded Timely's code for a token.
+  { id: "integration_timely", name: "Timely", color: "#F5A524", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("timely-access-token") },
+  { id: "integration_slack", name: "Slack", color: "#E01E5A", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("slack-token") },
+  { id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("betterstack-token") },
+  { id: "integration_linear", name: "Linear", color: "#5E6AD2", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: key("linear-api-key") },
   { id: "integration_music", name: "Apple Music", color: "#FA2D48", category: "service",
     subtitle: N_("Integration"), source: "n8n", support: "no", connect: none },
-  // Spotify's MPRIS interface on the session bus (src-tauri/src/spotify.rs).
-  // Windows has nothing to read it from yet.
+  // Spotify through MPRIS on Linux and the system media controls on Windows
+  // (src-tauri/src/spotify.rs).
   { id: "integration_spotify", name: "Spotify", color: "#1DB954", category: "service",
-    subtitle: N_("Integration"), source: "n8n", support: "linux", connect: none },
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: none },
+  // Exchange keys and wallet addresses, polled by src-tauri/src/portfolio.rs.
+  { id: "integration_portfolio", name: "Portfolio", color: "#FFD700", category: "service",
+    subtitle: N_("Integration"), source: "n8n", support: "yes", connect: { kind: "portfolio" } },
 ];
 
 /** The always-on pill unless the user picks another workspace tool. */
 export const DEFAULT_MAIN_PILL = "integration_claude";
-
-/** How many declared pills may sit next to the main one. */
-export const MAX_DECLARED = 4;
 
 /** The OS this page runs on. Only the Windows webview says "Windows". */
 export const HOST_OS: HostOs =
@@ -175,8 +192,11 @@ export function mainPillChoices(os: HostOs = HOST_OS): PillDefinition[] {
 
 /** PillDefinition.sessionSubtitle — next to the name in a live session's card. */
 export function sessionSubtitle(id: string): string {
+  // A pill made for one Claude Code session (src/island/hooks.ts).
+  if (id.startsWith("session_")) return "Claude Code";
   switch (id) {
-    case "integration_claude": return "Claude Code";
+    case "integration_claude":
+    case "workspace_claude": return "Claude Code";
     case "agent_cursor": return "Cursor";
     case "agent_codex": return "Codex";
     case "agent_hermes": return "Hermes";
@@ -211,14 +231,13 @@ export function sanitizeDeclared(d: Declared, os: HostOs = HOST_OS): Declared {
 
 /**
  * Declares or undeclares a pill. Returns the new list, or null when the click
- * changes nothing: the main pill is never toggled, an unknown pill never
- * declared, and a fifth pill never added.
+ * changes nothing: the main pill is never toggled and an unknown pill never
+ * declared.
  */
 export function toggleDeclared(d: Declared, id: string, os: HostOs = HOST_OS): string[] | null {
   if (id === d.mainPill) return null;
   if (!availablePills(os).some((p) => p.id === id)) return null;
   if (d.activeIntegrations.includes(id)) return d.activeIntegrations.filter((x) => x !== id);
-  if (d.activeIntegrations.length >= MAX_DECLARED) return null;
   return [...d.activeIntegrations, id];
 }
 

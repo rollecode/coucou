@@ -121,6 +121,10 @@ final class InstructionRunner {
             log("ignored: no Claude Code session seen for \(pillId) yet")
             return
         }
+        guard ClaudeSessionId.valid(session.sessionId) else {
+            log("ignored: the session id is not Claude Code's")
+            return
+        }
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDirectory), isDirectory.boolValue else {
             log("ignored: the session's folder is gone")
@@ -142,7 +146,7 @@ final class InstructionRunner {
     private func run(claude: String, text: String, sessionId: String, cwd: String, pillId: String) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: claude)
-        process.arguments = ["-p", text, "--resume", sessionId]
+        process.arguments = ["-p", text, "--resume=\(sessionId)"]
         process.currentDirectoryURL = URL(fileURLWithPath: cwd)
         var env = ProcessInfo.processInfo.environment
         let home = FileManager.default.homeDirectoryForCurrentUser.path
@@ -154,6 +158,8 @@ final class InstructionRunner {
         } else {
             env["TERM_PROGRAM"] = "vscode"
         }
+        // A `claude -p` run: the hooks skip those unless told it is watched.
+        env["COUCOU_WATCHED"] = "1"
         process.environment = env
         process.standardInput = FileHandle.nullDevice
         // Output goes to a file (a pipe could fill up and stall claude); its

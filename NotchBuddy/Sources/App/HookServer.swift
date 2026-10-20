@@ -34,21 +34,23 @@ final class HookServer: @unchecked Sendable {
     private static let maxPayload = 1_048_576          // 1 MB — reject oversized messages
     private static let receiveTimeoutSeconds: Int = 5   // SO_RCVTIMEO on client sockets
     private static let maxConnections = 32              // concurrent connection ceiling
+    private static let maxRemoteConnections = 8         // all remote hosts together: never starve nb.sock
+    private static let maxAgentPills = 12               // dynamic coucou_agent pills at once
 
     private var serverFD: Int32 = -1
     private let connectionLock = NSLock()
     private var connectionCount = 0
-    /// Permission requests waiting for a click, oldest first; the head is on the card.
-    /// Each one holds its nb-hook connection open until it is answered or dropped.
-    private var approvals = ApprovalQueue()
-    /// One read source per queued request: it notices the client hanging up, and its
-    /// cancel handler is the only place the request's fd is closed.
-    private var approvalSources: [UUID: any DispatchSourceRead] = [:]
+    private var remoteConnectionCount = 0
     private var pendingQuestionFD: Int32 = -1         // held open while user answers AskUserQuestion
     private var questionFDSource: (any DispatchSourceRead)? = nil  // monitors pendingQuestionFD
 
-    /// True when a real nb-hook connection is holding the approval fd open.
-    @MainActor var hasRealPendingApproval: Bool { !approvals.isEmpty }
+    // Pending approvals, FIFO. Main actor only. Each entry owns its fd, disconnect source and timeout.
+    private var approvalQueue = ApprovalQueue()
+    private var approvalGuard = ClickGuard()
+    private var approvalResources: [UUID: ApprovalResources] = [:]
+
+    /// True when a real nb-hook connection is holding an approval fd open.
+    @MainActor var hasRealPendingApproval: Bool { !approvalQueue.isEmpty }
     /// True when a real nb-hook connection is holding the question fd open.
     @MainActor var hasRealPendingQuestion: Bool { pendingQuestionFD >= 0 }
     private var questionPillId: String = ""           // pill that owns the pending question
@@ -56,109 +58,149 @@ final class HookServer: @unchecked Sendable {
     private var focusBeforeQuestion: String? = nil    // saved focus to restore after question
     private var activeSessionId: String? = nil        // current Claude Code session
     private var focusBeforeApproval: String? = nil    // saved focus to restore after approval
-    private var sessions = PillSessionRegistry()      // live sessions behind each pill
+
+    /// A turn that ended (Stop) while background work was still in flight.
+    private struct BackgroundWait {
+        let pillId: String
+        var subagents: Int
+        var others: Int
+        var total: Int { subagents + others }
+    }
+    /// Keyed by session id. While set, the pill stays "working" and events fired inside
+    /// background subagents (they carry agent_id) no longer overwrite the finished turn.
+    private var backgroundWaits: [String: BackgroundWait] = [:]
+    /// Bumped whenever a pill gets busy again, so a pending "finished → idle" reset is skipped.
+    private var idleResetGeneration: [String: Int] = [:]
+    private var focusBeforeAlert: String? = nil       // saved focus while another pill's card shows
+    private var alertPill: String? = nil              // the pill that took the focus for its alert
 
     private init() {}
 
-    // MARK: - Approval queue helpers
+    // MARK: - Approval fd helpers
 
-    /// Note shown when a request was answered outside Coucou.
+    private struct ApprovalResources {
+        let source: any DispatchSourceRead
+        let timeout: DispatchWorkItem
+    }
+
+    /// Where the user is expected to answer for this pill ("Cursor", "Codex", the Claude host…).
     @MainActor
-    private func handledNote(pill: String) -> String {
-        switch pill {
-        case "agent_cursor":  return "Handled in Cursor."
-        case "agent_codex":   return "Handled in Codex."
-        case "agent_copilot": return "Handled in Copilot CLI."
-        case "agent_muse":    return "Handled in Muse Code."
-        case "agent_hermes":  return "Handled in Hermes."
-        default:              return "Handled in \(claudeHostName)."
+    private func agentLabel(for pillId: String) -> String {
+        switch pillId {
+        case "agent_cursor":  return "Cursor"
+        case "agent_codex":   return "Codex"
+        case "agent_copilot": return "Copilot CLI"
+        case "agent_muse":    return "Muse Code"
+        case "agent_hermes":  return "Hermes"
+        default:              return claudeHostName
         }
     }
 
-    /// Note shown when a request waited too long and went back to the agent.
     @MainActor
-    private func waitingNote(pill: String) -> String {
-        switch pill {
-        case "agent_cursor":  return "Still waiting in Cursor."
-        case "agent_codex":   return "Still waiting in Codex."
-        case "agent_copilot": return "Still waiting in Copilot CLI."
-        case "agent_muse":    return "Still waiting in Muse Code."
-        case "agent_hermes":  return "Still waiting in Hermes."
-        default:              return "Still waiting in \(claudeHostName)."
-        }
+    private func handledNote(for pillId: String) -> String { "Handled in \(agentLabel(for: pillId))." }
+
+    @MainActor
+    private func waitingNote(for pillId: String) -> String { "Still waiting in \(agentLabel(for: pillId))." }
+
+    /// True while the peer has not closed its end. A request whose socket is dead must never be shown.
+    private static func isAlive(fd: Int32) -> Bool {
+        var byte: UInt8 = 0
+        let n = recv(fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT)
+        if n == 0 { return false }
+        if n < 0 { return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR }
+        return true
     }
 
-    /// Puts the oldest waiting request on the card. When the card already shows it, only
-    /// its "n waiting" count is refreshed (no sound, no focus change).
+    /// Removes one entry from the queue and tears down its timeout and source.
+    /// The source's cancel handler closes the fd — never close it here.
+    /// Returns the removed entry and its source so the caller can still write a decision first.
     @MainActor
-    private func showApprovalHead() {
+    private func detachApproval(id: UUID) -> (entry: QueuedApproval, source: (any DispatchSourceRead)?)? {
+        guard let entry = approvalQueue.remove(id: id) else { return nil }
+        nbLog("Approval \(entry.tool) closed after \(Int(Date().timeIntervalSince(entry.received))) s")
+        let res = approvalResources.removeValue(forKey: id)
+        res?.timeout.cancel()
+        return (entry, res?.source)
+    }
+
+    /// Drops these entries only (client gone, timed out, or handled elsewhere). Silent for the others.
+    /// `note` is shown only when the queue becomes empty.
+    @MainActor
+    private func dismissApprovals(ids: [UUID], note: String) {
+        var lastPill: String?
+        for id in ids {
+            guard let removed = detachApproval(id: id) else { continue }
+            removed.source?.cancel()
+            lastPill = removed.entry.pillId
+        }
+        guard let pillId = lastPill else { return }
+        refreshApprovalCard(releasedPill: pillId, emptyNote: note)
+    }
+
+    /// Brings the card and pill states in line with the queue after any removal.
+    /// Non-empty: the next live request becomes the card. Empty: release the island as before.
+    @MainActor
+    private func refreshApprovalCard(releasedPill: String, emptyNote: String?) {
         let state = AppState.shared
-        guard let head = approvals.head else { return }
-        if let shown = state.pendingApproval, shown.id == head.id {
-            if shown.queueCount != approvals.count { state.pendingApproval?.queueCount = approvals.count }
+        // Never show a request whose socket is already dead: drop it and move on.
+        while let head = approvalQueue.head, !Self.isAlive(fd: head.fd) {
+            nbLog("Dropped dead approval \(head.tool) [\(head.pillId)]")
+            if let removed = detachApproval(id: head.id) { removed.source?.cancel() }
+        }
+        // A pill with no request left goes back to work.
+        if !approvalQueue.hasEntries(forPill: releasedPill) {
+            state.updateTask(id: releasedPill, state: .working)
+            clearPillBadge(id: releasedPill)
+        }
+        guard let head = approvalQueue.head else {
+            state.pendingApproval = nil
+            state.isPinned = false
+            // Restore focus to the pill that was focused before the approval card appeared.
+            if let prev = focusBeforeApproval {
+                focusBeforeApproval = nil
+                if state.focusId == releasedPill, state.tasks.contains(where: { $0.id == prev }) {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = prev }
+                }
+            }
+            if let note = emptyNote {
+                state.noteMessage = note
+                state.view = .note
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                }
+            } else {
+                state.view = state.tasks.isEmpty ? .empty : .overview
+            }
             return
         }
-        state.updateTask(id: head.pillId, state: .approval)
-        state.pendingApproval = ApprovalInfo(sessionId: head.sessionId, tool: head.tool,
-                                              command: head.command, inputKey: head.inputKey,
-                                              pillId: head.pillId, id: head.id,
-                                              queueCount: approvals.count,
-                                              projectName: head.projectName)
+        showApproval(head)
+    }
+
+    /// Makes `entry` (the queue head) the card on screen.
+    @MainActor
+    private func showApproval(_ entry: QueuedApproval) {
+        let state = AppState.shared
+        if !entry.isChat {
+            if entry.pillId.hasPrefix(PillCatalog.sessionPillPrefix) {
+                upsertSessionTask(id: entry.pillId, projectName: entry.projectName, cwd: entry.cwd,
+                                  bundleId: entry.bundleId, tty: entry.tty)
+            } else {
+                upsertWorkspaceTask(id: entry.pillId, projectName: entry.projectName, cwd: entry.cwd,
+                                    hostApp: entry.hostApp, bundleId: entry.bundleId, tty: entry.tty)
+            }
+        }
+        state.updateTask(id: entry.pillId, state: .approval)
+        state.pendingApproval = ApprovalInfo(
+            sessionId: entry.sessionId, tool: entry.tool, command: entry.command,
+            inputKey: entry.inputKey, pillId: entry.pillId, id: entry.id,
+            position: 1, total: approvalQueue.count,
+            sourceLabel: approvalQueue.hasMixedSources ? agentLabel(for: entry.pillId) : nil)
         state.isPinned = true
-        // Approval always forces the island open — the user must be able to respond.
-        // Save the focus once, so it comes back when the last request is gone.
-        if focusBeforeApproval == nil { focusBeforeApproval = state.focusId }
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = head.pillId }
-        expandIfNeeded(to: .approval)
-    }
-
-    /// Takes one request out of the queue. With `answer`, the decision is written to its
-    /// nb-hook first; without, the connection just closes and the agent asks again itself.
-    /// The cancel handler of its source closes the fd — never close it directly.
-    /// The next request in line then takes the card; when none is left the card closes,
-    /// with `note` for three seconds if one is given.
-    @MainActor
-    private func removeApproval(id: UUID, answer json: String? = nil, note: String? = nil) {
-        guard let entry = approvals.remove(id: id) else { return }
-        let source = approvalSources.removeValue(forKey: id)
-        if let json {
-            let fd = entry.fd
-            Task.detached { [weak self] in
-                // Write while the fd is still valid, then cancel → the cancel handler closes it.
-                self?.sendLine(fd: fd, text: json)
-                DispatchQueue.main.async { source?.cancel() }
-            }
-        } else {
-            source?.cancel()
+        approvalGuard.show(entry.id, at: ProcessInfo.processInfo.systemUptime)
+        if state.focusId != entry.pillId {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = entry.pillId }
         }
-
-        let state = AppState.shared
-        if !approvals.hasEntries(forPill: entry.pillId) {
-            state.updateTask(id: entry.pillId, state: .working)
-            clearPillBadge(id: entry.pillId)
-        }
-        if approvals.head != nil {
-            showApprovalHead()
-            return
-        }
-        // Last request gone: close the card and give the focus back.
-        state.pendingApproval = nil
-        state.isPinned = false
-        if let prev = focusBeforeApproval {
-            focusBeforeApproval = nil
-            if state.focusId == entry.pillId, state.tasks.contains(where: { $0.id == prev }) {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = prev }
-            }
-        }
-        if let note {
-            state.noteMessage = note
-            state.view = .note
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                NotificationCenter.default.post(name: .islandCollapse, object: nil)
-            }
-        } else {
-            state.view = state.tasks.isEmpty ? .empty : .overview
-        }
+        if state.mode == .expanded { state.view = .approval }
     }
 
     // MARK: - Question fd helpers
@@ -279,13 +321,29 @@ final class HookServer: @unchecked Sendable {
         #if !APPSTORE
         installHookScript()
         #endif
-        Thread.detachNewThread { self.serverThread() }
+        Thread.detachNewThread { self.serve(path: Self.socketPath, host: nil) }
+        discoverSessions()
     }
 
     // MARK: - Socket server (background thread)
 
-    private func serverThread() {
-        let path = Self.socketPath
+    /// Remote hosts' listening sockets, by host (RemoteHosts.swift).
+    private var remoteFDs: [String: Int32] = [:]
+
+    /// Serves `path` like nb.sock, every event tagged with `host` (an SSH tunnel's end).
+    func serveRemote(path: String, host: String) {
+        Thread.detachNewThread { self.serve(path: path, host: host) }
+    }
+
+    /// Stops a remote host's socket: closing it ends its accept loop.
+    func stopRemote(host: String) {
+        connectionLock.lock()
+        let fd = remoteFDs.removeValue(forKey: host)
+        connectionLock.unlock()
+        if let fd { close(fd) }
+    }
+
+    private func serve(path: String, host: String?) {
         // sun_path on macOS is 104 bytes including the NUL terminator → max 103 usable bytes
         let maxSunPathBytes = MemoryLayout<sockaddr_un>.size - MemoryLayout<sa_family_t>.size - 1
         guard path.utf8.count <= maxSunPathBytes else {
@@ -296,7 +354,11 @@ final class HookServer: @unchecked Sendable {
 
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { return }
-        serverFD = fd
+        if let host {
+            connectionLock.lock(); remoteFDs[host] = fd; connectionLock.unlock()
+        } else {
+            serverFD = fd
+        }
 
         var addr = sockaddr_un()
         addr.sun_family = sa_family_t(AF_UNIX)
@@ -325,22 +387,30 @@ final class HookServer: @unchecked Sendable {
             }
             // Enforce concurrent connection ceiling
             connectionLock.lock()
-            let count = connectionCount
-            if count < Self.maxConnections { connectionCount += 1 }
+            let admitted: Bool
+            if host == nil {
+                admitted = connectionCount < Self.maxConnections
+                if admitted { connectionCount += 1 }
+            } else {
+                admitted = remoteConnectionCount < Self.maxRemoteConnections
+                if admitted { remoteConnectionCount += 1 }
+            }
             connectionLock.unlock()
-            guard count < Self.maxConnections else {
+            guard admitted else {
                 close(clientFD)
                 continue
             }
-            Thread.detachNewThread { self.handleClient(fd: clientFD) }
+            Thread.detachNewThread { self.handleClient(fd: clientFD, host: host) }
         }
     }
 
     // MARK: - Client handler (background thread)
 
-    private func handleClient(fd: Int32) {
+    private func handleClient(fd: Int32, host: String? = nil) {
         defer {
-            connectionLock.lock(); connectionCount -= 1; connectionLock.unlock()
+            connectionLock.lock()
+            if host == nil { connectionCount -= 1 } else { remoteConnectionCount -= 1 }
+            connectionLock.unlock()
         }
         // 5-second receive timeout — unresponsive clients don't hold threads forever
         var tv = timeval(tv_sec: Self.receiveTimeoutSeconds, tv_usec: 0)
@@ -360,11 +430,18 @@ final class HookServer: @unchecked Sendable {
         }
 
         guard !raw.isEmpty,
-              let payload = try? JSONSerialization.jsonObject(with: raw) as? [String: Any] else {
+              let parsed = try? JSONSerialization.jsonObject(with: raw) as? [String: Any],
+              var payload = host.map({ RemoteEvent.admit(parsed, host: $0) }) ?? parsed else {
             sendLine(fd: fd, text: #"{"ok":true}"#)
             close(fd)
             return
         }
+        #if !APPSTORE
+        // The session's own process, so its first event takes the pill found for it (as on Linux).
+        if host == nil, let pid = Self.claudeAncestor(from: payload["hook_ppid"] as? Int, peer: fd) {
+            payload["coucou_claude_pid"] = Int(pid)
+        }
+        #endif
 
         let coucouKind = payload["coucou_kind"] as? String ?? ""
 
@@ -391,6 +468,22 @@ final class HookServer: @unchecked Sendable {
 
         let eventName = payload["hook_event_name"] as? String ?? ""
 
+        // Coucou's own chat runs Claude Code (ClaudeCodeChat.swift): no session to
+        // show, but a tool it wants still needs a click on the card. A turn that
+        // ends still takes its waiting card down.
+        if payload["coucou_chat"] as? Bool == true && eventName != "PermissionRequest" {
+            let sessionId = payload["session_id"] as? String ?? ""
+            if ["Stop", "StopFailure", "UserPromptSubmit", "SessionEnd"].contains(eventName) {
+                Task { @MainActor in
+                    let ids = self.approvalQueue.entries.filter { $0.sessionId == sessionId }.map(\.id)
+                    self.dismissApprovals(ids: ids, note: "Handled in the chat.")
+                }
+            }
+            sendLine(fd: fd, text: #"{"ok":true}"#)
+            close(fd)
+            return
+        }
+
         if eventName == "PermissionRequest" {
             // Hold fd open — Claude Code waits for our decision (up to 120s)
             Task { @MainActor in self.processPermissionRequest(fd: fd, payload: payload) }
@@ -414,9 +507,8 @@ final class HookServer: @unchecked Sendable {
         let sessionId = payload["session_id"] as? String
                      ?? payload["conversation_id"] as? String
                      ?? "unknown"
-        let cwd = payload["cwd"] as? String ?? ""
-        let rawName = URL(fileURLWithPath: cwd).lastPathComponent
-        let projectName = aliasProjectName(rawName.isEmpty ? "Session" : rawName)
+        let (cwd, projectName) = sessionPlace(payload)
+        let isRemote = payload["coucou_remote"] is String
 
         // Determine which pill this event belongs to.
         // coucou_agent must be lowercase, digits and hyphens, ≤ 24 chars.
@@ -425,6 +517,7 @@ final class HookServer: @unchecked Sendable {
 
         let termProgram = payload["term_program"] as? String ?? ""
         let bundleId    = payload["bundle_id"]    as? String ?? ""
+        let tty         = payload["tty"]          as? String ?? ""
 
         // Cursor identified solely by its stable Electron bundle ID.
         // ToDesktop builds other apps too — do not match on "todesktop" alone.
@@ -444,39 +537,63 @@ final class HookServer: @unchecked Sendable {
         #else
         let isCodexEvent = false
         #endif
-        let agentId: String
+        let baseId: String
         let isExternalAgent: Bool
         var hostApp: String? = nil
         if isCodexEvent {
-            agentId = "agent_codex"
+            baseId = "agent_codex"
             isExternalAgent = false
         } else if let agent = validAgent {
-            agentId = "agent_\(agent)"
+            baseId = "agent_\(agent)"
             isExternalAgent = true
+        } else if isRemote {
+            baseId = terminalWorkspace()
+            isExternalAgent = false
         } else if isCursorEditor {
-            agentId = "agent_cursor"
+            baseId = "agent_cursor"
             isExternalAgent = false
         } else if isVSCodeEditor {
-            agentId = "integration_claude"
+            baseId = "integration_claude"
             isExternalAgent = false
         } else if let host = ClaudeHost.terminal(termProgram: termProgram, bundleId: bundleId) {
-            agentId = "integration_claude"
+            baseId = terminalWorkspace()
             isExternalAgent = false
             hostApp = host.bundleId
         } else {
             nbLog("Ignored \(name) from \(termProgram.isEmpty ? bundleId : termProgram) (\(projectName))")
             return
         }
+        // Claude Code sessions running at once each get their own pill; agents keep theirs.
+        if !isExternalAgent && !isCodexEvent {
+            adoptProcess(sessionId: sessionId, cwd: cwd, claudePid: payload["coucou_claude_pid"] as? Int)
+        }
+        let agentId = isExternalAgent || isCodexEvent ? baseId : claudePill(workspaceId: baseId, sessionId: sessionId)
+        let ownSession = agentId.hasPrefix(PillCatalog.sessionPillPrefix)
+        state.quietSessionPills.remove(agentId)
 
+        func ensurePill() {
+            if ownSession {
+                upsertSessionTask(id: agentId, projectName: projectName, cwd: cwd, bundleId: bundleId, tty: tty)
+            } else if isExternalAgent {
+                upsertExternalAgent(id: agentId, name: validAgent!)
+            } else {
+                upsertWorkspaceTask(id: agentId, projectName: projectName, cwd: cwd, hostApp: hostApp, bundleId: bundleId, tty: tty)
+            }
+        }
+
+        // The agent's activity, never the user's own prompt or session start.
+        if !["SessionEnd", "SessionStart", "UserPromptSubmit"].contains(name) { followActivity(pill: agentId) }
         let focused = state.focusId == agentId
-        // Several sessions can share one pill (it is chosen from the client, not from the
-        // session). The registry tells a turn-ending event whether it may touch the pill,
-        // and which session owns the project name shown on it.
-        let display = PillSessionRegistry.Display(
-            session: sessionId,
-            projectName: isExternalAgent ? (validAgent ?? projectName) : projectName,
-            cwd: isExternalAgent ? "" : cwd,
-            hostApp: hostApp, bundleId: bundleId)
+        if isRemote, let host = payload["coucou_remote"] as? String {
+            RemoteTerminal.remember(pillId: agentId, host: host, payload: payload)
+        } else {
+            RemoteTerminal.forget(pillId: agentId)
+        }
+        // The user is looking at the session's terminal: a finish or an error is already in
+        // front of them, so the pill only takes a badge (no sound, no reveal). Warp exposes
+        // no active tab, so a sibling session in another tab of the same terminal is quiet too.
+        let terminalInFront = hostApp != nil
+            && NSWorkspace.shared.frontmostApplication?.bundleIdentifier == hostApp
         // For sessions that carry no id, derive a unique key from pill + cwd so that
         // concurrent anonymous sessions are tracked independently in RecapStore.
         let recapSessionId = (sessionId == "unknown" || sessionId.isEmpty)
@@ -484,38 +601,58 @@ final class HookServer: @unchecked Sendable {
             : sessionId
 
         #if PHONE_LINK
-        // The iPhone's "last turn" (prompt, actions, diffs, answer).
-        if !isExternalAgent { TurnRecorder.shared.record(event: name, payload: payload, pillId: agentId) }
+        // The iPhone's "last turn" (prompt, actions, diffs, answer). Not a remote host's:
+        // an instruction sent back would run `claude` here, in the host's folder.
+        if !isExternalAgent && !isRemote { TurnRecorder.shared.record(event: name, payload: payload, pillId: agentId) }
         #endif
 
-        // Waiting permission requests: an event that settles one (its tool finished, or its
-        // turn ended) takes it off the card, then is processed normally.
-        if !approvals.isEmpty {
-            let eventTool = payload["tool_name"] as? String ?? ""
-            let eventKey = Self.approvalInputKey(payload["tool_input"] as? [String: Any] ?? [:])
-            for entry in approvals.resolved(byEvent: name, sessionId: sessionId, pillId: agentId,
-                                            tool: eventTool, inputKey: eventKey) {
-                removeApproval(id: entry.id, note: handledNote(pill: entry.pillId))
-            }
-            // A session still waiting on a decision is held back (its parallel tool calls
-            // would pull the pill out of its approval state). Other sessions go through.
-            if approvals.entries.contains(where: { $0.pillId == agentId && $0.sessionId == sessionId }) {
-                return
-            }
+        // While permission requests are pending for this agent, dismiss the ones this event
+        // resolves (same session and agent, and same tool + input for PostToolUse), then continue
+        // normal processing. Only skip normal processing when nothing was resolved.
+        if approvalQueue.hasEntries(forPill: agentId) {
+            let tool = payload["tool_name"] as? String ?? ""
+            let inputKey = Self.approvalInputKey(payload["tool_input"] as? [String: Any] ?? [:])
+            let resolved = approvalQueue.resolved(byEvent: name, sessionId: sessionId, pillId: agentId,
+                                                  tool: tool, inputKey: inputKey)
+            if resolved.isEmpty { return }
+            dismissApprovals(ids: resolved.map(\.id), note: isRemote ? String(localized: "Handled elsewhere.") : handledNote(for: agentId))
+            // Approval dismissed — fall through so the resolving event updates state normally.
         }
-        // A sibling session's event must not take the pill out of its approval state.
-        defer {
-            if approvals.hasEntries(forPill: agentId) { state.updateTask(id: agentId, state: .approval) }
+
+        // Sessions sharing a pill share its tty: it follows the one that spoke last, so Open
+        // after a Stop brings back the tab of the session that just finished.
+        if !isExternalAgent, !tty.isEmpty, let idx = state.tasks.firstIndex(where: { $0.id == agentId }) {
+            state.tasks[idx].sessionTTY = tty
+        }
+        // Events fired inside a subagent carry agent_id. Once the turn has ended with
+        // background work in flight, they must not replace the turn's state or final line.
+        let isSubagentEvent = !(payload["agent_id"] as? String ?? "").isEmpty
+        if isSubagentEvent, backgroundWaits[sessionId] != nil, name != "Notification" {
+            if name == "PreToolUse" {
+                RecapStore.shared.preToolUse(sessionId: recapSessionId, tool: payload["tool_name"] as? String ?? "Tool")
+            } else if name == "SubagentStop", !(payload["agent_type"] as? String ?? "").isEmpty {
+                // Internal agents (prompt suggestions, /btw) also send SubagentStop, with an empty agent_type.
+                subagentFinishedInBackground(sessionId: sessionId)
+            }
+            return
+        }
+        if !isSubagentEvent, name != "Notification", backgroundWaits.removeValue(forKey: sessionId) != nil {
+            nbLog("Background wait ended by \(name) (\(sessionId.prefix(8)))")
+        }
+        if name != "Stop", name != "Notification" { cancelIdleReset(id: agentId) }
+
+        if !isExternalAgent && !isCodexEvent {
+            recordCode(event: name, pillId: agentId, payload: payload, cwd: cwd, project: projectName)
         }
 
         switch name {
 
         case "SessionStart":
             activeSessionId = sessionId
-            upsertTask(pill: agentId, display: display, working: false,
-                       externalAgent: isExternalAgent ? validAgent : nil)
+            ensurePill()
             if let idx = state.tasks.firstIndex(where: { $0.id == agentId }) { state.tasks[idx].finalLine = nil }
             nbLog("SessionStart \(isExternalAgent ? agentId : projectName) (\(sessionId.prefix(8)))")
+            if !isExternalAgent { discoverSessions() }
             NotificationCenter.default.post(name: .checkMondayRecap, object: nil)
             if state.isPresent { expandIfNeeded(to: .overview) }
             SoundEngine.shared.play("work")
@@ -527,15 +664,17 @@ final class HookServer: @unchecked Sendable {
 
         case "UserPromptSubmit":
             activeSessionId = sessionId
-            upsertTask(pill: agentId, display: display, working: true,
-                       externalAgent: isExternalAgent ? validAgent : nil)
+            ensurePill()
             if let idx = state.tasks.firstIndex(where: { $0.id == agentId }) { state.tasks[idx].finalLine = nil }
             state.updateTask(id: agentId, state: .thinking)
+            state.endFollow(agentId)
             if let prompt = payload["prompt"] as? String, !prompt.isEmpty {
                 appendStep(id: agentId, step: String(prompt.prefix(60)))
             }
             RecapStore.shared.userPromptSubmit(sessionId: recapSessionId, pillId: agentId, project: projectName)
             NotificationCenter.default.post(name: .checkMondayRecap, object: nil)
+            // A new turn: the finished card would show the prompt as if it were the answer.
+            if state.mode == .expanded && state.view == .finished && state.focusId == agentId { state.view = .overview }
             if state.isPresent { expandIfNeeded(to: .overview) }
 
         case "PreToolUse":
@@ -546,71 +685,88 @@ final class HookServer: @unchecked Sendable {
             // AskUserQuestion is handled via the dedicated --ask hook.
             // Skip state/step update here to avoid flickering over the question card.
             guard tool != "AskUserQuestion" else { break }
-            upsertTask(pill: agentId, display: display, working: true,
-                       externalAgent: isExternalAgent ? validAgent : nil)
-            state.updateTask(id: agentId, state: .working)
+            ensurePill()
+            let isQuestion = tool == "ask_question" || tool.hasSuffix(":ask_question")
+            state.updateTask(id: agentId, state: isQuestion ? .question : .working)
             let input = payload["tool_input"] as? [String: Any] ?? [:]
             let step = localizedStep(tool: tool, input: input)
             appendStep(id: agentId, step: step)
+            if isQuestion {
+                SoundEngine.shared.play("question")
+                if state.isPresent { expandIfNeeded(to: .overview) }
+            }
             nbLog("PreToolUse \(tool)")
 
         case "PostToolUse":
-            sessions.note(pill: agentId, display: display, working: true)
             state.updateTask(id: agentId, state: .working)
             // Live diff for Edit / MultiEdit / Write
             let diffTool = payload["tool_name"] as? String ?? ""
             let diffInput = payload["tool_input"] as? [String: Any] ?? [:]
-            if let diff = buildFileDiff(tool: diffTool, input: diffInput, pillId: agentId) {
+            if var diff = buildFileDiff(tool: diffTool, input: diffInput, pillId: agentId) {
+                diff.remote = isRemote
                 let idx = state.appendSessionDiff(diff, for: agentId)
                 let step = String.makeDiffStep(filename: diff.name, added: diff.added, removed: diff.removed, diffId: idx)
                 appendStep(id: agentId, step: step)
                 RecapStore.shared.recordFileDiff(sessionId: recapSessionId, path: diff.name, added: diff.added, removed: diff.removed)
+                followEdit(pillId: agentId, diffId: idx)
             }
 
         case "PostToolUseFailure":
-            sessions.note(pill: agentId, display: display, working: true)
             state.updateTask(id: agentId, state: .working)
             appendStep(id: agentId, step: "⚠ failed")
 
         case "Notification":
-            sessions.note(pill: agentId, display: display, working: false)
             let message = payload["message"] as? String ?? ""
             let lower = message.lowercased()
             if lower.contains("rate limit") || lower.contains("limite d") {
                 state.updateTask(id: agentId, state: .ratelimit)
                 SoundEngine.shared.play("rate")
-            } else if message.hasSuffix("?") {
+            } else if payload["notification_type"] as? String == "permission_prompt" {
+                // No approval card for this session (terminal cards off, Claude desktop app…):
+                // it is blocked on the user, not working.
+                state.updateTask(id: agentId, state: .approval)
+                appendStep(id: agentId, step: message)
+                SoundEngine.shared.play("approval")
+            } else if payload["notification_type"] as? String == "elicitation_dialog" || message.hasSuffix("?") {
                 state.updateTask(id: agentId, state: .question)
                 appendStep(id: agentId, step: message)
             }
 
         case "Stop":
-            let scope = sessions.endTurn(pill: agentId, session: sessionId)
+            if state.liveDiff?.pillId == agentId { state.liveDiff = nil }
             let rawFinal = (payload["last_assistant_message"] as? String)
                 ?? (payload["message"] as? String) ?? ""
             let finalText = DiffEngine.toOneLine(rawFinal)
-            // The step log is shared, so the conclusion is worth showing either way.
-            if !finalText.isEmpty { appendStep(id: agentId, step: finalText) }
+            if !finalText.isEmpty {
+                appendStep(id: agentId, step: finalText)
+                if let idx = state.tasks.firstIndex(where: { $0.id == agentId }) {
+                    state.tasks[idx].finalLine = finalText
+                }
+            }
             RecapStore.shared.stop(sessionId: recapSessionId)
-            // Another session is still mid-turn behind this pill: the finished state, the
-            // sound and the idle reset below would land on its work. Its own Stop comes later.
-            guard scope == .pill else {
-                nbLog("Stop \(sessionId.prefix(8)) — \(sessions.workingCount(pill: agentId)) session(s) still working on \(agentId)")
+            // Subagents, shells or monitors still running: the session is paused, not done.
+            // Claude Code wakes the main agent when they finish, and its next Stop ends the turn.
+            let inFlight = payload["background_tasks"] as? [[String: Any]] ?? []
+            if !inFlight.isEmpty {
+                let subagents = inFlight.filter { $0["type"] as? String == "subagent" }.count
+                backgroundWaits[sessionId] = BackgroundWait(pillId: agentId, subagents: subagents,
+                                                            others: inFlight.count - subagents)
+                state.updateTask(id: agentId, state: .working)
+                appendStep(id: agentId, step: backgroundStep(inFlight.count))
+                nbLog("Stop with \(inFlight.count) background task(s) (\(sessionId.prefix(8)))")
                 break
             }
             state.updateTask(id: agentId, state: .finished)
-            if !finalText.isEmpty, let idx = state.tasks.firstIndex(where: { $0.id == agentId }) {
-                state.tasks[idx].finalLine = finalText
-            }
-            SoundEngine.shared.play("finish")
-            if focused {
+            if !terminalInFront { SoundEngine.shared.play("finish") }
+            if !terminalInFront && showsAlert(for: agentId, focused: focused) {
                 expandIfNeeded(to: .finished)
-            } else {
+            } else if !state.openForAlert(AlertExpansion.agentFinished, pill: agentId, view: .finished) {
                 setPillBadge(id: agentId, badge: .finished)
             }
+            let generation = idleResetGeneration[agentId, default: 0]
             DispatchQueue.main.asyncAfter(deadline: .now() + 5.2) {
-                // A session (this one or a sibling) may have started a new turn meanwhile.
-                guard self.sessions.workingCount(pill: agentId) == 0 else { return }
+                // Skip if the pill got busy again (another turn or session started meanwhile).
+                guard self.idleResetGeneration[agentId, default: 0] == generation else { return }
                 if isExternalAgent {
                     AppState.shared.removeTask(id: agentId)
                 } else {
@@ -621,33 +777,32 @@ final class HookServer: @unchecked Sendable {
 
         case "StopFailure":
             RecapStore.shared.stop(sessionId: recapSessionId)
-            guard sessions.endTurn(pill: agentId, session: sessionId) == .pill else { break }
+            nbLog("StopFailure \(sessionId.prefix(8)) — \(payload.keys.sorted().joined(separator: ", ")): \(Self.stopFailureDetail(payload) ?? "no detail")")
             state.updateTask(id: agentId, state: .error)
-            SoundEngine.shared.play("error")
-            if focused {
+            // The error view shows what went wrong (finalLine), not the last thing said before it.
+            if let idx = state.tasks.firstIndex(where: { $0.id == agentId }) {
+                state.tasks[idx].finalLine = Self.stopFailureDetail(payload)
+            }
+            if !terminalInFront { SoundEngine.shared.play("error") }
+            if !terminalInFront && showsAlert(for: agentId, focused: focused) {
                 expandIfNeeded(to: .error)
-            } else {
+            } else if !state.openForAlert(AlertExpansion.agentError, pill: agentId, view: .error) {
                 setPillBadge(id: agentId, badge: .error)
             }
 
         case "Interrupt":
             // Codex: user stopped the turn
             RecapStore.shared.stop(sessionId: recapSessionId)
-            guard sessions.endTurn(pill: agentId, session: sessionId) == .pill else { break }
             activeSessionId = nil
             state.updateTask(id: agentId, state: .idle)
             clearPillBadge(id: agentId)
 
         case "SessionEnd":
-            // Only the last session behind the pill may take the card and its diffs down.
-            guard sessions.endSession(pill: agentId, session: sessionId) == .pill else {
-                RecapStore.shared.sessionEnd(sessionId: recapSessionId)
-                nbLog("SessionEnd \(sessionId.prefix(8)) — \(sessions.liveCount(pill: agentId)) session(s) left on \(agentId)")
-                applyDisplayOwner(pill: agentId)
-                break
-            }
             activeSessionId = nil
+            endSession(sessionId)
+            if !isExternalAgent { discoverSessions() }
             if let idx = state.tasks.firstIndex(where: { $0.id == agentId }) { state.tasks[idx].finalLine = nil }
+            state.endFollow(agentId)
             state.clearSessionDiffs(for: agentId)
             state.removeTask(id: agentId)
             RecapStore.shared.sessionEnd(sessionId: recapSessionId)
@@ -661,6 +816,325 @@ final class HookServer: @unchecked Sendable {
         default:
             break
         }
+    }
+
+    // MARK: - One pill per Claude Code session
+
+    /// Extra sessions running at once, by session ID: the first keeps the workspace pill,
+    /// each other one gets a pill of its own until it ends or goes silent.
+    private var sessionPills: [String: String] = [:]
+    /// The session each workspace pill shows, by pill ID.
+    private var workspaceOwner: [String: String] = [:]
+    private var lastHeard: [String: Date] = [:]
+    /// A session silent this long, and idle, was closed without a SessionEnd.
+    private static let sessionStale: TimeInterval = 30 * 60
+
+    @MainActor
+    private func isStale(_ sessionId: String, pillId: String, now: Date) -> Bool {
+        // A pill made from a process never goes stale: the next scan says if it is gone.
+        if hasProcess(sessionId) { return false }
+        let heard = lastHeard[sessionId] ?? .distantPast
+        let idle = AppState.shared.tasks.first(where: { $0.id == pillId }).map { $0.state == .idle } ?? true
+        return now.timeIntervalSince(heard) > Self.sessionStale && idle
+    }
+
+    /// The pill a Claude Code session's events go to.
+    @MainActor
+    private func claudePill(workspaceId: String, sessionId: String) -> String {
+        guard !sessionId.isEmpty, sessionId != "unknown" else { return workspaceId }
+        let now = Date()
+        for (sid, pid) in sessionPills where isStale(sid, pillId: pid, now: now) {
+            sessionPills[sid] = nil
+            lastHeard[sid] = nil
+            AppState.shared.removeTask(id: pid)
+        }
+        // Sessions that only ever held a workspace pill are forgotten the same way.
+        let owners = Set(workspaceOwner.values)
+        for (sid, heard) in lastHeard where sessionPills[sid] == nil && !owners.contains(sid)
+            && now.timeIntervalSince(heard) > Self.sessionStale {
+            lastHeard[sid] = nil
+        }
+        lastHeard[sessionId] = now
+        if let own = sessionPills[sessionId] { return own }
+        if let owner = workspaceOwner[workspaceId], owner != sessionId,
+           !isStale(owner, pillId: workspaceId, now: now) {
+            let pillId = SessionPillId.make(sessionId, prefix: PillCatalog.sessionPillPrefix,
+                                            taken: Set(sessionPills.values))
+            sessionPills[sessionId] = pillId
+            return pillId
+        }
+        workspaceOwner[workspaceId] = sessionId
+        return workspaceId
+    }
+
+    @MainActor
+    private func endSession(_ sessionId: String) {
+        sessionPills[sessionId] = nil
+        lastHeard[sessionId] = nil
+        for (pill, owner) in workspaceOwner where owner == sessionId { workspaceOwner[pill] = nil }
+        for (key, id) in pidSessions where id == sessionId {
+            pidSessions[key] = nil
+            pidCwd[key] = nil
+        }
+        sessionPids[sessionId] = nil
+    }
+
+    /// Claude Code in a terminal goes to its own pill when that is the main tool.
+    @MainActor
+    private func terminalWorkspace() -> String {
+        AppState.shared.mainPillId == "workspace_claude" ? "workspace_claude" : "integration_claude"
+    }
+
+    // MARK: - Sessions found running
+    //
+    // A session is only heard of at its next event, and an idle one has none to send:
+    // after a launch its pill would be missing until it did something. So the `claude`
+    // processes running get their pills at once under `pid-<pid>`, and the session's
+    // first event in that folder takes the pill over.
+
+    /// `pid-<pid>` → the session key its pill is under (that same key until adopted).
+    private var pidSessions: [String: String] = [:]
+    private var pidCwd: [String: String] = [:]
+    /// Session key → the `claude` process its events came from.
+    private var sessionPids: [String: Int] = [:]
+
+    /// The app the session on `pill` runs in, and its tty, found from its `claude` process.
+    @MainActor
+    func sessionTerminal(pill: String) -> (bundleId: String, tty: String?)? {
+        guard let sid = sessionPills.first(where: { $0.value == pill })?.key ?? workspaceOwner[pill] else { return nil }
+        let pid = sessionPids[sid] ?? pidSessions.first(where: { $0.value == sid }).flatMap { Int($0.key.dropFirst(4)) }
+        guard let pid else { return nil }
+        return Self.terminal(of: Int32(pid))
+    }
+
+    /// Up from `pid` to the first app with a window: the terminal or editor it runs in.
+    nonisolated static func terminal(of pid: Int32) -> (bundleId: String, tty: String?)? {
+        var current = pid
+        var tty: String?
+        for _ in 0..<16 {
+            var kp = kinfo_proc()
+            var size = MemoryLayout<kinfo_proc>.stride
+            var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, current]
+            guard sysctl(&mib, 4, &kp, &size, nil, 0) == 0, size > 0 else { return nil }
+            if tty == nil, kp.kp_eproc.e_tdev != -1, let name = devname(kp.kp_eproc.e_tdev, S_IFCHR) {
+                tty = "/dev/" + String(cString: name)
+            }
+            if let app = NSRunningApplication(processIdentifier: current), app.activationPolicy == .regular,
+               let id = app.bundleIdentifier {
+                return (id, tty)
+            }
+            current = kp.kp_eproc.e_ppid
+            if current <= 1 { return nil }
+        }
+        return nil
+    }
+
+    private struct FoundSession: Sendable {
+        let pid: Int32
+        let cwd: String
+        /// The tmux session the user named, "" outside tmux.
+        let name: String
+    }
+
+    private func hasProcess(_ sessionId: String) -> Bool {
+        sessionId.hasPrefix("pid-") || pidSessions.values.contains(sessionId)
+    }
+
+    /// The session's first event: the pill made for its process is its. By the process when the
+    /// event names it, else by folder (the session may have moved since it started).
+    @MainActor
+    private func adoptProcess(sessionId: String, cwd: String, claudePid: Int?) {
+        guard !sessionId.isEmpty, sessionId != "unknown",
+              sessionPills[sessionId] == nil, !workspaceOwner.values.contains(sessionId),
+              !pidSessions.values.contains(sessionId) else { return }
+        if let claudePid { sessionPids[sessionId] = claudePid }
+        let byPid = claudePid.map { "pid-\($0)" }.flatMap { pidSessions[$0] == $0 ? $0 : nil }
+        // ponytail: by folder, two idle sessions in one folder may swap pills (same name).
+        let byCwd = cwd.isEmpty ? nil : pidSessions.first(where: { $0.key == $0.value && pidCwd[$0.key] == cwd })?.key
+        guard let key = claudePid == nil ? byCwd : byPid else { return }
+        nbLog("Session \(sessionId.prefix(8)) takes the pill found for \(key)")
+        if let own = sessionPills.removeValue(forKey: key) { sessionPills[sessionId] = own }
+        for (pill, owner) in workspaceOwner where owner == key { workspaceOwner[pill] = sessionId }
+        lastHeard[sessionId] = lastHeard.removeValue(forKey: key)
+        pidSessions[key] = sessionId
+    }
+
+    /// Pills for the sessions running now; those whose process is gone go.
+    func discoverSessions() {
+        #if !APPSTORE
+        DispatchQueue.global(qos: .utility).async {
+            let found = Self.claudeProcesses()
+            Task { @MainActor in self.applyDiscovered(found) }
+        }
+        #endif
+    }
+
+    @MainActor
+    private func applyDiscovered(_ found: [FoundSession]) {
+        let state = AppState.shared
+        let alive = Set(found.map { "pid-\($0.pid)" })
+        for (key, sessionId) in pidSessions where !alive.contains(key) {
+            let pillId = sessionPills[sessionId] ?? workspaceOwner.first(where: { $0.value == sessionId })?.key
+            endSession(sessionId)
+            guard let pillId else { continue }
+            state.clearSessionDiffs(for: pillId)
+            state.removeTask(id: pillId)
+            state.quietSessionPills.remove(pillId)
+        }
+        for session in found {
+            let key = "pid-\(session.pid)"
+            guard pidSessions[key] == nil else { continue }
+            // A session already heard from in this folder is this process's: no second pill.
+            let known = Set(sessionPills.keys).union(workspaceOwner.values)
+                .filter { !$0.hasPrefix("pid-") && !pidSessions.values.contains($0) }
+            if let sid = known.first(where: { sessionPids[$0] == Int(session.pid) }) ?? known.first(where: { sid in
+                sessionPids[sid] == nil && {
+                    let pill = sessionPills[sid] ?? workspaceOwner.first(where: { $0.value == sid })?.key
+                    return state.tasks.first(where: { $0.id == pill })?.sessionCwd == session.cwd
+                }()
+            }) {
+                pidSessions[key] = sid
+                pidCwd[key] = session.cwd
+                continue
+            }
+            pidSessions[key] = key
+            pidCwd[key] = session.cwd
+            let raw = session.name.isEmpty ? URL(fileURLWithPath: session.cwd).lastPathComponent : session.name
+            let projectName = aliasProjectName(raw.isEmpty ? "Session" : raw)
+            let pillId = claudePill(workspaceId: terminalWorkspace(), sessionId: key)
+            state.quietSessionPills.insert(pillId)
+            if pillId.hasPrefix(PillCatalog.sessionPillPrefix) {
+                upsertSessionTask(id: pillId, projectName: projectName, cwd: session.cwd, bundleId: "")
+            } else {
+                let host = state.tasks.first(where: { $0.id == pillId })?.hostApp
+                upsertWorkspaceTask(id: pillId, projectName: projectName, cwd: session.cwd, hostApp: host)
+            }
+        }
+    }
+
+    #if !APPSTORE
+    private static func commandOutput(_ path: String, _ args: [String]) -> String {
+        let task = Process(); let pipe = Pipe()
+        task.executableURL = URL(fileURLWithPath: path)
+        task.arguments = args; task.standardOutput = pipe; task.standardError = Pipe()
+        guard (try? task.run()) != nil else { return "" }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    /// Each top-level `claude` process of ours (not one whose parent is `claude`: the
+    /// helpers it spawns under its own name), with its folder and tmux session.
+    private static func claudeProcesses() -> [FoundSession] {
+        let uid = getuid()
+        var parent: [Int32: Int32] = [:]
+        var name: [Int32: String] = [:]
+        for line in commandOutput("/bin/ps", ["-axo", "pid=,ppid=,uid=,comm="]).split(separator: "\n") {
+            let f = line.split(separator: " ", omittingEmptySubsequences: true)
+            guard f.count >= 4, let pid = Int32(f[0]), let ppid = Int32(f[1]),
+                  let owner = UInt32(f[2]), owner == uid else { continue }
+            parent[pid] = ppid
+            // macOS reports Claude Code as its version in ucomm; comm is its path, may have spaces
+            name[pid] = URL(fileURLWithPath: f[3...].joined(separator: " ")).lastPathComponent
+        }
+        let panes = tmuxPanes()
+        var found: [FoundSession] = []
+        for (pid, comm) in name where comm == "claude" {
+            if let ppid = parent[pid], name[ppid] == "claude" { continue }
+            let cwd = commandOutput("/usr/sbin/lsof", ["-a", "-d", "cwd", "-Fn", "-p", String(pid)])
+                .split(separator: "\n").first(where: { $0.hasPrefix("n/") }).map { String($0.dropFirst()) }
+            guard let cwd else { continue }
+            var tmux = ""
+            var walk: Int32? = pid
+            for _ in 0..<8 {
+                guard let current = walk else { break }
+                if let session = panes[current] { tmux = session; break }
+                walk = parent[current]
+            }
+            found.append(FoundSession(pid: pid, cwd: cwd, name: claudeSessionName(pid: pid) ?? tmux))
+        }
+        return found.sorted { $0.pid < $1.pid }
+    }
+
+    /// The name `/rename` gave the session, from Claude Code's own `~/.claude/sessions/<pid>.json`.
+    nonisolated static func claudeSessionName(pid: Int32) -> String? {
+        let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/sessions/\(pid).json")
+        guard let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let name = json["name"] as? String, !name.isEmpty else { return nil }
+        return name
+    }
+
+    /// The `claude` process that ran a hook: the farthest one up from the hook's parent, else
+    /// from the relay on the socket (gone already when it sent its event and left).
+    private static func claudeAncestor(from hookParent: Int?, peer fd: Int32) -> Int32? {
+        var pid: pid_t = 0
+        var len = socklen_t(MemoryLayout<pid_t>.size)
+        if let hookParent, (2...Int(Int32.max)).contains(hookParent) {
+            pid = pid_t(hookParent)
+        } else {
+            guard getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0, pid > 1 else { return nil }
+        }
+        var found: Int32?
+        var current = pid
+        for _ in 0..<12 {
+            guard let ppid = parentPid(current) else { break }
+            if commandName(current) == "claude" { found = current }
+            guard ppid > 1 else { break }
+            current = ppid
+        }
+        return found
+    }
+
+    private static func parentPid(_ pid: pid_t) -> pid_t? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        return info.kp_eproc.e_ppid
+    }
+
+    /// argv[0]'s last part, as `ps -o comm` shows it: macOS names Claude Code by its version otherwise.
+    private static func commandName(_ pid: pid_t) -> String? {
+        var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
+        var size = 0
+        guard sysctl(&mib, 3, nil, &size, nil, 0) == 0, size > MemoryLayout<Int32>.size else { return nil }
+        var buf = [UInt8](repeating: 0, count: size)
+        guard sysctl(&mib, 3, &buf, &size, nil, 0) == 0 else { return nil }
+        // argc, the executable's path, NUL padding, then argv[0].
+        var i = MemoryLayout<Int32>.size
+        while i < size, buf[i] != 0 { i += 1 }
+        while i < size, buf[i] == 0 { i += 1 }
+        let start = i
+        while i < size, buf[i] != 0 { i += 1 }
+        guard start < i else { return nil }
+        return URL(fileURLWithPath: String(decoding: buf[start..<i], as: UTF8.self)).lastPathComponent
+    }
+
+    /// The process in each tmux pane → its session's name. Empty without tmux.
+    private static func tmuxPanes() -> [Int32: String] {
+        let paths = ["/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/opt/local/bin/tmux"]
+        guard let tmux = paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return [:] }
+        var panes: [Int32: String] = [:]
+        for line in commandOutput(tmux, ["list-panes", "-a", "-F", "#{pane_pid} #{session_name}"]).split(separator: "\n") {
+            let f = line.split(separator: " ", maxSplits: 1)
+            if f.count == 2, let pid = Int32(f[0]) { panes[pid] = String(f[1]) }
+        }
+        return panes
+    }
+    #endif
+
+    /// A session's own pill: named after its folder, in that folder's colour, with what
+    /// Open terminal needs.
+    @MainActor
+    private func upsertSessionTask(id: String, projectName: String, cwd: String, bundleId: String, tty: String = "") {
+        upsertExternalAgent(id: id, name: projectName)
+        let state = AppState.shared
+        guard let idx = state.tasks.firstIndex(where: { $0.id == id }) else { return }
+        if state.tasks[idx].name != projectName { state.tasks[idx].name = projectName }
+        if !cwd.isEmpty { state.tasks[idx].sessionCwd = cwd }
+        if !bundleId.isEmpty { state.tasks[idx].sessionBundleId = bundleId }
+        if !tty.isEmpty { state.tasks[idx].sessionTTY = tty }
     }
 
     // MARK: - Agent validation + dynamic pill
@@ -687,6 +1161,16 @@ final class HookServer: @unchecked Sendable {
     private func upsertExternalAgent(id: String, name: String) {
         let state = AppState.shared
         guard state.tasks.firstIndex(where: { $0.id == id }) == nil else { return }
+        // A tag whose session never ends would keep its pill forever: past the cap,
+        // drop the oldest one not working. Same rule as Windows and Linux (state.ts).
+        let dynamic = state.tasks.filter {
+            $0.source == .agent && $0.id != state.mainPillId && !state.activeIntegrations.contains($0.id)
+        }
+        if dynamic.count >= Self.maxAgentPills {
+            let busy: Set<BotState> = [.working, .thinking, .searching, .approval, .question]
+            guard let stale = dynamic.first(where: { !busy.contains($0.state) }) else { return }
+            state.removeTask(id: stale.id)
+        }
         let color: String
         if let def = PillCatalog.definition(for: id) {
             color = def.color
@@ -705,6 +1189,80 @@ final class HookServer: @unchecked Sendable {
 
     // MARK: - Helpers
 
+    /// Settings → Follow edits live: the edit just made opens on its diff (LiveEdits.mayFollow).
+    @MainActor
+    private func followEdit(pillId: String, diffId: Int) {
+        let state = AppState.shared
+        let follow = LiveEdits.mayFollow(
+            enabled: state.followEdits,
+            stopped: state.liveStopped.contains(pillId),
+            cardPending: state.pendingApproval != nil || state.pendingQuestion != nil,
+            expanded: state.mode == .expanded,
+            // The code view this session is followed in counts as the overview.
+            onOverview: state.view == .overview || (state.view == .code && state.liveDiff?.pillId == pillId),
+            typing: NSApp.keyWindow?.firstResponder is NSTextView,
+            followingOther: state.liveDiff.map { $0.pillId != pillId } ?? false)
+        guard follow else { return }
+        withAnimation(.easeOut(duration: 0.22)) {
+            state.liveDiff = LiveDiff(pillId: pillId, diffId: diffId)
+            state.focusId = pillId
+        }
+        // Its code view when the session has one; the diff card otherwise (remote hosts, other agents).
+        let view: IslandView = state.codeSessions[pillId]?.hasContent == true ? .code : .overview
+        if state.mode != .expanded {
+            NotificationCenter.default.post(name: .hookExpand, object: view)
+        } else if state.view != view {
+            withAnimation(.easeIn(duration: 0.16)) { state.view = view }
+        }
+    }
+
+    /// Settings → Follow the latest activity: the pill that just did something takes the card, and with
+    /// "Open the island on new activity" the island opens on it. A view you opened stays, and an approval
+    /// or a question keeps the front.
+    @MainActor
+    private func followActivity(pill id: String) {
+        let state = AppState.shared
+        guard state.followActivity, state.isPresent, !state.pointerInIsland, state.pendingApproval == nil, state.pendingQuestion == nil,
+              state.tasks.contains(where: { $0.id == id }) else { return }
+        if state.mode == .expanded && state.view != .overview { return }
+        if state.focusId != id {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.setFocus(id) }
+        }
+        if state.expandOnActivity && state.mode != .expanded {
+            NotificationCenter.default.post(name: .hookExpand, object: IslandView.overview)
+        }
+    }
+
+    /// Whether a finish or an error opens the island. The pill shown always does; another pill
+    /// does too with "Show alerts from every pill" (#683): it takes the focus for its card, and
+    /// the pill that was shown comes back when the island closes. Never over an approval, a
+    /// question, or a card the user is busy in (chat, mail, settings…).
+    @MainActor
+    private func showsAlert(for pill: String, focused: Bool) -> Bool {
+        if focused { return true }
+        let state = AppState.shared
+        guard state.alertsFromAllPills, state.pendingApproval == nil, state.pendingQuestion == nil else { return false }
+        if state.mode == .expanded, ![IslandView.overview, .finished, .error, .empty].contains(state.view) { return false }
+        if focusBeforeAlert == nil { focusBeforeAlert = state.focusId }
+        alertPill = pill
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = pill }
+        return true
+    }
+
+    /// The island closed: the pill that was shown before another pill's alert comes back.
+    @MainActor
+    func restoreAlertFocus() {
+        guard let prev = focusBeforeAlert else { return }
+        let borrowed = alertPill
+        focusBeforeAlert = nil
+        alertPill = nil
+        let state = AppState.shared
+        // Only if the alert's pill is still the one shown (the user may have picked another).
+        guard state.pendingApproval == nil, state.focusId == borrowed, borrowed != prev,
+              state.tasks.contains(where: { $0.id == prev }) else { return }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { state.focusId = prev }
+    }
+
     @MainActor
     private func expandIfNeeded(to view: IslandView) {
         let state = AppState.shared
@@ -717,7 +1275,7 @@ final class HookServer: @unchecked Sendable {
             // Approval and question always win; other alerts are blocked while a card is showing
             if view == .approval || view == .question {
                 state.view = view
-            } else if isAlert && state.pendingApproval == nil {
+            } else if isAlert && approvalQueue.isEmpty {
                 state.view = view
             }
         } else if isAlert {
@@ -751,13 +1309,13 @@ final class HookServer: @unchecked Sendable {
         let sessionId = payload["session_id"] as? String
                      ?? payload["conversation_id"] as? String
                      ?? "unknown"
-        let cwd       = payload["cwd"]        as? String ?? ""
-        let rawName   = URL(fileURLWithPath: cwd).lastPathComponent
-        let projectName = aliasProjectName(rawName.isEmpty ? "Session" : rawName)
+        let (cwd, projectName) = sessionPlace(payload)
+        let isRemote = payload["coucou_remote"] is String
 
         let rawAgent = payload["coucou_agent"] as? String ?? ""
         let termProgram = payload["term_program"] as? String ?? ""
         let bundleId    = payload["bundle_id"]    as? String ?? ""
+        let tty         = payload["tty"]          as? String ?? ""
         let isCursorEditor = bundleId.lowercased() == "com.todesktop.230313mzl4w4u92"
         let isVSCodeEditor = !isCursorEditor && (
             termProgram.lowercased().contains("vscode") ||
@@ -776,11 +1334,15 @@ final class HookServer: @unchecked Sendable {
         let isHermesRequest  = rawAgent == "hermes"
             && UserDefaults.standard.bool(forKey: "hermesApprovalsEnabled")
             && (payload["coucou_has_transport"] as? Bool == true)
+        // Coucou's own chat (Claude Code as chat provider): always a card, on the
+        // Claude Code pill as it is.
+        let isChatRequest    = payload["coucou_chat"] as? Bool == true
         #else
         let isCodexRequest   = false
         let isCopilotRequest = false
         let isMuseRequest    = false
         let isHermesRequest  = false
+        let isChatRequest    = false
         #endif
         if !isCodexRequest && !isCopilotRequest && !isMuseRequest && !isHermesRequest && Self.validateAgent(rawAgent) != nil {
             Task.detached { [weak self] in
@@ -791,25 +1353,27 @@ final class HookServer: @unchecked Sendable {
         }
 
         // Determine which workspace pill owns the request.
-        let pillId: String
+        let basePillId: String
         if isCodexRequest {
-            pillId = "agent_codex"
+            basePillId = "agent_codex"
         } else if isCopilotRequest {
-            pillId = "agent_copilot"
+            basePillId = "agent_copilot"
         } else if isMuseRequest {
-            pillId = "agent_muse"
+            basePillId = "agent_muse"
         } else if isHermesRequest {
-            pillId = "agent_hermes"
+            basePillId = "agent_hermes"
         } else if isCursorEditor {
-            pillId = "agent_cursor"
+            basePillId = "agent_cursor"
         } else {
-            pillId = "integration_claude"
+            basePillId = isVSCodeEditor ? "integration_claude" : terminalWorkspace()
         }
+        let isClaudeCode = !isCodexRequest && !isCopilotRequest && !isMuseRequest && !isHermesRequest
+        let pillId = isClaudeCode ? claudePill(workspaceId: basePillId, sessionId: sessionId) : basePillId
         // Terminal sessions: only when turned on in Settings, else the terminal asks itself.
         let terminalHost = isCursorEditor || isVSCodeEditor ? nil
             : ClaudeHost.terminal(termProgram: termProgram, bundleId: bundleId)
         let isTerminal = terminalHost != nil && ClaudeHost.terminalCardsEnabled
-        guard isCodexRequest || isCopilotRequest || isMuseRequest || isHermesRequest || isCursorEditor || isVSCodeEditor || isTerminal else {
+        guard isCodexRequest || isCopilotRequest || isMuseRequest || isHermesRequest || isCursorEditor || isVSCodeEditor || isTerminal || isRemote || isChatRequest else {
             Task.detached { [weak self] in
                 self?.sendLine(fd: fd, text: #"{"permissionDecision":"ask"}"#)
                 close(fd)
@@ -819,6 +1383,10 @@ final class HookServer: @unchecked Sendable {
 
         let tool = payload["tool_name"] as? String ?? "Tool"
         let toolInput = payload["tool_input"] as? [String: Any] ?? [:]
+        // A plan is too long for the card: show its title.
+        let command = tool == "ExitPlanMode"
+            ? Self.planTitle(toolInput["plan"] as? String)
+            : toolInput["command"] as? String ?? tool
         let inputKey = Self.approvalInputKey(toolInput)
         nbLog("PermissionRequest \(tool) [\(pillId)]")
 
@@ -833,16 +1401,23 @@ final class HookServer: @unchecked Sendable {
             return
         }
 
-        let command = toolInput["command"] as? String ?? tool
+        // On a call the island stays away: the terminal takes the question at once.
+        if AppState.shared.inCall {
+            Task.detached { [weak self] in
+                self?.sendLine(fd: fd, text: #"{"permissionDecision":"ask"}"#)
+                close(fd)
+            }
+            return
+        }
 
-        // Several requests can wait at once (several sessions or agents): they queue, the
-        // card shows the oldest. Past the cap, the newest goes back to its own terminal.
         let entry = QueuedApproval(id: UUID(), fd: fd, sessionId: sessionId, pillId: pillId,
                                    projectName: projectName, cwd: cwd, tool: tool,
                                    command: command, inputKey: inputKey,
-                                   hostApp: terminalHost?.bundleId, bundleId: bundleId)
-        guard approvals.enqueue(entry) == .accepted else {
-            nbLog("PermissionRequest \(tool): \(ApprovalQueue.maxPending) already waiting, asked in the terminal")
+                                   hostApp: terminalHost?.bundleId, bundleId: bundleId,
+                                   tty: tty, isChat: isChatRequest)
+        guard approvalQueue.enqueue(entry) == .accepted else {
+            // Queue full: the newest request falls back to its terminal ("ask"), as displacement did.
+            nbLog("Approval queue full (\(ApprovalQueue.maxPending)): ask for \(tool) [\(pillId)]")
             Task.detached { [weak self] in
                 self?.sendLine(fd: fd, text: #"{"permissionDecision":"ask"}"#)
                 close(fd)
@@ -851,48 +1426,60 @@ final class HookServer: @unchecked Sendable {
         }
         activeSessionId = sessionId
 
-        upsertTask(pill: pillId,
-                   display: PillSessionRegistry.Display(session: sessionId, projectName: projectName,
-                                                        cwd: cwd, hostApp: terminalHost?.bundleId,
-                                                        bundleId: bundleId),
-                   working: true, externalAgent: nil)
-        state.updateTask(id: pillId, state: .approval)
-        SoundEngine.shared.play("approval")
-
-        // Monitor fd: if the agent closes the connection (answered in its own UI), drop the
-        // request. The cancel handler closes the fd — never close it anywhere else.
-        let entryId = entry.id
-        let capturedPillId = pillId
+        // Monitor fd: if the client closes the connection (handled in the editor), drop only this
+        // entry. The cancel handler closes the fd — never close it anywhere else.
+        let id = entry.id
         let source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: .main)
         source.setEventHandler { [weak self] in
-            guard let self, self.approvals.contains(id: entryId) else { return }
-            self.removeApproval(id: entryId, note: self.handledNote(pill: capturedPillId))
+            guard let self, self.approvalQueue.contains(id: id) else { return }
+            self.dismissApprovals(ids: [id], note: self.handledNote(for: pillId))
         }
         source.setCancelHandler { close(fd) }
         source.resume()
-        approvalSources[entryId] = source
 
-        // Safety timeout — drop without a decision. nb-hook reads EOF from the cancel
-        // handler's close and exits; the agent asks again itself.
+        // Safety timeout, on this request's own clock (it was sent at arrival time):
+        // cancel without sending a decision. The relay reads EOF and exits; the agent re-asks.
         // Copilot/Muse use 110s (their relay waits 118s but their hook timeout is 120s, leaving little margin).
         let waitTimeout: Double = (isCopilotRequest || isMuseRequest) ? 110 : 115
-        DispatchQueue.main.asyncAfter(deadline: .now() + waitTimeout) { [weak self] in
-            guard let self, self.approvals.contains(id: entryId) else { return }
-            self.removeApproval(id: entryId, note: self.waitingNote(pill: capturedPillId))
+        let timeout = DispatchWorkItem { [weak self] in
+            guard let self, self.approvalQueue.contains(id: id) else { return }
+            self.dismissApprovals(ids: [id], note: self.waitingNote(for: pillId))
         }
+        DispatchQueue.main.asyncAfter(deadline: .now() + waitTimeout, execute: timeout)
+        approvalResources[id] = ApprovalResources(source: source, timeout: timeout)
 
-        showApprovalHead()
+        nbLog("Approval queued \(approvalQueue.count)/\(ApprovalQueue.maxPending) [\(pillId)]")
+        SoundEngine.shared.play("approval")
+        // First request: take over the card. Later ones wait their turn (FIFO) and only bump the counter.
+        if approvalQueue.count == 1 {
+            // Approval always forces the island open — user must be able to respond.
+            // Save current focus so we can restore it when the card is dismissed.
+            if focusBeforeApproval == nil { focusBeforeApproval = state.focusId }
+            showApproval(entry)
+            expandIfNeeded(to: .approval)
+        } else if let head = approvalQueue.head {
+            showApproval(head)
+        }
     }
 
-    /// Called by ApprovalView buttons and the iPhone. Writes the decision to the waiting
-    /// nb-hook of request `id` — the one that was on screen. A click that lands after the
-    /// card moved on to another request is ignored, so it can never answer the wrong one.
+    /// A click on the card's buttons. Ignored for a moment after a new request took the card,
+    /// so a double-click meant for the previous request never answers this one.
     @MainActor
-    func sendApprovalDecision(_ decision: String, for id: UUID? = nil) {
-        // Only intercept a demo card — a real card has a queued request behind it.
+    func clickApproval(_ decision: String, for id: UUID) {
+        if approvalQueue.head?.id == id, !approvalGuard.accepts(id, at: ProcessInfo.processInfo.systemUptime) {
+            return
+        }
+        sendApprovalDecision(decision, for: id)
+    }
+
+    /// Writes the decision to the waiting nb-hook and cleans up.
+    /// `id` is the request the card showed: a click is never applied to a different request.
+    @MainActor
+    func sendApprovalDecision(_ decision: String, for id: UUID) {
+        // Only intercept a demo card — a real card has a queue entry behind it.
         if DemoEngine.shared.isActive,
            AppState.shared.pendingApproval?.sessionId == "demo_session",
-           approvals.isEmpty {
+           approvalQueue.isEmpty {
             let s = AppState.shared
             s.pendingApproval = nil
             s.isPinned = false
@@ -900,28 +1487,47 @@ final class HookServer: @unchecked Sendable {
             DemoEngine.shared.handleApprovalDecision(decision)
             return
         }
-        guard let head = approvals.head else {
-            // A card with nothing behind it any more: just close it.
-            let s = AppState.shared
-            s.pendingApproval = nil
-            s.isPinned = false
-            s.view = s.tasks.isEmpty ? .empty : .overview
-            return
-        }
-        if let id, id != head.id {
-            nbLog("Approval decision for a request no longer on the card, ignored")
-            return
-        }
+        guard approvalQueue.head?.id == id, let removed = detachApproval(id: id) else { return }
+        let fd = removed.entry.fd
+        let source = removed.source
 
         let json: String
         switch decision {
         case "allow":  json = #"{"permissionDecision":"allow"}"#
         case "always": json = #"{"permissionDecision":"always"}"#
         case "ask":    json = #"{"permissionDecision":"ask"}"#
+        // Plan approval (ExitPlanMode): the hook turns "mode" into a setMode permission update.
+        case "plan_auto":    json = #"{"permissionDecision":"allow","mode":"auto"}"#
+        case "plan_default": json = #"{"permissionDecision":"allow","mode":"default"}"#
+        // Reject the plan and stop Claude, so the change can be typed in the terminal.
+        case "plan_change":  json = #"{"permissionDecision":"change_plan"}"#
         default:       json = #"{"permissionDecision":"deny"}"#
         }
-        RecapStore.shared.recordDecision(pillId: head.pillId, decision: decision)
-        removeApproval(id: head.id, answer: json)
+
+        if Self.isAlive(fd: fd) {
+            Task.detached { [weak self] in
+                // Write decision while fd is still valid, then cancel source → cancel handler closes fd
+                self?.sendLine(fd: fd, text: json)
+                DispatchQueue.main.async { source?.cancel() }
+            }
+        } else {
+            // Client already gone: nothing to answer. Drop it.
+            nbLog("Dropped dead approval on decision \(removed.entry.tool) [\(removed.entry.pillId)]")
+            source?.cancel()
+        }
+        // The recap only counts allow / always / deny.
+        let recapDecision = ["plan_auto": "allow", "plan_default": "allow", "plan_change": "deny"][decision] ?? decision
+        RecapStore.shared.recordDecision(pillId: removed.entry.pillId, decision: recapDecision)
+        refreshApprovalCard(releasedPill: removed.entry.pillId, emptyNote: nil)
+        if decision == "plan_change" { ClaudeHost.activate(removed.entry.hostApp) }
+    }
+
+    /// The plan's first non-empty line without its Markdown heading marks, for the card.
+    static func planTitle(_ plan: String?) -> String {
+        let firstLine = plan?.split(separator: "\n")
+            .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        let title = firstLine.map { String($0.drop { $0 == "#" || $0 == " " }) } ?? ""
+        return title.isEmpty ? "Plan" : title
     }
 
     // MARK: - Question request
@@ -929,16 +1535,23 @@ final class HookServer: @unchecked Sendable {
     @MainActor
     private func processQuestionRequest(fd: Int32, parsed: AskQuestion, payload: [String: Any]) {
         let state = AppState.shared
+        if state.inCall {
+            Task.detached { [weak self] in
+                self?.sendLine(fd: fd, text: #"{"permissionDecision":"ask"}"#)
+                close(fd)
+            }
+            return
+        }
         let sessionId = payload["session_id"] as? String
                      ?? payload["conversation_id"] as? String
                      ?? "unknown"
-        let cwd       = payload["cwd"]        as? String ?? ""
-        let rawName   = URL(fileURLWithPath: cwd).lastPathComponent
-        let projectName = aliasProjectName(rawName.isEmpty ? "Session" : rawName)
+        let (cwd, projectName) = sessionPlace(payload)
+        let isRemote = payload["coucou_remote"] is String
 
         let rawAgent    = payload["coucou_agent"] as? String ?? ""
         let termProgram = payload["term_program"]  as? String ?? ""
         let bundleId    = payload["bundle_id"]     as? String ?? ""
+        let tty         = payload["tty"]           as? String ?? ""
         let isCursorEditor = bundleId.lowercased() == "com.todesktop.230313mzl4w4u92"
         let isVSCodeEditor = !isCursorEditor && (
             termProgram.lowercased().contains("vscode") ||
@@ -951,16 +1564,15 @@ final class HookServer: @unchecked Sendable {
         let pillId: String
         if isCodexRequest {
             pillId = "agent_codex"
-        } else if isCursorEditor {
-            pillId = "agent_cursor"
         } else {
-            pillId = "integration_claude"
+            let workspace = isCursorEditor ? "agent_cursor" : isVSCodeEditor ? "integration_claude" : terminalWorkspace()
+            pillId = claudePill(workspaceId: workspace, sessionId: sessionId)
         }
         // Terminal sessions: only when turned on in Settings, else the terminal asks itself.
         let terminalHost = isCursorEditor || isVSCodeEditor ? nil
             : ClaudeHost.terminal(termProgram: termProgram, bundleId: bundleId)
         let isTerminal = terminalHost != nil && ClaudeHost.terminalCardsEnabled
-        guard isCodexRequest || isCursorEditor || isVSCodeEditor || isTerminal else {
+        guard isCodexRequest || isCursorEditor || isVSCodeEditor || isTerminal || isRemote else {
             Task.detached { [weak self] in
                 self?.sendLine(fd: fd, text: #"{"permissionDecision":"ask"}"#)
                 close(fd)
@@ -985,11 +1597,11 @@ final class HookServer: @unchecked Sendable {
             ? "\(pillId)+\(cwd)"
             : sessionId
 
-        upsertTask(pill: pillId,
-                   display: PillSessionRegistry.Display(session: sessionId, projectName: projectName,
-                                                        cwd: cwd, hostApp: terminalHost?.bundleId,
-                                                        bundleId: bundleId),
-                   working: true, externalAgent: nil)
+        if pillId.hasPrefix(PillCatalog.sessionPillPrefix) {
+            upsertSessionTask(id: pillId, projectName: projectName, cwd: cwd, bundleId: bundleId, tty: tty)
+        } else {
+            upsertWorkspaceTask(id: pillId, projectName: projectName, cwd: cwd, hostApp: terminalHost?.bundleId, bundleId: bundleId, tty: tty)
+        }
         state.updateTask(id: pillId, state: .question)
         state.pendingQuestion = parsed
         state.isPinned = true
@@ -1030,51 +1642,19 @@ final class HookServer: @unchecked Sendable {
         ClaudeHost.name(for: AppState.shared.tasks.first { $0.id == "integration_claude" }?.hostApp)
     }
 
-    /// Records the session an event came from, then refreshes its card.
-    /// `externalAgent` is the validated `coucou_agent` name for a third-party agent pill,
-    /// nil for a workspace pill.
-    @MainActor
-    private func upsertTask(pill: String, display: PillSessionRegistry.Display,
-                            working: Bool, externalAgent: String?) {
-        sessions.note(pill: pill, display: display, working: working)
-        if let externalAgent {
-            upsertExternalAgent(id: pill, name: externalAgent)
-        } else {
-            upsertWorkspaceTask(id: pill, projectName: display.projectName, cwd: display.cwd,
-                                hostApp: display.hostApp, bundleId: display.bundleId,
-                                session: display.session)
-        }
-    }
-
-    /// Writes the pill's name, cwd and terminal from the session that owns it: used when
-    /// the owner ends and a sibling session inherits the card.
-    @MainActor
-    private func applyDisplayOwner(pill: String) {
-        guard let owner = sessions.displayOwner(of: pill),
-              let idx = AppState.shared.tasks.firstIndex(where: { $0.id == pill }),
-              !owner.projectName.isEmpty else { return }
-        let state = AppState.shared
-        state.tasks[idx].name = owner.projectName
-        if !owner.cwd.isEmpty { state.tasks[idx].sessionCwd = owner.cwd }
-        if pill == "integration_claude" { state.tasks[idx].hostApp = owner.hostApp }
-        if !owner.bundleId.isEmpty { state.tasks[idx].sessionBundleId = owner.bundleId }
-    }
-
     /// Updates or transiently creates a workspace pill (VS Code or Cursor) task.
     /// If the task already exists (persistent), just updates name/cwd.
     /// If missing (transient), creates it and inserts after the main pill.
-    /// Name, cwd and terminal belong to the session that owns the pill (the oldest one
-    /// still running), so a second session under the same client cannot rename the card,
-    /// or send "Open terminal" elsewhere, out from under the first.
     @MainActor
-    private func upsertWorkspaceTask(id: String, projectName: String, cwd: String = "", hostApp: String? = nil, bundleId: String = "", session: String) {
+    private func upsertWorkspaceTask(id: String, projectName: String, cwd: String = "", hostApp: String? = nil,
+                                     bundleId: String = "", tty: String = "") {
         let state = AppState.shared
         if let idx = state.tasks.firstIndex(where: { $0.id == id }) {
-            guard sessions.ownsDisplay(pill: id, session: session) else { return }
             state.tasks[idx].name = projectName
             if !cwd.isEmpty { state.tasks[idx].sessionCwd = cwd }
-            if id == "integration_claude" { state.tasks[idx].hostApp = hostApp }
+            if id == "integration_claude" || id == "workspace_claude" { state.tasks[idx].hostApp = hostApp }
             if !bundleId.isEmpty { state.tasks[idx].sessionBundleId = bundleId }
+            if !tty.isEmpty { state.tasks[idx].sessionTTY = tty }
             return
         }
         // Transient: create and insert after the main pill
@@ -1083,8 +1663,9 @@ final class HookServer: @unchecked Sendable {
         let source = def?.source ?? .agent
         var task = AgentTask(id: id, name: projectName, color: color,
                              state: .idle, steps: [], source: source, isIntegration: true)
-        if id == "integration_claude" { task.hostApp = hostApp }
+        if id == "integration_claude" || id == "workspace_claude" { task.hostApp = hostApp }
         if !bundleId.isEmpty { task.sessionBundleId = bundleId }
+        if !tty.isEmpty { task.sessionTTY = tty }
         if let mainIdx = state.tasks.firstIndex(where: { $0.id == state.mainPillId }) {
             state.tasks.insert(task, at: mainIdx + 1)
         } else {
@@ -1104,6 +1685,34 @@ final class HookServer: @unchecked Sendable {
     }
 
     @MainActor
+    private func cancelIdleReset(id: String) {
+        idleResetGeneration[id, default: 0] += 1
+    }
+
+    /// "⏳ In background: 3" — the ticker line while a finished turn waits on background work.
+    private func backgroundStep(_ count: Int) -> String {
+        "⏳ " + String(format: String(localized: "step.background %lld"), Int64(count))
+    }
+
+    @MainActor
+    private func subagentFinishedInBackground(sessionId: String) {
+        guard var wait = backgroundWaits[sessionId], wait.subagents > 0 else { return }
+        wait.subagents -= 1
+        backgroundWaits[sessionId] = wait
+        if wait.total > 0 {
+            appendStep(id: wait.pillId, step: backgroundStep(wait.total))
+            return
+        }
+        // All done. The main agent normally resumes on its own; if it never does, end quietly.
+        let pillId = wait.pillId
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+            guard self.backgroundWaits[sessionId]?.total == 0 else { return }
+            self.backgroundWaits[sessionId] = nil
+            AppState.shared.updateTask(id: pillId, state: .idle)
+        }
+    }
+
+    @MainActor
     private func clearPillBadge(id: String) {
         let state = AppState.shared
         guard let idx = state.tasks.firstIndex(where: { $0.id == id }) else { return }
@@ -1119,7 +1728,82 @@ final class HookServer: @unchecked Sendable {
         state.tasks[idx].stepIndex = state.tasks[idx].steps.count - 1
     }
 
+    /// The session's folder and pill name. A remote host's folder is not on this
+    /// Mac: the name carries the host, and there is no folder to open here.
+    private func sessionPlace(_ payload: [String: Any]) -> (cwd: String, name: String) {
+        let cwd = payload["cwd"] as? String ?? ""
+        let name = sessionName(payload, cwd: cwd)
+        guard let host = payload["coucou_remote"] as? String else { return (cwd, name) }
+        return ("", "\(name) · \(SSHDestination.label(host))")
+    }
+
+    // MARK: - Code view
+
+    /// Keeps what the code view shows of a Claude Code session: phases, last edit, last command.
+    @MainActor
+    private func recordCode(event: String, pillId: String, payload: [String: Any], cwd: String, project: String) {
+        let state = AppState.shared
+        if event == "SessionEnd" {
+            state.codeSessions[pillId] = nil
+            // The code view has nothing left to show.
+            if state.view == .code, state.codeSessions[state.focusId ?? ""]?.hasContent != true {
+                state.view = state.tasks.isEmpty ? .empty : .overview
+            }
+            return
+        }
+        var session = state.codeSessions[pillId] ?? CodeSession(project: project, root: cwd)
+        let tool = payload["tool_name"] as? String ?? ""
+        switch event {
+        case "UserPromptSubmit":
+            session = CodeSession(project: project, root: cwd)
+        case "PreToolUse":
+            session.toolStarted(tool: tool, input: payload["tool_input"] as? [String: Any] ?? [:], cwd: cwd)
+            if readsSnippet(tool, payload, session.edit) { session.awaitSnippet() }
+        case "PostToolUse", "PostToolUseFailure":
+            let failed = event == "PostToolUseFailure"
+            session.toolFinished(tool: tool, response: payload["tool_response"], failed: failed, error: payload["error"] as? String)
+            if !failed, readsSnippet(tool, payload, session.edit), let edit = session.edit {
+                loadSnippet(edit, pillId: pillId, root: session.root, cwd: cwd)
+            }
+        case "Stop":
+            session.endTurn()
+        default:
+            return
+        }
+        state.codeSessions[pillId] = session
+    }
+
+    /// Reads the lines around an edit off the main thread, then adds them if the edit is still the one shown.
+    @MainActor
+    private func loadSnippet(_ edit: CodeEdit, pillId: String, root: String, cwd: String) {
+        let base = edit.path.hasPrefix(root + "/") ? root : cwd
+        DispatchQueue.global(qos: .utility).async {
+            let snippet = CodeView.readSnippet(path: edit.path, root: base, find: edit.added)
+            Task { @MainActor in
+                AppState.shared.codeSessions[pillId]?.snippetRead(snippet, for: edit)
+            }
+        }
+    }
+
+    /// An Edit made on this Mac: the lines around it are read from the file. A remote
+    /// session's files are on its host.
+    private func readsSnippet(_ tool: String, _ payload: [String: Any], _ edit: CodeEdit?) -> Bool {
+        tool == "Edit" && payload["coucou_remote"] == nil && edit?.added.isEmpty == false
+    }
+
     // MARK: - Project name alias mapping
+
+    /// The session's own name (Claude Code's /rename, read by the hook), else its folder, `~` at home.
+    private func sessionName(_ payload: [String: Any], cwd: String) -> String {
+        if let name = payload["session_name"] as? String, !name.isEmpty { return name }
+        if let title = payload["session_title"] as? String, !title.isEmpty { return title }
+        // The folder the session started in, so a cd into a subfolder keeps the name.
+        let root = payload["session_root"] as? String ?? ""
+        let dir = root.isEmpty ? cwd : root
+        if !dir.isEmpty, dir == (payload["home"] as? String ?? NSHomeDirectory()) { return "~" }
+        let folder = URL(fileURLWithPath: dir).lastPathComponent
+        return aliasProjectName(folder.isEmpty ? "Session" : folder)
+    }
 
     private func aliasProjectName(_ name: String) -> String {
         let aliases: [String: String] = [
@@ -1151,8 +1835,11 @@ final class HookServer: @unchecked Sendable {
             "apply_patch":  String(localized: "step.edits",     defaultValue: "Edits"),
             "update_plan":  String(localized: "step.tasks",     defaultValue: "Tasks"),
             "spawn_agent":  String(localized: "step.agent",     defaultValue: "Agent"),
+            // Antigravity tools
+            "ask_question": String(localized: "step.needs-input", defaultValue: "Needs input"),
         ]
-        var label = labels[tool] ?? tool
+        let labelTool = tool == "ask_question" || tool.hasSuffix(":ask_question") ? "ask_question" : tool
+        var label = labels[labelTool] ?? tool
 
         // Codex MCP tools arrive as mcp__server__tool — show "server · tool"
         if tool.hasPrefix("mcp__") {
@@ -1177,6 +1864,14 @@ final class HookServer: @unchecked Sendable {
                 }
             }
             return label
+        }
+
+        // ask_question: extract the question string
+        if (tool == "ask_question" || tool.hasSuffix(":ask_question")),
+           let questions = input["questions"] as? [[String: Any]],
+           let firstQ = questions.first?["question"] as? String,
+           !firstQ.trimmingCharacters(in: .whitespaces).isEmpty {
+            return "\(label) · \(oneLine(firstQ))"
         }
 
         if let cmd = input["command"] as? String {
@@ -1311,8 +2006,7 @@ final class HookServer: @unchecked Sendable {
             for matcher in permReqHooks {
                 if let hookList = matcher["hooks"] as? [[String: Any]] {
                     for hook in hookList {
-                        if let cmd = hook["command"] as? String,
-                           cmd.contains("NotchBuddy") || cmd.contains("coucou") {
+                        if let cmd = hook["command"] as? String, isLocalCoucouHook(cmd) {
                             hasCoucouHooks = true
                             if let timeout = hook["timeout"] as? Int, timeout < 120 { return true }
                         }
@@ -1327,8 +2021,7 @@ final class HookServer: @unchecked Sendable {
             let hasAskEntry = preToolHooks.contains { m in
                 (m["matcher"] as? String) == "AskUserQuestion"
                 && (m["hooks"] as? [[String: Any]])?.contains {
-                    let cmd = $0["command"] as? String ?? ""
-                    return cmd.contains("NotchBuddy") || cmd.contains("coucou")
+                    isLocalCoucouHook($0["command"] as? String ?? "")
                 } ?? false
             }
             if !hasAskEntry { return true }
@@ -1374,6 +2067,16 @@ final class HookServer: @unchecked Sendable {
         #else
         let quotedCmd = "\"\(hookPath.replacingOccurrences(of: "\"", with: "\\\""))\""
         #endif
+        settings = try Self.withClaudeHooks(settings, command: quotedCmd)
+        let data = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
+        return (data, snapshot.bytes)
+    }
+
+    /// `settings` with Coucou's hooks for Claude Code, running `quotedCmd`; only the hooks `owns`
+    /// claims are replaced. Also used for a remote host's settings.json.
+    static func withClaudeHooks(_ original: [String: Any], command quotedCmd: String,
+                                owns: (String) -> Bool = isLocalCoucouHook) throws -> [String: Any] {
+        var settings = original
         let events: [(String, Int)] = [
             ("SessionStart", 10), ("SessionEnd", 10),
             ("UserPromptSubmit", 10),
@@ -1387,7 +2090,7 @@ final class HookServer: @unchecked Sendable {
         var hooks = try ClaudeSettingsFile.hooks(in: settings, name: "settings.json")
         for (event, timeout) in events {
             var existing = try ClaudeSettingsFile.hookGroups(in: hooks, event: event, name: "settings.json")
-            existing.removeAll { ($0["hooks"] as? [[String: Any]])?.contains { ($0["command"] as? String)?.contains("NotchBuddy") == true || ($0["command"] as? String)?.contains("coucou") == true } ?? false }
+            existing = removingHooks(from: existing, where: owns)
             existing.append(["hooks": [["type": "command", "command": quotedCmd, "timeout": timeout]]])
             hooks[event] = existing
         }
@@ -1399,32 +2102,34 @@ final class HookServer: @unchecked Sendable {
         ])
         hooks["PreToolUse"] = preToolUse
         settings["hooks"] = hooks
-        let data = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
-        return (data, snapshot.bytes)
+        return settings
     }
 
     func uninstallClaudeHooks() throws {
         let settingsURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude/settings.json")
         let snapshot = try ClaudeSettingsFile.read(at: settingsURL)
-        var settings = snapshot.object
-        guard var hooks = settings["hooks"] as? [String: Any] else { return }
+        guard snapshot.object["hooks"] is [String: Any] else { return }
+        let settings = Self.withoutClaudeHooks(snapshot.object)
+        let newData = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
+        try ClaudeSettingsFile.write(newData, to: settingsURL, expecting: snapshot.bytes)
+    }
+
+    /// `settings` without the hooks `owns` claims; nothing else changed.
+    static func withoutClaudeHooks(_ original: [String: Any],
+                                   owns: (String) -> Bool = isLocalCoucouHook) -> [String: Any] {
+        var settings = original
+        guard var hooks = settings["hooks"] as? [String: Any] else { return settings }
 
         for key in hooks.keys {
-            if var matchers = hooks[key] as? [[String: Any]] {
-                matchers.removeAll { matcher in
-                    (matcher["hooks"] as? [[String: Any]])?.contains {
-                        ($0["command"] as? String)?.contains("NotchBuddy") == true ||
-                        ($0["command"] as? String)?.contains("coucou") == true
-                    } ?? false
-                }
+            if let groups = hooks[key] as? [[String: Any]] {
+                let matchers = removingHooks(from: groups, where: owns)
                 if matchers.isEmpty { hooks.removeValue(forKey: key) }
                 else { hooks[key] = matchers }
             }
         }
         settings["hooks"] = hooks
-        let newData = try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys])
-        try ClaudeSettingsFile.write(newData, to: settingsURL, expecting: snapshot.bytes)
+        return settings
     }
 
     // MARK: - Claude plan status line installer
@@ -1441,7 +2146,7 @@ final class HookServer: @unchecked Sendable {
               let settings = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let sl = settings["statusLine"] as? [String: Any],
               let cmd = sl["command"] as? String else { return false }
-        return cmd.contains("nb-hook")
+        return isLocalCoucouHook(cmd)
     }
 
     private var _pendingStatusLineData: Data?
@@ -1484,7 +2189,7 @@ final class HookServer: @unchecked Sendable {
             }
 
             if let existing = oldSL,
-               let cmd = existing["command"] as? String, !cmd.contains("nb-hook") {
+               let cmd = existing["command"] as? String, !isLocalCoucouHook(cmd) {
                 // Keep existing object but swap command; save old for later restoration
                 var updated = existing
                 updated["command"] = quotedCmd
@@ -1492,7 +2197,7 @@ final class HookServer: @unchecked Sendable {
                 _pendingPreviousData = try? JSONSerialization.data(withJSONObject: existing,
                                                                    options: [.prettyPrinted, .sortedKeys])
             } else if let existing = oldSL,
-                      let cmd = existing["command"] as? String, cmd.contains("nb-hook") {
+                      let cmd = existing["command"] as? String, isLocalCoucouHook(cmd) {
                 // Already installed — rebuild to update path if needed, keep other fields
                 var updated = existing
                 updated["command"] = quotedCmd
@@ -1502,7 +2207,7 @@ final class HookServer: @unchecked Sendable {
             }
         } else {
             // Uninstall: only if it's ours
-            if let cur = oldSL, let cmd = cur["command"] as? String, cmd.contains("nb-hook") {
+            if let cur = oldSL, let cmd = cur["command"] as? String, isLocalCoucouHook(cmd) {
                 if let prevData = try? Data(contentsOf: statusLinePreviousURL),
                    let prevObj = (try? JSONSerialization.jsonObject(with: prevData)) as? [String: Any] {
                     newSL = prevObj
@@ -1587,13 +2292,8 @@ final class HookServer: @unchecked Sendable {
         var settings = snapshot.object
         guard var hooks = settings["hooks"] as? [String: Any] else { return }
         for key in hooks.keys {
-            if var matchers = hooks[key] as? [[String: Any]] {
-                matchers.removeAll { matcher in
-                    (matcher["hooks"] as? [[String: Any]])?.contains {
-                        ($0["command"] as? String)?.contains("coucou") == true ||
-                        ($0["command"] as? String)?.contains("NotchBuddy") == true
-                    } ?? false
-                }
+            if let groups = hooks[key] as? [[String: Any]] {
+                let matchers = removingHooks(from: groups, where: isLocalCoucouHook)
                 if matchers.isEmpty { hooks.removeValue(forKey: key) }
                 else { hooks[key] = matchers }
             }
@@ -1625,10 +2325,7 @@ final class HookServer: @unchecked Sendable {
         var hooks = try ClaudeSettingsFile.hooks(in: settings, name: "settings.json")
         for (event, timeout) in events {
             var existing = try ClaudeSettingsFile.hookGroups(in: hooks, event: event, name: "settings.json")
-            existing.removeAll { ($0["hooks"] as? [[String: Any]])?.contains {
-                ($0["command"] as? String)?.contains("coucou") == true ||
-                ($0["command"] as? String)?.contains("NotchBuddy") == true
-            } ?? false }
+            existing = removingHooks(from: existing, where: isLocalCoucouHook)
             existing.append(["hooks": [["type": "command", "command": quotedCmd, "timeout": timeout]]])
             hooks[event] = existing
         }
@@ -3147,6 +3844,8 @@ private let nbHookShellWrapper = """
 #!/bin/sh
 # Coucou hook relay — always exits 0, never blocks Claude Code
 HOOK_DIR="$(dirname "$0")"
+# The agent that ran the hook, still running after this relay has exited
+COUCOU_HOOK_PPID=$PPID; export COUCOU_HOOK_PPID
 out=""
 if xcode-select -p >/dev/null 2>&1; then
     out=$(/usr/bin/python3 "$HOOK_DIR/nb-hook.py" "$@" 2>/dev/null)
@@ -3179,11 +3878,68 @@ exit 0
 
 // MARK: - nb-hook Python relay (GitHub / non-sandboxed version)
 
-private let nbHookPythonGitHub = """
+let nbHookPythonGitHub = """
 #!/usr/bin/env python3
 # nb-hook.py — Coucou hook relay for Claude Code and third-party agents (GitHub version)
 # Reads JSON from stdin, forwards to Coucou via Unix socket, translates response.
-import sys, json, os, socket
+import sys, json, os, re, socket, subprocess, time
+
+def session_tty():
+    # The session's terminal tab ("/dev/ttys004"), as Terminal.app names its tabs. Hooks run
+    # without a controlling terminal, so walk up to the agent's own process. '' when none has one.
+    pid = os.getpid()
+    for _ in range(8):
+        try:
+            out = subprocess.run(['ps', '-o', 'tty=,ppid=', '-p', str(pid)],
+                                 capture_output=True, text=True, timeout=1).stdout.split()
+        except Exception:
+            return ''
+        if len(out) != 2:
+            return ''
+        if out[0].startswith('tty'):
+            return '/dev/' + out[0]
+        if not out[1].isdigit() or int(out[1]) <= 1:
+            return ''
+        pid = int(out[1])
+    return ''
+
+# The app reads at most 1 MiB per event and drops a bigger one whole, a
+# permission request included: past that, keep only what the card needs.
+MAX_LINE = 1048576
+
+def wire(p, waits=False):
+    line = (json.dumps(p) + '\\n').encode()
+    if len(line) <= MAX_LINE or not isinstance(p, dict):
+        return line
+    if waits:
+        # A card made from the cut copy would hide what Allow runs: the terminal asks.
+        raise ValueError('too long for a card')
+    small = {k: v for k, v in p.items()
+             if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
+    tool_input = p.get('tool_input')
+    if isinstance(tool_input, dict):
+        small['tool_input'] = {k: v[:2000] if isinstance(v, str) else v
+                               for k, v in tool_input.items() if not isinstance(v, (dict, list))}
+    return (json.dumps(small) + '\\n').encode()
+
+def machine_id():
+    # Only for Coucou to tell whether it runs on this same machine: Linux's machine-id, else the Mac's IOPlatformUUID.
+    import re
+    for path in ('/etc/machine-id', '/var/lib/dbus/machine-id'):
+        try:
+            with open(path) as f:
+                mid = f.read().strip()
+            if re.fullmatch(r'[0-9A-Fa-f-]{1,64}', mid):
+                return mid
+        except Exception:
+            pass
+    try:
+        out = subprocess.run(['/usr/sbin/ioreg', '-rd1', '-c', 'IOPlatformExpertDevice'],
+                             capture_output=True, text=True, timeout=1).stdout
+        m = re.search(r'"IOPlatformUUID" = "([0-9A-Fa-f-]{1,64})"', out)
+        return m.group(1) if m else ''
+    except Exception:
+        return ''
 
 def normalize_event(name):
     mapping = {
@@ -3241,6 +3997,101 @@ def normalize_tool_fields(payload):
     if not payload.get('cwd') and payload.get('workdir'):
         payload['cwd'] = payload['workdir']
 
+# Several Coucous on one host each run a relay for the same call; the one answered marks it
+# here and the others let go. Same files and key as the Linux coucou-hook.
+ANSWERED_DIR = os.path.expanduser('~/.coucou/answered')
+
+def answer_key(payload):
+    tid = payload.get('tool_use_id')
+    if isinstance(tid, str) and 0 < len(tid) <= 128 and re.fullmatch(r'[A-Za-z0-9_-]+', tid):
+        return tid
+    sid, tool = payload.get('session_id'), payload.get('tool_name')
+    text = '%s\\n%s\\n%s' % (sid if isinstance(sid, str) else '', tool if isinstance(tool, str) else '',
+        json.dumps(payload.get('tool_input'), sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+    h = 0xcbf29ce484222325
+    for b in text.encode('utf-8'):
+        h = ((h ^ b) * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
+    return 'h%016x' % h
+
+def mark_answered(key):
+    try:
+        os.makedirs(ANSWERED_DIR, exist_ok=True)
+        os.chmod(ANSWERED_DIR, 0o700)
+        tmp = os.path.join(ANSWERED_DIR, '.%s.%d' % (key, os.getpid()))
+        open(tmp, 'w').close()
+        os.replace(tmp, os.path.join(ANSWERED_DIR, key))
+        now = time.time()
+        for name in os.listdir(ANSWERED_DIR):
+            p = os.path.join(ANSWERED_DIR, name)
+            if now - os.path.getmtime(p) > 3600:
+                os.remove(p)
+    except OSError:
+        pass
+
+def read_reply(s, key, budget):
+    # The app's reply line, or '' once another relay on this host has answered the call.
+    s.settimeout(0.2)
+    chunks = []
+    deadline = time.monotonic() + budget
+    while time.monotonic() < deadline:
+        try:
+            chunk = s.recv(4096)
+        except socket.timeout:
+            if os.path.exists(os.path.join(ANSWERED_DIR, key)):
+                return ''
+            continue
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b'\\n' in chunk:
+            break
+    return b''.join(chunks).decode().strip()
+def claude_session_name(sid):
+    # The name given with /rename, from Claude Code's session registry
+    if not sid:
+        return ''
+    try:
+        d = os.path.expanduser('~/.claude/sessions')
+        for f in os.listdir(d):
+            if not f.endswith('.json'):
+                continue
+            with open(os.path.join(d, f)) as fh:
+                s = json.load(fh)
+            if s.get('sessionId') == sid:
+                return str(s.get('name') or '')
+    except Exception:
+        pass
+    return ''
+def add_session_name(payload):
+    # Name the pill after the folder the session started in, not the current cwd (the
+    # agent may cd into subfolders), or after the session's /rename title. Both come
+    # from the transcript: its first lines and the last custom-title entry.
+    path = payload.get('transcript_path') or ''
+    if not path:
+        return
+    try:
+        with open(path, 'rb') as f:
+            for line in f.read(16384).splitlines():
+                try:
+                    root = json.loads(line).get('cwd')
+                except Exception:
+                    continue
+                if root:
+                    payload['session_root'] = root
+                    break
+            f.seek(0, os.SEEK_END)
+            start = max(0, f.tell() - 65536)
+            f.seek(start)
+            lines = f.read().splitlines()
+            for line in reversed(lines[1:] if start else lines):
+                if b'"custom-title"' in line:
+                    title = json.loads(line).get('customTitle')
+                    if title:
+                        payload['session_title'] = title
+                    break
+    except Exception:
+        pass
+
 def main():
     raw = b''
     payload = {}
@@ -3254,8 +4105,16 @@ def main():
     except Exception:
         if '--statusline' not in sys.argv[1:]:
             return
+    # claude -p, the SDK and scheduled jobs: no one watches them, so they stay off the island.
+    if os.environ.get('CLAUDE_CODE_ENTRYPOINT', '').startswith('sdk-') and os.environ.get('COUCOU_WATCHED') != '1':
+        return
 
-    socket_path = os.path.expanduser(
+    # Coucou's own chat runs Claude Code: the app shows its permission requests only.
+    if os.environ.get('COUCOU_CHAT') == '1' and isinstance(payload, dict):
+        payload['coucou_chat'] = True
+
+    # COUCOU_SOCKET: the same relay on a remote host, behind Coucou's SSH tunnel.
+    socket_path = os.environ.get('COUCOU_SOCKET') or os.path.expanduser(
         '~/Library/Application Support/NotchBuddy/nb.sock'
     )
 
@@ -3291,6 +4150,8 @@ def main():
                 pass
         return
 
+    key = answer_key(payload)
+
     # --ask mode: dedicated hook for AskUserQuestion via PreToolUse (Claude Code 2.1.85+)
     if '--ask' in sys.argv[1:]:
         tool = payload.get('tool_name', '')
@@ -3299,30 +4160,28 @@ def main():
         payload['coucou_kind'] = 'ask_user_question'
         env = os.environ
         payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+        if env.get('COUCOU_HOOK_PPID', '').isdigit():
+            payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
         payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
         payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
         payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
+        payload.setdefault('tty', session_tty())
         if 'cwd' not in payload or not payload['cwd']:
             paths = payload.get('workspacePaths') or payload.get('workspace_roots', [])
             if isinstance(paths, list) and paths:
                 payload['cwd'] = paths[0]
             else:
                 payload['cwd'] = os.getcwd()
+        payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+        payload['home'] = os.path.expanduser('~')
+        add_session_name(payload)
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            s.sendall(wire(payload, waits=True))
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
@@ -3330,6 +4189,7 @@ def main():
                 except Exception:
                     decision = ''
                 if decision == 'answer':
+                    mark_answered(key)
                     answers = resp_obj.get('answers', {})
                     questions = payload.get('tool_input', {}).get('questions', [])
                     out = {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'updatedInput': {'questions': questions, 'answers': answers}}}
@@ -3366,15 +4226,44 @@ def main():
     # Enrich with terminal context
     env = os.environ
     payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+    if env.get('COUCOU_HOOK_PPID', '').isdigit():
+        payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
     payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
     payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
     payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
+    payload.setdefault('tty', session_tty())
     if 'cwd' not in payload or not payload['cwd']:
         paths = payload.get('workspacePaths') or payload.get('workspace_roots', [])
         if isinstance(paths, list) and paths:
             payload['cwd'] = paths[0]
         else:
             payload['cwd'] = os.getcwd()
+    payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+    payload['home'] = os.path.expanduser('~')
+
+    # The tmux session, so another machine can attach to it (remote Open terminal)
+    if payload.get('hook_event_name') in ('SessionStart', 'UserPromptSubmit') and env.get('TMUX'):
+        try:
+            import subprocess, re
+            pane = ['-t', env['TMUX_PANE']] if env.get('TMUX_PANE') else []
+            name = subprocess.run(['tmux', 'display-message', '-p'] + pane + ['#S'],
+                                  capture_output=True, text=True, timeout=0.3).stdout.strip()
+            if re.fullmatch(r'[A-Za-z0-9._-]{1,64}', name):
+                payload['tmux_session'] = name
+        except Exception:
+            pass
+
+    # On a remote host: who ran the hook, and the machine, so Coucou on this same machine finds its terminal
+    if env.get('COUCOU_SOCKET'):
+        try:
+            payload['hook_ppid'] = int(env.get('COUCOU_HOOK_PPID', ''))
+        except ValueError:
+            payload['hook_ppid'] = os.getppid()
+        if payload.get('hook_event_name') in ('SessionStart', 'UserPromptSubmit'):
+            mid = machine_id()
+            if mid:
+                payload['machine_id'] = mid
+    add_session_name(payload)
 
     # Normalize event name and tool fields (Gemini CLI / Antigravity → canonical names)
     try:
@@ -3394,23 +4283,17 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            s.sendall(wire(payload, waits=True))
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
                     decision = resp_obj.get('permissionDecision', '')
                 except Exception:
                     decision = ''
+                if decision in ('allow', 'always', 'deny', 'answer'):
+                    mark_answered(key)
                 if agent == 'hermes':
                     hermes_choice = 'once' if decision == 'allow' else decision
                     if hermes_choice in ('once', 'always', 'deny'):
@@ -3428,6 +4311,13 @@ def main():
                     else:
                         # Claude Code / Codex plain allow
                         out = {'hookSpecificOutput': {'hookEventName': 'PermissionRequest', 'decision': {'behavior': 'allow'}}}
+                    # Claude Code ignores an allow for ExitPlanMode without updatedInput (Allow and Always).
+                    if payload.get('tool_name') == 'ExitPlanMode' and 'hookSpecificOutput' in out:
+                        out['hookSpecificOutput']['decision']['updatedInput'] = payload.get('tool_input', {})
+                        # Mode picked on the plan card: same choice as the terminal's plan dialog.
+                        mode = resp_obj.get('mode')
+                        if mode in ('auto', 'default'):
+                            out['hookSpecificOutput']['decision']['updatedPermissions'] = [{'type': 'setMode', 'mode': mode, 'destination': 'session'}]
                     sys.stdout.write(json.dumps(out) + '\\n')
                     sys.stdout.flush()
                     sys.exit(0)
@@ -3447,6 +4337,13 @@ def main():
                     sys.stdout.write(json.dumps(out) + '\\n')
                     sys.stdout.flush()
                     sys.exit(0)
+                elif decision == 'change_plan':
+                    # Plan card "Change plan": like the terminal's "Tell Claude what to change",
+                    # reject the plan and stop Claude so the prompt is free for the change.
+                    out = {'hookSpecificOutput': {'hookEventName': 'PermissionRequest', 'decision': {'behavior': 'deny', 'interrupt': True, 'message': 'The user wants to change the plan and will type the changes in the terminal.'}}}
+                    sys.stdout.write(json.dumps(out) + '\\n')
+                    sys.stdout.flush()
+                    sys.exit(0)
                 # 'ask' or unknown: fall through → no output → agent re-asks
         except Exception:
             pass
@@ -3463,7 +4360,7 @@ def main():
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(0.3)
         s.connect(socket_path)
-        s.sendall((json.dumps(payload) + '\\n').encode())
+        s.sendall(wire(payload))
         s.close()
     except Exception:
         pass  # Always exit cleanly — never block the agent
@@ -3490,7 +4387,26 @@ private let nbHookPythonAppStore = """
 #!/usr/bin/env python3
 # nb-hook.py — Coucou (App Store) hook relay for Claude Code and third-party agents
 # Socket lives inside the sandboxed container; script runs outside the sandbox.
-import sys, json, os, socket
+import sys, json, os, re, socket, time
+
+# The app reads at most 1 MiB per event and drops a bigger one whole, a
+# permission request included: past that, keep only what the card needs.
+MAX_LINE = 1048576
+
+def wire(p, waits=False):
+    line = (json.dumps(p) + '\\n').encode()
+    if len(line) <= MAX_LINE or not isinstance(p, dict):
+        return line
+    if waits:
+        # A card made from the cut copy would hide what Allow runs: the terminal asks.
+        raise ValueError('too long for a card')
+    small = {k: v for k, v in p.items()
+             if not isinstance(v, (dict, list)) and not (isinstance(v, str) and len(v) > 2000)}
+    tool_input = p.get('tool_input')
+    if isinstance(tool_input, dict):
+        small['tool_input'] = {k: v[:2000] if isinstance(v, str) else v
+                               for k, v in tool_input.items() if not isinstance(v, (dict, list))}
+    return (json.dumps(small) + '\\n').encode()
 
 def normalize_event(name):
     mapping = {
@@ -3548,6 +4464,101 @@ def normalize_tool_fields(payload):
     if not payload.get('cwd') and payload.get('workdir'):
         payload['cwd'] = payload['workdir']
 
+# Several Coucous on one host each run a relay for the same call; the one answered marks it
+# here and the others let go. Same files and key as the Linux coucou-hook.
+ANSWERED_DIR = os.path.expanduser('~/.coucou/answered')
+
+def answer_key(payload):
+    tid = payload.get('tool_use_id')
+    if isinstance(tid, str) and 0 < len(tid) <= 128 and re.fullmatch(r'[A-Za-z0-9_-]+', tid):
+        return tid
+    sid, tool = payload.get('session_id'), payload.get('tool_name')
+    text = '%s\\n%s\\n%s' % (sid if isinstance(sid, str) else '', tool if isinstance(tool, str) else '',
+        json.dumps(payload.get('tool_input'), sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+    h = 0xcbf29ce484222325
+    for b in text.encode('utf-8'):
+        h = ((h ^ b) * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
+    return 'h%016x' % h
+
+def mark_answered(key):
+    try:
+        os.makedirs(ANSWERED_DIR, exist_ok=True)
+        os.chmod(ANSWERED_DIR, 0o700)
+        tmp = os.path.join(ANSWERED_DIR, '.%s.%d' % (key, os.getpid()))
+        open(tmp, 'w').close()
+        os.replace(tmp, os.path.join(ANSWERED_DIR, key))
+        now = time.time()
+        for name in os.listdir(ANSWERED_DIR):
+            p = os.path.join(ANSWERED_DIR, name)
+            if now - os.path.getmtime(p) > 3600:
+                os.remove(p)
+    except OSError:
+        pass
+
+def read_reply(s, key, budget):
+    # The app's reply line, or '' once another relay on this host has answered the call.
+    s.settimeout(0.2)
+    chunks = []
+    deadline = time.monotonic() + budget
+    while time.monotonic() < deadline:
+        try:
+            chunk = s.recv(4096)
+        except socket.timeout:
+            if os.path.exists(os.path.join(ANSWERED_DIR, key)):
+                return ''
+            continue
+        if not chunk:
+            break
+        chunks.append(chunk)
+        if b'\\n' in chunk:
+            break
+    return b''.join(chunks).decode().strip()
+def claude_session_name(sid):
+    # The name given with /rename, from Claude Code's session registry
+    if not sid:
+        return ''
+    try:
+        d = os.path.expanduser('~/.claude/sessions')
+        for f in os.listdir(d):
+            if not f.endswith('.json'):
+                continue
+            with open(os.path.join(d, f)) as fh:
+                s = json.load(fh)
+            if s.get('sessionId') == sid:
+                return str(s.get('name') or '')
+    except Exception:
+        pass
+    return ''
+def add_session_name(payload):
+    # Name the pill after the folder the session started in, not the current cwd (the
+    # agent may cd into subfolders), or after the session's /rename title. Both come
+    # from the transcript: its first lines and the last custom-title entry.
+    path = payload.get('transcript_path') or ''
+    if not path:
+        return
+    try:
+        with open(path, 'rb') as f:
+            for line in f.read(16384).splitlines():
+                try:
+                    root = json.loads(line).get('cwd')
+                except Exception:
+                    continue
+                if root:
+                    payload['session_root'] = root
+                    break
+            f.seek(0, os.SEEK_END)
+            start = max(0, f.tell() - 65536)
+            f.seek(start)
+            lines = f.read().splitlines()
+            for line in reversed(lines[1:] if start else lines):
+                if b'"custom-title"' in line:
+                    title = json.loads(line).get('customTitle')
+                    if title:
+                        payload['session_title'] = title
+                    break
+    except Exception:
+        pass
+
 def main():
     raw = b''
     payload = {}
@@ -3561,6 +4572,9 @@ def main():
     except Exception:
         if '--statusline' not in sys.argv[1:]:
             return
+    # claude -p, the SDK and scheduled jobs: no one watches them, so they stay off the island.
+    if os.environ.get('CLAUDE_CODE_ENTRYPOINT', '').startswith('sdk-') and os.environ.get('COUCOU_WATCHED') != '1':
+        return
 
     socket_path = os.path.expanduser(
         '~/Library/Containers/fr.louisraille.Coucou/Data/nb.sock'
@@ -3598,6 +4612,8 @@ def main():
                 pass
         return
 
+    key = answer_key(payload)
+
     # --ask mode: dedicated hook for AskUserQuestion via PreToolUse (Claude Code 2.1.85+)
     if '--ask' in sys.argv[1:]:
         tool = payload.get('tool_name', '')
@@ -3606,6 +4622,8 @@ def main():
         payload['coucou_kind'] = 'ask_user_question'
         env = os.environ
         payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+        if env.get('COUCOU_HOOK_PPID', '').isdigit():
+            payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
         payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
         payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
         payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
@@ -3615,21 +4633,16 @@ def main():
                 payload['cwd'] = paths[0]
             else:
                 payload['cwd'] = os.getcwd()
+        payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+        payload['home'] = os.path.expanduser('~')
+        add_session_name(payload)
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(125)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            s.sendall(wire(payload, waits=True))
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
@@ -3637,6 +4650,7 @@ def main():
                 except Exception:
                     decision = ''
                 if decision == 'answer':
+                    mark_answered(key)
                     answers = resp_obj.get('answers', {})
                     questions = payload.get('tool_input', {}).get('questions', [])
                     out = {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'updatedInput': {'questions': questions, 'answers': answers}}}
@@ -3672,6 +4686,8 @@ def main():
 
     env = os.environ
     payload.setdefault('term_program', env.get('TERM_PROGRAM', ''))
+    if env.get('COUCOU_HOOK_PPID', '').isdigit():
+        payload['hook_ppid'] = int(env['COUCOU_HOOK_PPID'])
     payload.setdefault('iterm_session_id', env.get('ITERM_SESSION_ID', ''))
     payload.setdefault('term_session_id', env.get('TERM_SESSION_ID', ''))
     payload.setdefault('bundle_id', env.get('__CFBundleIdentifier', ''))
@@ -3681,6 +4697,21 @@ def main():
             payload['cwd'] = paths[0]
         else:
             payload['cwd'] = os.getcwd()
+    payload['session_name'] = claude_session_name(payload.get('session_id', ''))
+    payload['home'] = os.path.expanduser('~')
+
+    # The tmux session, so another machine can attach to it (remote Open terminal)
+    if payload.get('hook_event_name') in ('SessionStart', 'UserPromptSubmit') and env.get('TMUX'):
+        try:
+            import subprocess, re
+            pane = ['-t', env['TMUX_PANE']] if env.get('TMUX_PANE') else []
+            name = subprocess.run(['tmux', 'display-message', '-p'] + pane + ['#S'],
+                                  capture_output=True, text=True, timeout=0.3).stdout.strip()
+            if re.fullmatch(r'[A-Za-z0-9._-]{1,64}', name):
+                payload['tmux_session'] = name
+        except Exception:
+            pass
+    add_session_name(payload)
 
     # Normalize event name and tool fields (Gemini CLI / Antigravity → canonical names)
     try:
@@ -3700,23 +4731,17 @@ def main():
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.settimeout(118)
             s.connect(socket_path)
-            s.sendall((json.dumps(payload) + '\\n').encode())
-            chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                if b'\\n' in chunk:
-                    break
+            s.sendall(wire(payload, waits=True))
+            response = read_reply(s, key, s.gettimeout())
             s.close()
-            response = b''.join(chunks).decode().strip()
             if response:
                 try:
                     resp_obj = json.loads(response)
                     decision = resp_obj.get('permissionDecision', '')
                 except Exception:
                     decision = ''
+                if decision in ('allow', 'always', 'deny', 'answer'):
+                    mark_answered(key)
                 if agent == 'hermes':
                     hermes_choice = 'once' if decision == 'allow' else decision
                     if hermes_choice in ('once', 'always', 'deny'):
@@ -3734,6 +4759,13 @@ def main():
                     else:
                         # Claude Code / Codex plain allow
                         out = {'hookSpecificOutput': {'hookEventName': 'PermissionRequest', 'decision': {'behavior': 'allow'}}}
+                    # Claude Code ignores an allow for ExitPlanMode without updatedInput (Allow and Always).
+                    if payload.get('tool_name') == 'ExitPlanMode' and 'hookSpecificOutput' in out:
+                        out['hookSpecificOutput']['decision']['updatedInput'] = payload.get('tool_input', {})
+                        # Mode picked on the plan card: same choice as the terminal's plan dialog.
+                        mode = resp_obj.get('mode')
+                        if mode in ('auto', 'default'):
+                            out['hookSpecificOutput']['decision']['updatedPermissions'] = [{'type': 'setMode', 'mode': mode, 'destination': 'session'}]
                     sys.stdout.write(json.dumps(out) + '\\n')
                     sys.stdout.flush()
                     sys.exit(0)
@@ -3753,6 +4785,13 @@ def main():
                     sys.stdout.write(json.dumps(out) + '\\n')
                     sys.stdout.flush()
                     sys.exit(0)
+                elif decision == 'change_plan':
+                    # Plan card "Change plan": like the terminal's "Tell Claude what to change",
+                    # reject the plan and stop Claude so the prompt is free for the change.
+                    out = {'hookSpecificOutput': {'hookEventName': 'PermissionRequest', 'decision': {'behavior': 'deny', 'interrupt': True, 'message': 'The user wants to change the plan and will type the changes in the terminal.'}}}
+                    sys.stdout.write(json.dumps(out) + '\\n')
+                    sys.stdout.flush()
+                    sys.exit(0)
                 # 'ask' or unknown: fall through → no output → agent re-asks
         except Exception:
             pass
@@ -3768,7 +4807,7 @@ def main():
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(0.3)
         s.connect(socket_path)
-        s.sendall((json.dumps(payload) + '\\n').encode())
+        s.sendall(wire(payload))
         s.close()
     except Exception:
         pass  # Always exit cleanly — never block the agent
@@ -3788,3 +4827,39 @@ except Exception:
     pass
 sys.exit(0)
 """
+
+
+extension HookServer {
+    /// What stopped a Claude Code turn, from its StopFailure hook: Claude Code's own message when
+    /// it sends one, else a sentence for the kind of error. nil when nothing says.
+    static func stopFailureDetail(_ payload: [String: Any]) -> String? {
+        for key in ["error_message", "error_details", "message"] {
+            if let text = payload[key] as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return DiffEngine.toOneLine(text)
+            }
+        }
+        if let error = payload["error"] as? [String: Any], let text = error["message"] as? String, !text.isEmpty {
+            return DiffEngine.toOneLine(text)
+        }
+        let kind = (payload["error_type"] as? String) ?? (payload["error"] as? String) ?? ""
+        switch kind {
+        case "rate_limit":            return String(localized: "Claude's rate limit is reached. Try again in a moment.")
+        case "overloaded":            return String(localized: "Claude is overloaded. Try again in a moment.")
+        case "authentication_failed", "oauth_org_not_allowed":
+                                      return String(localized: "Claude Code is not signed in, or its key is no longer valid.")
+        case "billing_error":         return String(localized: "Billing problem on the Claude account.")
+        case "server_error":          return String(localized: "Claude's servers had a problem. Try again.")
+        case "max_output_tokens":     return String(localized: "The answer was too long and was cut.")
+        case "model_not_found":       return String(localized: "This model is not available.")
+        default:
+            // Claude Code often sends only `error: "unknown"`: its last message then usually
+            // carries the API's own words ("API Error: 529 Overloaded…").
+            if let last = payload["last_assistant_message"] as? String,
+               last.range(of: "error", options: .caseInsensitive) != nil {
+                return DiffEngine.toOneLine(last)
+            }
+            // A readable error is shown as it is; "unknown" or a bare status code says nothing.
+            return kind.count > 3 && Int(kind) == nil && kind != "unknown" ? kind : nil
+        }
+    }
+}

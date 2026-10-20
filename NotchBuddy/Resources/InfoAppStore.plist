@@ -17,13 +17,17 @@
 		<string>en</string>
 		<string>ar</string>
 		<string>bn</string>
+		<string>de</string>
 		<string>es</string>
 		<string>fr</string>
 		<string>hi</string>
 		<string>id</string>
 		<string>pt-BR</string>
 		<string>ru</string>
+		<string>th</string>
+		<string>tr</string>
 		<string>zh-Hans</string>
+		<string>zh-Hant</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>Coucou</string>
@@ -44,6 +48,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Coucou shows your next meeting in the notch and reminds you 5 minutes before it starts.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>

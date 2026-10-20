@@ -18,10 +18,11 @@ object Pills {
     const val DEFAULT_MAIN_PILL = "integration_claude"
 
     val catalog: List<PillDefinition> = listOf(
-        PillDefinition("integration_claude", "VS Code", "#F5F6F8", PillCategory.WORKSPACE),
+        PillDefinition("integration_claude", "Claude Code", "#F5F6F8", PillCategory.WORKSPACE),
         PillDefinition("agent_cursor", "Cursor", "#C0C4CC", PillCategory.WORKSPACE),
         PillDefinition("agent_antigravity", "Antigravity", "#E879F9", PillCategory.WORKSPACE),
         PillDefinition("agent_codex", "Codex", "#2DD4BF", PillCategory.WORKSPACE),
+        PillDefinition("workspace_claude", "Claude Code", "#E07950", PillCategory.WORKSPACE),
         PillDefinition("agent_gemini", "Gemini CLI", "#8AB4F8", PillCategory.AGENT),
         PillDefinition("agent_copilot", "Copilot CLI", "#818CF8", PillCategory.AGENT),
         PillDefinition("agent_muse", "Muse Code", "#38BDF8", PillCategory.AGENT),
@@ -40,8 +41,14 @@ object Pills {
         PillDefinition("integration_github", "GitHub", "#F4505E", PillCategory.SERVICE),
         PillDefinition("integration_notion", "Notion", "#8C8C8C", PillCategory.SERVICE),
         PillDefinition("integration_calcom", "Cal.com", "#C9956A", PillCategory.SERVICE),
+        PillDefinition("integration_calendar", "Calendar", "#4F9DF7", PillCategory.SERVICE),
         PillDefinition("integration_stripe", "Stripe", "#0570DE", PillCategory.SERVICE),
+        PillDefinition("integration_timely", "Timely", "#F5A524", PillCategory.SERVICE),
+        PillDefinition("integration_slack", "Slack", "#E01E5A", PillCategory.SERVICE),
+        PillDefinition("integration_betterstack", "Better Stack", "#5B5FEF", PillCategory.SERVICE),
+        PillDefinition("integration_linear", "Linear", "#5E6AD2", PillCategory.SERVICE),
         PillDefinition("integration_spotify", "Spotify", "#1DB954", PillCategory.SERVICE),
+        PillDefinition("integration_portfolio", "Portfolio", "#FFD700", PillCategory.SERVICE),
     )
 
     fun byId(id: String): PillDefinition? = catalog.firstOrNull { it.id == id }

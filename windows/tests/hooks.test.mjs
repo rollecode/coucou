@@ -5,8 +5,10 @@
 import { afterEach, beforeEach, mock, test } from "node:test";
 import assert from "node:assert/strict";
 import { calls, emit, sent } from "./tauri.mjs";
-import { registerHookHandlers } from "../src/island/hooks.ts";
+import { discoverSessions, forgetSessions, registerHookHandlers } from "../src/island/hooks.ts";
 import { DEFAULT_SETTINGS, State } from "../src/core/state.ts";
+import { Sound } from "../src/core/sound.ts";
+import { setLanguage } from "../src/i18n/i18n.ts";
 
 const CLAUDE = "integration_claude";
 
@@ -25,6 +27,7 @@ const task = (id = CLAUDE) => State.tasks.find((t) => t.id === id);
 const seconds = (n) => mock.timers.tick(n * 1000);
 
 beforeEach(() => {
+  setLanguage("en");
   mock.timers.enable({ apis: ["setTimeout"] });
   asked = [];
   calls.length = 0;
@@ -33,10 +36,13 @@ beforeEach(() => {
   State.mode = "hidden";
   State.view = "overview";
   State.paused = false;
+  State.callSensors = new Set();
   State.isPinned = false;
   State.pendingApproval = null;
+  State.approvalQueue = [];
   State.settings = { ...DEFAULT_SETTINGS };
   State.loadIntegrationTasks();
+  forgetSessions();
 });
 
 // hooks.ts keeps timer handles between events: the 110 s approval timeout, and
@@ -62,9 +68,34 @@ test("a paused island hands a permission request straight back to the terminal",
 test("a paused island ignores every other event", () => {
   State.paused = true;
   hook({ hook_event_name: "SessionStart", cwd: "C:\\Users\\me\\proj" });
-  assert.equal(task().name, "VS Code");
+  assert.equal(task().name, "Claude Code");
   assert.deepEqual(asked, []);
   assert.deepEqual(calls, []);
+});
+
+// ── On a call ─────────────────────────────────────────────────────────────────
+
+test("on a call a permission request goes straight back to the terminal", () => {
+  State.callSensors = new Set(["mic"]);
+  hook({ hook_event_name: "PermissionRequest", request_id: "r1", tool_name: "Bash" });
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }]);
+  assert.deepEqual(sent("approval_ack"), []);
+  assert.equal(State.pendingApproval, null);
+  assert.deepEqual(asked, []);
+});
+
+test("on a call work still updates the pill, but nothing reveals the island", () => {
+  State.callSensors = new Set(["cam"]);
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me/proj" });
+  assert.equal(task().name, "proj");
+  assert.deepEqual(asked, []);
+});
+
+test("a sensor whose switch is off is no call", () => {
+  State.settings = { ...DEFAULT_SETTINGS, quietOnMic: false };
+  State.callSensors = new Set(["mic"]);
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me/proj" });
+  assert.deepEqual(asked, ["reveal"]);
 });
 
 // ── Session and work events ───────────────────────────────────────────────────
@@ -74,6 +105,29 @@ test("a session names the pill after its folder and reveals the island", () => {
   assert.equal(task().name, "proj");
   assert.equal(task().sessionCwd, "C:\\Users\\me\\proj\\");
   assert.deepEqual(asked, ["reveal"]);
+});
+
+test("a session on a remote host is named with the host and keeps no local folder", () => {
+  hook({ hook_event_name: "SessionStart", session_id: "s-remote", cwd: "/srv/api-server", coucou_remote: "devbox" });
+  assert.equal(task().name, "api-server · devbox");
+  assert.notEqual(task().sessionCwd, "/srv/api-server");
+});
+
+test("a named session goes by its name, and the home folder is ~", () => {
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me", home: "/home/me" });
+  assert.equal(task().name, "~");
+  hook({ hook_event_name: "SessionStart", cwd: "/home/me", home: "/home/me", session_name: "coucou-mac" });
+  assert.equal(task().name, "coucou-mac");
+});
+
+test("a prompt sent while the finished card shows takes the card back to the overview", () => {
+  hook({ hook_event_name: "SessionStart", cwd: "/p/proj" });
+  State.setFocus(CLAUDE);
+  State.mode = "expanded";
+  State.view = "finished";
+  asked = [];
+  hook({ hook_event_name: "UserPromptSubmit", cwd: "/p/proj", prompt: "one more thing" });
+  assert.ok(asked.includes("setView:overview"));
 });
 
 test("known project folders get their display name, and no folder is a Session", () => {
@@ -144,7 +198,7 @@ test("a notification is a rate limit, a question, or nothing", () => {
 test("an unknown event changes nothing", () => {
   hook({ hook_event_name: "SomethingNew", cwd: "/p" });
   assert.equal(task().state, "idle");
-  assert.equal(task().name, "VS Code");
+  assert.equal(task().name, "Claude Code");
   assert.deepEqual(asked, []);
 });
 
@@ -159,6 +213,66 @@ test("a finished session opens the finished view, then goes idle after 5.2 s", (
   assert.equal(task().state, "finished");
   seconds(0.1);
   assert.equal(task().state, "idle");
+});
+
+// ── Background work (#474) ────────────────────────────────────────────────────
+
+const bgStop = (session_id, types) =>
+  hook({ hook_event_name: "Stop", session_id, message: "kicked off", background_tasks: types.map((type) => ({ type })) });
+
+test("a turn that ends with background work running stays working, without the finished card", () => {
+  bgStop("bg1", ["subagent", "shell"]);
+  assert.equal(task().state, "working");
+  assert.equal(task().steps.at(-1), "⏳ In background: 2");
+  assert.deepEqual(asked, []);
+  seconds(6);
+  assert.equal(task().state, "working");
+  hook({ hook_event_name: "Stop", session_id: "bg1", message: "all done", background_tasks: [] });
+  assert.equal(task().state, "finished");
+  assert.equal(task().finalLine, "all done");
+});
+
+test("while a turn waits, its subagents' events leave the pill alone until the main agent speaks", () => {
+  bgStop("bg2", ["subagent"]);
+  const final = task().finalLine;
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", agent_id: "a1", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task().state, "working");
+  assert.equal(task().finalLine, final);
+  assert.equal(task().steps.at(-1), "⏳ In background: 1");
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", tool_name: "Bash", tool_input: { command: "npm test" } });
+  assert.equal(task().steps.at(-1), "Runs · npm test");
+  // The wait is over: a subagent event counts as usual again.
+  hook({ hook_event_name: "PreToolUse", session_id: "bg2", agent_id: "a1", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task().steps.at(-1), "Runs · ls");
+});
+
+test("SubagentStop counts the background subagents down, internal agents do not count", () => {
+  bgStop("bg3", ["subagent", "subagent"]);
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "x", agent_type: "" });
+  assert.equal(task().steps.at(-1), "⏳ In background: 2");
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "a1", agent_type: "Explore" });
+  assert.equal(task().steps.at(-1), "⏳ In background: 1");
+  hook({ hook_event_name: "SubagentStop", session_id: "bg3", agent_id: "a2", agent_type: "Explore" });
+  assert.equal(task().state, "working");
+  // The main agent's own Stop finishes the turn.
+  hook({ hook_event_name: "Stop", session_id: "bg3", message: "summary", background_tasks: [] });
+  assert.equal(task().state, "finished");
+});
+
+test("a pill whose background work all ended idles if the main agent never resumes", () => {
+  bgStop("bg4", ["subagent"]);
+  hook({ hook_event_name: "SubagentStop", session_id: "bg4", agent_id: "a1", agent_type: "Explore" });
+  seconds(59);
+  assert.equal(task().state, "working");
+  seconds(1);
+  assert.equal(task().state, "idle");
+});
+
+test("a notification says what it is: a permission prompt or a question", () => {
+  hook({ hook_event_name: "Notification", message: "Claude needs your permission to use Bash", notification_type: "permission_prompt" });
+  assert.equal(task().state, "approval");
+  hook({ hook_event_name: "Notification", message: "Pick one", notification_type: "elicitation_dialog" });
+  assert.equal(task().state, "question");
 });
 
 test("an alert on an island that is already open only switches its view", () => {
@@ -189,7 +303,7 @@ test("the end of a session puts the pill back as it was", () => {
   hook({ hook_event_name: "PreToolUse", cwd: "/p/proj", tool_name: "Bash", tool_input: { command: "ls" } });
   hook({ hook_event_name: "SessionEnd", cwd: "/p/proj" });
   assert.equal(task().state, "idle");
-  assert.equal(task().name, "VS Code");
+  assert.equal(task().name, "Claude Code");
   assert.deepEqual(task().steps, []);
 });
 
@@ -217,7 +331,7 @@ test("a tagged agent gets its own pill next to Claude Code's", () => {
   assert.deepEqual(agent.steps, ["Runs · ls"]);
   assert.match(agent.color, /^#[0-9A-F]{6}$/);
   // Claude Code's own pill is not the one that moved.
-  assert.equal(task().name, "VS Code");
+  assert.equal(task().name, "Claude Code");
   assert.equal(task().state, "idle");
 });
 
@@ -324,6 +438,30 @@ test("the end of the turn takes a waiting card down and releases the relay", () 
     assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }], end);
     mock.timers.runAll();
   }
+});
+
+test("a card answered elsewhere comes down once its tool has run", () => {
+  for (const done of ["PostToolUse", "PostToolUseFailure"]) {
+    State.pendingApproval = null;
+    calls.length = 0;
+    hook({ hook_event_name: "PermissionRequest", request_id: "r1", session_id: "s1", tool_name: "Bash" });
+    // Another tool of the same session, or the same tool elsewhere, changes nothing.
+    hook({ hook_event_name: done, session_id: "s1", tool_name: "Read" });
+    hook({ hook_event_name: done, session_id: "other", tool_name: "Bash" });
+    assert.equal(State.pendingApproval?.requestId, "r1", done);
+    hook({ hook_event_name: done, session_id: "s1", tool_name: "Bash" });
+    assert.equal(State.pendingApproval, null, done);
+    assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }], done);
+    mock.timers.runAll();
+  }
+});
+
+test("a card whose relay hung up comes down at once", () => {
+  hook({ hook_event_name: "PermissionRequest", request_id: "r1", session_id: "s1", tool_name: "Bash" });
+  hook({ hook_event_name: "Released", request_id: "other" });
+  assert.equal(State.pendingApproval?.requestId, "r1");
+  hook({ hook_event_name: "Released", request_id: "r1" });
+  assert.equal(State.pendingApproval, null);
 });
 
 test("Codex's Interrupt puts its pill back to idle", () => {
@@ -501,13 +639,60 @@ test("a request from Claude Code in Cursor's terminal goes on the Cursor pill", 
   assert.equal(task().state, "idle");
 });
 
-test("a second request never replaces the card: it goes back to the terminal", () => {
+test("a second request never replaces the card: it waits behind it, acknowledged", () => {
   ask("r1");
   ask("r2", { tool_name: "Bash", tool_input: { command: "ls" } });
   assert.equal(State.pendingApproval.requestId, "r1");
   assert.equal(State.pendingApproval.tool, "Write");
-  assert.deepEqual(sent("approval_decline"), [{ requestId: "r2" }]);
-  assert.deepEqual(sent("approval_ack"), [{ requestId: "r1" }]);
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r2"]);
+  assert.equal(State.approvalCount, 2);
+  assert.deepEqual(sent("approval_decline"), []);
+  assert.deepEqual(sent("approval_ack"), [{ requestId: "r1" }, { requestId: "r2" }]);
+});
+
+test("waiting requests come up in the order they arrived once the card goes", () => {
+  ask("r1");
+  ask("r2", { session_id: "s2", tool_name: "Bash", tool_input: { command: "ls" } });
+  ask("r3", { session_id: "s3" });
+  asked = [];
+  hook({ hook_event_name: "Stop", session_id: "s1", cwd: "C:\\Users\\me\\proj" });
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }]);
+  assert.equal(State.pendingApproval.requestId, "r2");
+  assert.equal(State.pendingApproval.command, "Bash · ls");
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r3"]);
+  assert.ok(asked.includes("alert:approval"));
+});
+
+test("past five waiting, the newest goes back to its terminal", () => {
+  for (const id of ["r1", "r2", "r3", "r4", "r5"]) ask(id);
+  ask("r6");
+  assert.equal(State.approvalCount, 5);
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r6" }]);
+});
+
+test("the end of a turn takes only that session's waiting requests out", () => {
+  ask("r1", { session_id: "s2" });
+  ask("r2");
+  ask("r3", { session_id: "s2" });
+  ask("r4");
+  hook({ hook_event_name: "Stop", session_id: "s1", cwd: "C:\\Users\\me\\proj" });
+  assert.equal(State.pendingApproval.requestId, "r1");
+  assert.deepEqual(State.approvalQueue.map((a) => a.requestId), ["r3"]);
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r2" }, { requestId: "r4" }]);
+});
+
+test("a waiting request the relay gave up on leaves the queue, the card stays", () => {
+  ask("r1");
+  seconds(50);
+  ask("r2");
+  ask("r3");
+  // The card's own 110 s run out first: the next one comes up, and keeps its own clock.
+  seconds(60);
+  assert.equal(State.pendingApproval.requestId, "r2");
+  State.unqueueApprovals((a) => a.requestId === "r3");
+  seconds(110);
+  assert.equal(State.pendingApproval, null);
+  assert.equal(State.approvalCount, 0);
 });
 
 test("the same request arriving twice is acknowledged again, not declined", () => {
@@ -689,9 +874,246 @@ test("a declined permission request leaves the stop timer running", () => {
     { coucou_agent: "gemini" },
   );
   assert.equal(task("agent_gemini"), undefined);
-  // So is a second request while a card is already up.
-  ask("r1");
-  afterStop(() => ask("r2"));
-  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }, { requestId: "r2" }]);
+  // So is a request past the five that can wait.
+  for (const id of ["r1", "r2", "r3", "r4", "r5"]) ask(id);
+  afterStop(() => ask("r6"));
+  assert.deepEqual(sent("approval_decline"), [{ requestId: "r1" }, { requestId: "r6" }]);
   assert.equal(task().state, "idle");
+});
+
+// ── One pill per Claude Code session ──────────────────────────────────────────
+
+const SESSION_A = "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const SESSION_B = "22222222-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const sessionPill = (id) => `session_${id}`;
+/** The pill a session ended up on, whatever its ID looks like. */
+const pillOf = (sessionId) => State.tasks.find((t) => t.sessionId === sessionId)?.id;
+
+test("a session pill takes the name of the session's later events", () => {
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/coucou" });
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/api" });
+  hook({ hook_event_name: "UserPromptSubmit", session_id: SESSION_B, cwd: "/home/me/web" });
+  assert.equal(task(sessionPill(SESSION_B)).name, "web");
+});
+
+test("a second Claude Code session gets its own pill, named after its folder", () => {
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/coucou" });
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/api" });
+  assert.equal(task().sessionId, SESSION_A);
+  const b = task(sessionPill(SESSION_B));
+  assert.equal(b.name, "api");
+  assert.equal(b.sessionId, SESSION_B);
+  assert.equal(b.sessionCwd, "/home/me/api");
+
+  hook({ hook_event_name: "PreToolUse", session_id: SESSION_B, cwd: "/home/me/api", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task(sessionPill(SESSION_B)).state, "working");
+  assert.equal(task().state, "idle");
+});
+
+test("a session's pill stays between turns and goes when the session ends", () => {
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/a" });
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/b" });
+  hook({ hook_event_name: "Stop", session_id: SESSION_B, cwd: "/home/me/b" });
+  seconds(6);
+  assert.equal(task(sessionPill(SESSION_B)).state, "idle");
+  hook({ hook_event_name: "SessionEnd", session_id: SESSION_B, cwd: "/home/me/b" });
+  assert.equal(task(sessionPill(SESSION_B)), undefined);
+  // The workspace pill's session ended too: the next one takes it.
+  hook({ hook_event_name: "SessionEnd", session_id: SESSION_A, cwd: "/home/me/a" });
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/b" });
+  assert.equal(task().sessionId, SESSION_B);
+  assert.equal(task(sessionPill(SESSION_B)), undefined);
+});
+
+test("a session closed without SessionEnd gives its pill up after half an hour idle", () => {
+  let now = 1000;
+  mock.method(performance, "now", () => now);
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/a" });
+  now += 31 * 60 * 1000;
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/b" });
+  assert.equal(task().sessionId, SESSION_B);
+  assert.equal(task(sessionPill(SESSION_B)), undefined);
+  mock.restoreAll();
+});
+
+test("session ids that differ only in dropped characters or past 36 get pills of their own", () => {
+  const long = "x".repeat(40);
+  const ids = ["abc!", "abc?", `${long}1`, `${long}2`];
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/a" });
+  ids.forEach((id, i) => hook({ hook_event_name: "SessionStart", session_id: id, cwd: `/home/me/${i}` }));
+  const pills = State.tasks.filter((t) => t.id.startsWith("session_"));
+  assert.deepEqual(pills.map((t) => t.sessionId).sort(), [...ids].sort());
+  for (const t of pills) assert.match(t.id, /^session_[A-Za-z0-9-]{1,36}$/);
+  // A UUID keeps the pill ID it always had.
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/b" });
+  assert.ok(task(sessionPill(SESSION_B)));
+});
+
+// ── Sessions found running ───────────────────────────────────────────────────
+
+import { answers } from "./tauri.mjs";
+
+test("sessions already running get their pills before any event, named after their folder", async () => {
+  answers.set("claude_sessions", () => [{ pid: 100, cwd: "/home/me/api", name: "api" }, { pid: 200, cwd: "/home/me", name: "coucou" }]);
+  await discoverSessions();
+  assert.equal(task().sessionId, "pid-100");
+  assert.equal(task().name, "api");
+  const own = task(pillOf("pid-200"));
+  assert.equal(own.name, "coucou");
+  assert.equal(own.state, "idle");
+  assert.equal(own.sessionCwd, "/home/me");
+  answers.delete("claude_sessions");
+});
+
+test("the first event of a found session lands on the pill made for its process", async () => {
+  answers.set("claude_sessions", () => [{ pid: 100, cwd: "/home/me/api", name: "api" }, { pid: 200, cwd: "/home/me", name: "coucou" }]);
+  await discoverSessions();
+  const ownId = pillOf("pid-200");
+  hook({ hook_event_name: "PreToolUse", session_id: SESSION_B, cwd: "/home/me/coucou", coucou_claude_pid: 200, tool_name: "Bash", tool_input: { command: "ls" } });
+  const own = task(ownId);
+  assert.equal(own.state, "working");
+  assert.equal(own.sessionId, SESSION_B);
+  assert.equal(task(sessionPill(SESSION_B)), undefined);
+  // The same for the one on the workspace pill.
+  hook({ hook_event_name: "PreToolUse", session_id: SESSION_A, cwd: "/home/me/api", coucou_claude_pid: 100, tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(task().sessionId, SESSION_A);
+  assert.equal(task().state, "working");
+  // Its process gone: the pill goes, even though it spoke a moment ago.
+  answers.set("claude_sessions", () => [{ pid: 100, cwd: "/home/me/api", name: "api" }]);
+  await discoverSessions();
+  assert.equal(task(ownId), undefined);
+  assert.equal(task().sessionId, SESSION_A);
+  answers.delete("claude_sessions");
+});
+
+test("a found session is never dropped for being quiet", async () => {
+  let now = 1000;
+  mock.method(performance, "now", () => now);
+  answers.set("claude_sessions", () => [{ pid: 100, cwd: "/home/me/a", name: "" }]);
+  await discoverSessions();
+  now += 31 * 60 * 1000;
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_B, cwd: "/home/me/b" });
+  assert.equal(task().sessionId, "pid-100");
+  assert.equal(task(sessionPill(SESSION_B)).name, "b");
+  mock.restoreAll();
+  answers.delete("claude_sessions");
+});
+
+test("with Claude Code as the main tool, its sessions go to that pill, not VS Code's", () => {
+  State.settings = { ...DEFAULT_SETTINGS, mainPill: "workspace_claude" };
+  State.loadIntegrationTasks();
+  hook({ hook_event_name: "SessionStart", session_id: SESSION_A, cwd: "/home/me/coucou" });
+  assert.equal(task("workspace_claude").sessionId, SESSION_A);
+  assert.equal(task("workspace_claude").name, "coucou");
+  assert.equal(task(CLAUDE)?.sessionId ?? null, null);
+});
+
+// ── Follow the latest activity ────────────────────────────────────────────────
+
+const gemini = (name = "PreToolUse") =>
+  hook({ hook_event_name: name, cwd: "/p/proj", coucou_agent: "gemini", tool_name: "Bash", tool_input: { command: "ls" } });
+
+test("the card stays where it is unless following is on", () => {
+  gemini("SessionStart");
+  State.setFocus(CLAUDE);
+  gemini();
+  assert.equal(State.focusId, CLAUDE);
+});
+
+test("following, the agent that did something last takes the card", () => {
+  State.settings.followActivity = true;
+  gemini("SessionStart");
+  State.setFocus(CLAUDE);
+  gemini();
+  assert.equal(State.focusId, "agent_gemini");
+  assert.ok(!asked.includes("alert:overview"), "the island opens only with its own switch");
+});
+
+test("following leaves the user's own prompt alone", () => {
+  State.settings.followActivity = true;
+  gemini("SessionStart");
+  State.setFocus(CLAUDE);
+  gemini("UserPromptSubmit");
+  assert.equal(State.focusId, CLAUDE);
+  gemini();
+  assert.equal(State.focusId, "agent_gemini");
+});
+
+test("with its switch, new activity opens the island on that card", () => {
+  State.settings.followActivity = true;
+  State.settings.expandOnActivity = true;
+  State.mode = "compact";
+  gemini("SessionStart");
+  State.setFocus(CLAUDE);
+  asked = [];
+  gemini();
+  assert.equal(State.focusId, "agent_gemini");
+  assert.deepEqual(asked.filter((a) => a === "alert:overview"), ["alert:overview"]);
+});
+
+test("following never takes a view you opened, or the front from an approval", () => {
+  State.settings.followActivity = true;
+  gemini("SessionStart");
+  State.setFocus(CLAUDE);
+  State.mode = "expanded";
+  State.view = "prompt";
+  gemini();
+  assert.equal(State.focusId, CLAUDE);
+  State.view = "overview";
+  State.pendingApproval = { requestId: "r", sessionId: "s", pillId: CLAUDE };
+  gemini();
+  assert.equal(State.focusId, CLAUDE);
+});
+
+for (const tool_name of ["ask_question", "default_api:ask_question"]) {
+  test(`Antigravity ${tool_name} alerts and plays a sound until the question is answered`, (context) => {
+    const sound = context.mock.method(Sound, "play", () => {});
+    hook({
+      hook_event_name: "PreToolUse",
+      coucou_agent: "antigravity",
+      tool_name,
+      tool_input: { questions: [{ question: "Which deployment strategy should we use?" }] },
+    });
+    const active = task("agent_antigravity");
+    assert.equal(active.state, "question");
+    assert.equal(active.steps.at(-1), "Needs input · Which deployment strategy should we use?");
+    assert.deepEqual(asked, ["alert:overview"]);
+    assert.deepEqual(sound.mock.calls.map((call) => call.arguments), [["question"]]);
+    assert.equal(State.pendingApproval, null, "the answer stays in Antigravity");
+    assert.deepEqual(sent("approval_ack"), []);
+
+    hook({ hook_event_name: "PostToolUse", coucou_agent: "antigravity", tool_name });
+    assert.equal(active.state, "working");
+    assert.equal(sound.mock.callCount(), 1);
+  });
+}
+
+test("Antigravity namespaced questions use the selected interface language", () => {
+  setLanguage("fr");
+  try {
+    hook({
+      hook_event_name: "PreToolUse",
+      coucou_agent: "antigravity",
+      tool_name: "default_api:ask_question",
+      tool_input: { questions: [{ question: "Quelle stratégie ?" }] },
+    });
+    assert.equal(task("agent_antigravity").steps.at(-1), "Réponse attendue · Quelle stratégie ?");
+  } finally {
+    setLanguage("en");
+  }
+});
+
+test("Antigravity questions without usable text still alert with a translated label", () => {
+  for (const questions of [undefined, [], [null], [{ question: 3 }], [{ question: "  " }]]) {
+    hook({
+      hook_event_name: "PreToolUse",
+      coucou_agent: "antigravity",
+      tool_name: "default_api:ask_question",
+      tool_input: { questions },
+    });
+    assert.equal(task("agent_antigravity").state, "question");
+    assert.equal(task("agent_antigravity").steps.at(-1), "Needs input");
+  }
+  assert.equal(asked.length, 5);
+  assert.ok(asked.every((request) => request === "alert:overview"));
 });

@@ -33,8 +33,9 @@ final class DemoEngine: ObservableObject {
     private var realTaskIdsAtStart: Set<String> = [] // real task IDs that existed before demo
     private var demoCycleIndex: Int = 0
     private let rotatingIntegrationIds = [
-        "integration_stripe", "integration_calcom",
-        "integration_n8n", "integration_notion", "integration_vercel"
+        "integration_stripe", "integration_calcom", "integration_calendar",
+        "integration_n8n", "integration_notion", "integration_vercel",
+        "integration_linear", "integration_slack", "integration_timely"
     ]
     private var demoDiffIds: [String: [Int]] = [:]   // [pillId: [diffId]]
     private var lastApprovalDecision: String = "allow"
@@ -64,9 +65,24 @@ final class DemoEngine: ObservableObject {
         var stripeError: String?
         var calcomBookings: [CalcomBooking]
         var calcomLoaded: Bool
+        var calendarMeetings: [CalendarMeeting]
+        var calendarLoaded: Bool
         var n8nRuns: [N8nRun]
         var notionPages: [NotionPage]
         var notionLoaded: Bool
+        var timelyDay: TimelyDay?
+        var timelyLoaded: Bool
+        var timelyError: String?
+        var slackMessages: [SlackMessage]
+        var slackUnreadDMs: Int
+        var slackMentionCount: Int
+        var slackLoaded: Bool
+        var slackError: String?
+        var betterstackIncidents: [BetterStackIncident]
+        var betterstackDownMonitors: [BetterStackMonitor]
+        var betterstackLoaded: Bool
+        var betterstackError: String?
+        var linearInbox: LinearInbox?
         // NOTE: pendingApproval and pendingQuestion are intentionally NOT snapshotted.
         // HookServer's file descriptors are authoritative for real requests.
         var mode: IslandMode
@@ -110,9 +126,24 @@ final class DemoEngine: ObservableObject {
             stripeError:         s.stripeError,
             calcomBookings:      s.calcomBookings,
             calcomLoaded:        s.calcomLoaded,
+            calendarMeetings:    s.calendarMeetings,
+            calendarLoaded:      s.calendarLoaded,
             n8nRuns:             s.n8nRuns,
             notionPages:         s.notionPages,
             notionLoaded:        s.notionLoaded,
+            timelyDay:           s.timelyDay,
+            timelyLoaded:        s.timelyLoaded,
+            timelyError:         s.timelyError,
+            slackMessages:       s.slackMessages,
+            slackUnreadDMs:      s.slackUnreadDMs,
+            slackMentionCount:   s.slackMentionCount,
+            slackLoaded:         s.slackLoaded,
+            slackError:          s.slackError,
+            betterstackIncidents: s.betterstackIncidents,
+            betterstackDownMonitors: s.betterstackDownMonitors,
+            betterstackLoaded:   s.betterstackLoaded,
+            betterstackError:    s.betterstackError,
+            linearInbox:         s.linearInbox,
             mode:                s.mode,
             view:                s.view
         )
@@ -219,9 +250,24 @@ final class DemoEngine: ObservableObject {
         s.stripeError          = snap.stripeError
         s.calcomBookings       = snap.calcomBookings
         s.calcomLoaded         = snap.calcomLoaded
+        s.calendarMeetings     = snap.calendarMeetings
+        s.calendarLoaded       = snap.calendarLoaded
         s.n8nRuns              = snap.n8nRuns
         s.notionPages          = snap.notionPages
         s.notionLoaded         = snap.notionLoaded
+        s.timelyDay            = snap.timelyDay
+        s.timelyLoaded         = snap.timelyLoaded
+        s.timelyError          = snap.timelyError
+        s.slackMessages        = snap.slackMessages
+        s.slackUnreadDMs       = snap.slackUnreadDMs
+        s.slackMentionCount    = snap.slackMentionCount
+        s.slackLoaded          = snap.slackLoaded
+        s.slackError           = snap.slackError
+        s.betterstackIncidents = snap.betterstackIncidents
+        s.betterstackDownMonitors = snap.betterstackDownMonitors
+        s.betterstackLoaded    = snap.betterstackLoaded
+        s.betterstackError     = snap.betterstackError
+        s.linearInbox          = snap.linearInbox
 
         // Restore tasks: keep real tasks that arrived during the demo, discard demo-only ones.
         // For tasks that existed before the demo (realTaskIdsAtStart), use the CURRENT version
@@ -366,6 +412,19 @@ final class DemoEngine: ObservableObject {
         ]
         s.calcomLoaded = true
 
+        // Calendar
+        let standup = now.addingTimeInterval(12 * 60)
+        let review  = now.addingTimeInterval(3 * 3600)
+        s.calendarMeetings = [
+            CalendarMeeting(id: "demo_standup", title: "Team standup",
+                            start: standup, end: standup.addingTimeInterval(900), isAllDay: false,
+                            joinURL: URL(string: "https://meet.google.com/abc-defg-hij")),
+            CalendarMeeting(id: "demo_review", title: "Design review",
+                            start: review, end: review.addingTimeInterval(3600), isAllDay: false,
+                            joinURL: nil),
+        ]
+        s.calendarLoaded = true
+
         // n8n
         s.n8nRuns = [
             N8nRun(workflow: "Notify on new Stripe payment", detail: "3 payments processed",
@@ -382,6 +441,52 @@ final class DemoEngine: ObservableObject {
                        url: "https://notion.so/demo/auth-notes"),
         ]
         s.notionLoaded = true
+
+        // Timely
+        s.timelyDay = TimelyDay(entries: [
+            TimelyEntry(id: 2001, project: "my-app", client: "Acme", color: "#7C5CFF",
+                        note: "Weekly sync", loggedSeconds: 2700, timerStartedAt: nil),
+            TimelyEntry(id: 2002, project: "my-app", client: "Acme", color: "#7C5CFF",
+                        note: "Auth refactor", loggedSeconds: 3600,
+                        timerStartedAt: now.addingTimeInterval(-1500)),
+        ], capacityHours: 7.5)
+        s.timelyLoaded = true
+        s.timelyError = nil
+
+        // Slack
+        let ts = { (ago: TimeInterval) in String(format: "%.6f", now.addingTimeInterval(-ago).timeIntervalSince1970) }
+        s.slackMessages = [
+            SlackMessage(kind: .dm, channelId: "D_demo1", channelName: nil, userId: "U_demo1", author: "Alice",
+                         text: "Can you look at the auth PR before standup?", ts: ts(240), unread: 2, permalink: nil),
+            SlackMessage(kind: .mention, channelId: "C_demo1", channelName: "deploys", userId: "U_demo2",
+                         author: "bob", text: "@alex the release build is green, ship it?", ts: ts(1500),
+                         unread: 0, permalink: nil),
+        ]
+        s.slackUnreadDMs = 2
+        s.slackMentionCount = 1
+        s.slackError = nil
+        s.slackLoaded = true
+
+        // Better Stack
+        s.betterstackIncidents = [
+            BetterStackIncident(id: "demo_inc1", name: "api.my-app.com", cause: "Status 502",
+                                startedAt: now.addingTimeInterval(-420), acknowledged: false),
+        ]
+        s.betterstackDownMonitors = []
+        s.betterstackLoaded = true
+        s.betterstackError = nil
+
+        // Linear
+        s.linearInbox = LinearInbox(
+            unread: [
+                LinearNotification(id: "lin_demo1", reason: .mention, actor: "Alice Martin", key: "APP-142",
+                                   title: "Checkout fails on Safari", url: "https://linear.app/demo/issue/APP-142",
+                                   createdAt: now.addingTimeInterval(-420)),
+                LinearNotification(id: "lin_demo2", reason: .assigned, actor: "Bob Chen", key: "APP-139",
+                                   title: "Rate limit the export API", url: "https://linear.app/demo/issue/APP-139",
+                                   createdAt: now.addingTimeInterval(-5400)),
+            ],
+            inboxURL: "https://linear.app/demo/inbox")
 
         // Inject GitHub pill only — rotating 4th integration added per cycle.
         var injected: [String] = []

@@ -1,6 +1,6 @@
 // Cloud providers that speak the OpenAI chat completions API: OpenAI, Google AI
-// (Gemini's OpenAI-compatible endpoint, as ClaudeService.swift uses it) and
-// OpenRouter. One table describes them; one client talks to all three.
+// (Gemini's OpenAI-compatible endpoint, as ClaudeService.swift uses it),
+// OpenRouter, DeepSeek, Qwen and Moonshot. One table describes them; one client talks to all.
 //
 // Same contract as claude.rs: the key never leaves the credential store and
 // file bytes never cross the IPC boundary. Chat only — no tools are sent, so
@@ -62,6 +62,36 @@ pub const PROVIDERS: &[Provider] = &[
         key: "openrouter-api-key",
         models_path: "models",
         default_model: "openrouter/auto",
+        not_chat: &[],
+        max_tokens_field: "max_tokens",
+    },
+    Provider {
+        id: "deepseek",
+        name: "DeepSeek",
+        base_url: "https://api.deepseek.com/v1",
+        key: "deepseek-api-key",
+        models_path: "models",
+        default_model: "deepseek-chat",
+        not_chat: &[],
+        max_tokens_field: "max_tokens",
+    },
+    Provider {
+        id: "qwen",
+        name: "Qwen",
+        base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        key: "qwen-api-key",
+        models_path: "models",
+        default_model: "qwen-max",
+        not_chat: &["embed", "rerank", "tts", "asr", "wanx", "paraformer", "cosyvoice", "image"],
+        max_tokens_field: "max_tokens",
+    },
+    Provider {
+        id: "moonshot",
+        name: "Moonshot",
+        base_url: "https://api.moonshot.cn/v1",
+        key: "moonshot-api-key",
+        models_path: "models",
+        default_model: "moonshot-v1-32k",
         not_chat: &[],
         max_tokens_field: "max_tokens",
     },
@@ -163,8 +193,8 @@ pub async fn send(
     if model.is_empty() {
         return Err(tf("Pick a {name} model above the chat box.", &[("name", p.name)]));
     }
-    let turn = chat.begin(p.id);
-    let user = user_message(turn.first, context.as_ref(), &query);
+    let turn = chat.begin(p.id, context.as_ref());
+    let user = user_message(turn.attach, context.as_ref(), &query);
     let body = request_body(p, model, &chat::system_prompt(false), &turn.history, &user);
 
     let endpoint = url(p, "chat/completions")?;
@@ -184,7 +214,7 @@ pub async fn send(
     let json: Value = serde_json::from_slice(&bytes).map_err(|e| tf("Bad API response: {error}", &[("error", &e.to_string())]))?;
     let text = reply_text(p, &json)?;
 
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, user, json!({ "role": "assistant", "content": text }), &plain, &text);
     Ok(ChatReply { text })
 }
@@ -231,7 +261,7 @@ fn parse_models(p: &Provider, json: &Value) -> Vec<ModelInfo> {
             let free = p.id == "openrouter" && is_free(m, &id);
             let name = m.get("name").and_then(Value::as_str).unwrap_or(&id);
             let label = if free && !name.to_lowercase().contains("(free)") { format!("{name} (free)") } else { name.to_string() };
-            Some((ModelInfo { id, label }, created, free))
+            Some((ModelInfo { id, label, group: None }, created, free))
         })
         .collect();
     match p.id {
@@ -306,6 +336,12 @@ mod tests {
             "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         );
         assert_eq!(url(p("openrouter"), "models").unwrap().as_str(), "https://openrouter.ai/api/v1/models");
+        assert_eq!(url(p("deepseek"), "chat/completions").unwrap().as_str(), "https://api.deepseek.com/v1/chat/completions");
+        assert_eq!(
+            url(p("qwen"), "models").unwrap().as_str(),
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/models"
+        );
+        assert_eq!(url(p("moonshot"), "models").unwrap().as_str(), "https://api.moonshot.cn/v1/models");
         for prov in PROVIDERS {
             assert!(crate::secrets::KNOWN_KEYS.contains(&prov.key), "{}", prov.key);
             assert!(prov.base_url.starts_with("https://"));
@@ -401,6 +437,10 @@ mod tests {
         ]});
         let ids: Vec<_> = parse_models(p("google"), &google).into_iter().map(|m| m.id).collect();
         assert_eq!(ids, vec!["gemini-2.0-flash", "gemini-2.5-pro"]);
+
+        let qwen = json!({"data":[{"id":"qwen-max"},{"id":"text-embedding-v3"},{"id":"qwen-plus"},{"id":"wanx2.1-t2i-turbo"}]});
+        let ids: Vec<_> = parse_models(p("qwen"), &qwen).into_iter().map(|m| m.id).collect();
+        assert_eq!(ids, vec!["qwen-max", "qwen-plus"]);
 
         let openrouter = json!({"data":[
             {"id":"b/paid","name":"B Paid","pricing":{"prompt":"0.000001","completion":"0.000002"}},

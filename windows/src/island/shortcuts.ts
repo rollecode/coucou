@@ -12,6 +12,7 @@ import type { BotEmoteName, IslandViewName } from "../core/layout";
 import { cyclePill, islandKeyAction, navigate, pillByNumber, type IslandKeyAction } from "../core/shortcuts";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
+import { startNewChat } from "../views/chat";
 
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
 
@@ -24,6 +25,8 @@ export interface ShortcutHost {
   setPinned(on: boolean): void;
   /** Gives the island the keyboard, so the in-island keys work (Mac: makeKey). */
   takeKeyboard(): void;
+  /** The chat field takes the typing, once the island has the keyboard. */
+  focusChat(): void;
   /** The wardrobe from any state, or back if it is open (Island.wardrobeAnywhere). */
   wardrobeAnywhere(): void;
   /** False where Mochi can't leave the island (GNOME on Wayland). */
@@ -63,6 +66,8 @@ export function runGlobalShortcut(host: ShortcutHost, action: string, resume: ()
     case "openChat":
       resume();
       host.alert("prompt");
+      host.takeKeyboard();
+      host.focusChat();
       break;
 
     case "goToAlert": {
@@ -163,13 +168,7 @@ export function runIslandKey(host: ShortcutHost, action: IslandKeyAction) {
       host.viewCommand("toggleDiff");
       break;
     case "newChat":
-      // Not while an answer is on its way: it would land in the new chat.
-      if (State.stateOverride === "thinking") return;
-      State.chatHistory = [];
-      State.droppedFile = null;
-      State.promptContext = null;
-      void Bridge.chatReset();
-      Sound.play("blip");
+      if (!startNewChat()) return;
       host.setView("prompt");
       break;
     case "settings":

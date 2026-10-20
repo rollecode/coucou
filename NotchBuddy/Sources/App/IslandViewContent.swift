@@ -27,6 +27,7 @@ struct IslandViewContent: View {
         case .greeting:  EmptyView()  // GreetingCanvasView overlaid in IslandRootView
         case .wardrobe:  WardrobeView(state: state)
         case .recap:     WeeklyRecapCardView(state: state)
+        case .code:      CodeSessionView(state: state)
         case .listening:
             #if !APPSTORE
             VoiceListeningView(isActive: state.view == .listening)
@@ -36,6 +37,18 @@ struct IslandViewContent: View {
         case .voiceResult:
             #if !APPSTORE
             VoiceResultView()
+            #else
+            EmptyView()
+            #endif
+        case .capture:
+            #if !APPSTORE
+            CaptureCardView()
+            #else
+            EmptyView()
+            #endif
+        case .update:
+            #if !APPSTORE
+            UpdateCardView()
             #else
             EmptyView()
             #endif
@@ -51,6 +64,18 @@ struct OverviewView: View {
     @State private var activeDiffId: Int? = nil
 
     var agent: AgentTask? { state.focusTask }
+
+    /// Following edits live: the focused session's latest edit.
+    private var liveDiffId: Int? {
+        guard state.mode == .expanded, let live = state.liveDiff, live.pillId == agent?.id else { return nil }
+        return live.diffId
+    }
+    private var shownDiffId: Int? { liveDiffId ?? activeDiffId }
+
+    private func closeDiff() {
+        activeDiffId = nil
+        if state.liveDiff != nil { state.stopFollowing() }
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -97,7 +122,7 @@ struct OverviewView: View {
                             }
                             .padding(.top, 6)
                             .padding(.leading, 108)
-                            .padding(.trailing, 36)
+                            .padding(.trailing, hasCode ? 56 : 36)
 
                             TickerView(task: agent, onDiffTap: { diffIdx in
                                 withAnimation(.easeIn(duration: 0.16)) { activeDiffId = diffIdx }
@@ -140,20 +165,36 @@ struct OverviewView: View {
                 #endif
 
                 // Diff overlay — replaces ticker when a diff step is tapped
-                if let diffId = activeDiffId,
+                if let diffId = shownDiffId,
                    let task = agent,
                    let diff = state.sessionDiffs[task.id]?.first(where: { $0.id == diffId }) {
                     CardBackground(wash: nil)
-                    DiffCardView(diff: diff, onDismiss: { activeDiffId = nil })
+                    DiffCardView(diff: diff, live: liveDiffId != nil, onDismiss: { closeDiff() })
+                        .id(diff.id)
                         .transition(.opacity)
                 }
 
                 // ↗ jump button — last in ZStack so it renders on top; hidden while any detail is open
                 #if !APPSTORE
-                let hideJumpButton = showingN8nDetail || state.showingPlanDetail || activeDiffId != nil
+                let hideJumpButton = showingN8nDetail || state.showingPlanDetail || shownDiffId != nil
                 #else
-                let hideJumpButton = showingN8nDetail || activeDiffId != nil
+                let hideJumpButton = showingN8nDetail || shownDiffId != nil
                 #endif
+                if !hideJumpButton && hasCode {
+                    Button(action: openCode) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .font(.system(size: 7, weight: .semibold))
+                            .foregroundColor(Color(hex: "#5F646D"))
+                            .frame(width: 16, height: 16)
+                            .background(Color.white.opacity(0.07))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(String(localized: "Code"))
+                    .padding(.top, 8)
+                    .padding(.trailing, 30)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
                 if !hideJumpButton {
                     Button(action: { openAgentTarget(agent) }) {
                         Image(systemName: "arrow.up.right")
@@ -170,6 +211,10 @@ struct OverviewView: View {
                 }
             }
             .frame(width: 322)
+            // A click on the card opens the code view too, as on Windows and Linux;
+            // the ticker's diff rows and the buttons keep their own taps.
+            .contentShape(Rectangle())
+            .onTapGesture { if hasCode && !detailOpen { openCode() } }
 
             // Right card: agent pills
             CardBackground(wash: nil) {
@@ -198,9 +243,8 @@ struct OverviewView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .islandToggleDiff)) { _ in
-            if let id = activeDiffId {
-                withAnimation(.easeIn(duration: 0.16)) { activeDiffId = nil }
-                _ = id
+            if shownDiffId != nil {
+                withAnimation(.easeIn(duration: 0.16)) { closeDiff() }
             } else if let task = state.focusTask,
                       let last = state.sessionDiffs[task.id]?.last {
                 withAnimation(.easeIn(duration: 0.16)) { activeDiffId = last.id }
@@ -208,22 +252,57 @@ struct OverviewView: View {
         }
     }
 
+    /// A detail (n8n, plan, a diff) stands in for the ticker.
+    private var detailOpen: Bool {
+        #if !APPSTORE
+        return showingN8nDetail || state.showingPlanDetail || shownDiffId != nil
+        #else
+        return showingN8nDetail || shownDiffId != nil
+        #endif
+    }
+
+    /// The focused Claude Code session has an edit or a command for the code view.
+    private var hasCode: Bool {
+        guard let agent else { return false }
+        return state.codeSessions[agent.id]?.hasContent == true
+    }
+
+    private func openCode() {
+        withAnimation(.easeIn(duration: 0.16)) { state.view = .code }
+    }
+
     private func openAgentTarget(_ task: AgentTask?) {
         guard let task else { return }
+        if RemoteTerminal.open(pillId: task.id) { return }
+        #if !APPSTORE
+        if let found = HookServer.shared.sessionTerminal(pill: task.id),
+           TerminalTarget.activate(sessionBundleId: found.bundleId, tty: found.tty) { return }
+        #endif
         switch task.id {
         case "integration_claude":
-            if ClaudeHost.activate(task.hostApp) { return }
+            if ClaudeHost.activate(task.hostApp, tty: task.sessionTTY) { return }
             let vscodeBundleId = "com.microsoft.VSCode"
-            if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == vscodeBundleId }) {
-                app.activate(options: .activateIgnoringOtherApps)
+            if let url = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == vscodeBundleId })?.bundleURL {
+                NSWorkspace.shared.openApplication(at: url, configuration: .init(), completionHandler: nil)
             } else {
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/Visual Studio Code.app"))
             }
+        case "workspace_claude":
+            // The terminal tool: its terminal, never VS Code.
+            #if !APPSTORE
+            if !ClaudeHost.activate(task.hostApp, tty: task.sessionTTY) { TerminalTarget.activate(sessionBundleId: task.sessionBundleId, tty: task.sessionTTY) }
+            #endif
         case "integration_resend":
             NSWorkspace.shared.open(URL(string: "https://resend.com/emails")!)
         case "integration_mail":
             #if !APPSTORE
             MailController.shared.openMail()
+            #endif
+        case "integration_whatsapp":
+            #if !APPSTORE
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "net.whatsapp.WhatsApp") {
+                NSWorkspace.shared.openApplication(at: url, configuration: .init(), completionHandler: nil)
+            }
             #endif
         case "integration_crypto":
             let exchange = CryptoSettings.exchange
@@ -247,6 +326,19 @@ struct OverviewView: View {
             NSWorkspace.shared.open(URL(string: "https://notion.so")!)
         case "integration_calcom":
             NSWorkspace.shared.open(URL(string: "https://app.cal.com/bookings")!)
+        case CalendarWatcher.pillId:
+            let next = CalendarAgenda(state.calendarMeetings, now: Date()).next
+            NSWorkspace.shared.open(next?.joinURL ?? URL(fileURLWithPath: "/System/Applications/Calendar.app"))
+        case "integration_timely":
+            NSWorkspace.shared.open(TimelyAPI.webURL)
+        case "integration_slack":
+            SlackPoller.openWorkspace()
+        case "integration_betterstack":
+            if let url = BetterStackAPI.page("incidents", team: BetterStackPoller.team) { NSWorkspace.shared.open(url) }
+        case "integration_linear":
+            if let url = URL(string: state.linearInbox?.inboxURL ?? "https://linear.app") {
+                NSWorkspace.shared.open(url)
+            }
         case "agent_cursor":
             #if !APPSTORE
             if let url = NSWorkspace.shared.urlForApplication(
@@ -294,7 +386,7 @@ struct OverviewView: View {
                 }
             } else {
                 #if !APPSTORE
-                TerminalTarget.activate(sessionBundleId: task.sessionBundleId)
+                TerminalTarget.activate(sessionBundleId: task.sessionBundleId, tty: task.sessionTTY)
                 #endif
             }
         }
@@ -335,45 +427,53 @@ struct ApprovalView: View {
 
     var approval: ApprovalInfo? { state.pendingApproval }
 
-    /// The pill, named after the session that asks (several sessions can share a pill).
-    private var asker: AgentTask? {
-        guard var task = state.focusTask else { return nil }
-        if let project = approval?.projectName, !project.isEmpty { task.name = project }
-        return task
+    /// "needs permission", with "1 of N" (and the agent when sources differ) only while others are queued.
+    private var approvalLabel: String {
+        guard let a = approval, a.total > 1 else { return "needs permission" }
+        var parts = ["needs permission", "\(a.position) of \(a.total)"]
+        if let source = a.sourceLabel { parts.append(source) }
+        return parts.joined(separator: " · ")
     }
 
     var body: some View {
         // Captured when the card is drawn: a click answers the request that was on screen,
-        // and is ignored if the card has moved on to the next one since.
+        // and is ignored if the queue has moved on since.
         let shownId = approval?.id
+        let isPlan = approval?.tool == "ExitPlanMode"
         ZStack {
             CardBackground(wash: .amber)
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 7) {
-                    AgentWho(task: asker, label: "needs permission")
-                    // Other requests waiting behind this one: "1/3".
-                    if let count = approval?.queueCount, count > 1 {
-                        Text(verbatim: "1/\(count)")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#8E939C"))
-                            .monospacedDigit()
-                    }
-                }
+                AgentWho(task: state.focusTask, label: isPlan ? "has a plan ready" : approvalLabel)
                 CodeBlock(text: approval?.command ?? approval?.tool ?? "…")
-                HStack(spacing: 8) {
-                    SecondaryButton("Deny") {
-                        HookServer.shared.sendApprovalDecision("deny", for: shownId)
+                if isPlan {
+                    // The terminal's plan dialog choices, not a tool permission.
+                    HStack(spacing: 8) {
+                        SecondaryButton("Change plan") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_change", for: id) }
+                        }
+                        PrimaryButton("Auto mode") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_auto", for: id) }
+                        }
+                        SecondaryButton("Manual") {
+                            if let id = shownId { HookServer.shared.clickApproval("plan_default", for: id) }
+                        }
                     }
-                    PrimaryButton("Allow") {
-                        HookServer.shared.sendApprovalDecision("allow", for: shownId)
-                    }
-                    // Codex, Copilot CLI and Muse Code do not support updatedPermissions
-                    let hideAlways = approval?.pillId == "agent_codex"
-                        || approval?.pillId == "agent_copilot"
-                        || approval?.pillId == "agent_muse"
-                    if !hideAlways {
-                        SecondaryButton("Always") {
-                            HookServer.shared.sendApprovalDecision("always", for: shownId)
+                } else {
+                    HStack(spacing: 8) {
+                        SecondaryButton("Deny") {
+                            if let id = shownId { HookServer.shared.clickApproval("deny", for: id) }
+                        }
+                        PrimaryButton("Allow") {
+                            if let id = shownId { HookServer.shared.clickApproval("allow", for: id) }
+                        }
+                        // Codex, Copilot CLI and Muse Code do not support updatedPermissions
+                        let hideAlways = approval?.pillId == "agent_codex"
+                            || approval?.pillId == "agent_copilot"
+                            || approval?.pillId == "agent_muse"
+                        if !hideAlways {
+                            SecondaryButton("Always") {
+                                if let id = shownId { HookServer.shared.clickApproval("always", for: id) }
+                            }
                         }
                     }
                 }
@@ -613,19 +713,66 @@ struct QuestionView: View {
 struct ErrorView: View {
     @ObservedObject var state: AppState
 
+    private var task: AgentTask? { state.focusTask }
+
+    /// The kind next to the name ("Claude Code", "n8n", "Agent"): agentWho already shows the name.
+    private var kind: String {
+        switch task?.source {
+        case .some(.n8n):   return "n8n"
+        case .some(.agent): return "Agent"
+        default:            return "Claude Code"
+        }
+    }
+
+    /// What went wrong: Claude Code's error (StopFailure) or n8n's, else the last step.
+    private var detail: String {
+        if let line = task?.finalLine, !line.isEmpty { return line }
+        if task?.source == .n8n, let steps = task?.steps, steps.count > 1, let last = steps.last { return last }
+        if task?.source != .n8n, let step = task?.steps.last(where: { !$0.isDiffStep }) { return step }
+        return String(localized: "No detail available.")
+    }
+
+    private var n8nURL: URL? {
+        guard task?.source == .n8n, let s = KeychainStore.shared.get("n8n-url") else { return nil }
+        return URL(string: s)
+    }
+
     var body: some View {
         ZStack {
             CardBackground(wash: .red)
             VStack(alignment: .leading, spacing: 5) {
-                AgentWho(task: state.focusTask, label: "n8n")
-                Text("Workflow stopped.")
+                AgentWho(task: task, label: kind)
+                Text(task?.source == .n8n ? LocalizedStringKey("Workflow stopped.") : LocalizedStringKey("Session stopped on an error."))
                     .font(.system(size: 15, weight: .semibold))
-                Text("Gmail node timed out after 30s. Retry or open n8n.")
+                Text(detail)
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: "#FF8D97"))
+                    .lineLimit(2)
+                    .truncationMode(.tail)
                 HStack(spacing: 8) {
-                    PrimaryButton("Retry") { /* retry */ }
-                    SecondaryButton("Open in n8n") { /* open */ }
+                    if task?.source == .n8n {
+                        if let url = n8nURL {
+                            PrimaryButton("Open in n8n") {
+                                NSWorkspace.shared.open(url)
+                                NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                            }
+                        }
+                    } else if task?.id == "agent_claude-desktop" {
+                        PrimaryButton("Open Claude") {
+                            openClaudeDesktopApp()
+                            NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                        }
+                    } else {
+                        #if !APPSTORE
+                        PrimaryButton("Open terminal") {
+                            openSessionApp(task)
+                            NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                        }
+                        #endif
+                    }
+                    SecondaryButton("OK") {
+                        NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                    }
                 }
             }
             .padding(.leading, 116)
@@ -635,6 +782,16 @@ struct ErrorView: View {
         }
     }
 }
+
+#if !APPSTORE
+/// The app a session runs in (its terminal, or VS Code), else any known terminal.
+private func openSessionApp(_ task: AgentTask?) {
+    if !(task?.id == "integration_claude" && ClaudeHost.activate(task?.hostApp)),
+       !TerminalTarget.activate(sessionBundleId: task?.sessionBundleId) {
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+    }
+}
+#endif
 
 /// Brings the Claude desktop app forward (or launches it) — target of the Claude Desktop pill.
 private let claudeDesktopBundleId = "com.anthropic.claudefordesktop"
@@ -675,8 +832,12 @@ struct FinishedView: View {
                         PrimaryButton("Open terminal") {
                             // The app the session runs in (its terminal, or VS Code), then any known terminal
                             let task = state.focusTask
-                            if !(task?.id == "integration_claude" && ClaudeHost.activate(task?.hostApp)),
-                               !TerminalTarget.activate(sessionBundleId: task?.sessionBundleId) {
+                            if let id = task?.id, RemoteTerminal.open(pillId: id) {
+                                NotificationCenter.default.post(name: .islandCollapse, object: nil)
+                                return
+                            }
+                            if !((task?.id == "integration_claude" || task?.id == "workspace_claude") && ClaudeHost.activate(task?.hostApp, tty: task?.sessionTTY)),
+                               !TerminalTarget.activate(sessionBundleId: task?.sessionBundleId, tty: task?.sessionTTY) {
                                 NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
                             }
                             NotificationCenter.default.post(name: .islandCollapse, object: nil)
@@ -700,6 +861,8 @@ struct FinishedView: View {
 
 struct DiffCardView: View {
     let diff: FileDiff
+    /// Following edits as they happen (Settings → Follow edits live).
+    var live = false
     let onDismiss: () -> Void
 
     private var allLines: [DiffLine] { diff.hunks.flatMap { $0.lines } }
@@ -719,6 +882,15 @@ struct DiffCardView: View {
                     .foregroundColor(Color(hex: "#F5F6F8"))
                 }
                 .buttonStyle(.plain)
+                if live {
+                    Text(String(localized: "Live").uppercased())
+                        .font(.system(size: 9, weight: .semibold).monospaced())
+                        .foregroundColor(Color(hex: "#22C55E"))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Color(hex: "#22C55E").opacity(0.18))
+                        .clipShape(Capsule())
+                }
                 Spacer(minLength: 2)
                 if diff.added > 0 {
                     Text("+\(diff.added)")
@@ -730,15 +902,18 @@ struct DiffCardView: View {
                         .font(.system(size: 10, weight: .medium).monospaced())
                         .foregroundColor(Color(hex: "#F4505E"))
                 }
-                Button(action: { openInEditor(diff) }) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 8, weight: .medium))
-                        .foregroundColor(Color(hex: "#5F646D"))
-                        .frame(width: 14, height: 14)
-                        .background(Color.white.opacity(0.07))
-                        .clipShape(Circle())
+                // A remote host's file is not on this Mac: nothing to open.
+                if !diff.remote {
+                    Button(action: { openInEditor(diff) }) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 8, weight: .medium))
+                            .foregroundColor(Color(hex: "#5F646D"))
+                            .frame(width: 14, height: 14)
+                            .background(Color.white.opacity(0.07))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.top, 6)
             .padding(.bottom, 3)
@@ -753,10 +928,13 @@ struct DiffCardView: View {
                     .font(.system(size: 10.5))
                     .foregroundColor(Color(hex: "#6B7079"))
             } else {
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(allLines.enumerated()), id: \.offset) { _, line in
-                            DiffLineRowView(line: line)
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        LiveRevealHost(
+                            lines: allLines.map { LiveReveal.Line(typed: $0.kind == .added, length: $0.text.count) },
+                            animate: live, scrollProxy: proxy
+                        ) { i, shown in
+                            DiffLineRowView(line: allLines[i], shown: shown)
                         }
                     }
                 }
@@ -770,7 +948,8 @@ struct DiffCardView: View {
     }
 
     private func openInEditor(_ diff: FileDiff) {
-        let path = diff.path
+        // An absolute path to a real file: never read by `code` as an option.
+        guard !diff.remote, let path = LocalFile.regular(diff.path) else { return }
         #if !APPSTORE
         let codePaths = ["/opt/homebrew/bin/code", "/usr/local/bin/code", "/usr/bin/code",
                          "\(NSHomeDirectory())/.nvm/current/bin/code"]
@@ -783,12 +962,15 @@ struct DiffCardView: View {
             return
         }
         #endif
-        NSWorkspace.shared.open(URL(fileURLWithPath: path))
+        // Shown in Finder, not opened: its default app could run it (.command, .app).
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 }
 
 struct DiffLineRowView: View {
     let line: DiffLine
+    /// Set while the line is being revealed (live edits): how much of it is shown.
+    var shown: LiveReveal.Shown? = nil
 
     private var bgColor: Color {
         switch line.kind {
@@ -820,7 +1002,7 @@ struct DiffLineRowView: View {
                                  line.kind == .removed ? Color(hex: "#F4505E") :
                                  Color(hex: "#454850"))
                 .frame(width: 12, alignment: .leading)
-            Text(line.text)
+            Text(shown.map { LiveRevealStyle.text(line.text, $0) } ?? line.text)
                 .font(.system(size: 10.5).monospaced())
                 .foregroundColor(fgColor)
                 .lineLimit(1)
@@ -1344,8 +1526,25 @@ struct PromptView: View {
                     Spacer()
                 }
 
-                HStack(spacing: 0) {
+                HStack(spacing: 6) {
                     Spacer()
+                    if !state.chatHistory.isEmpty || state.promptContext != nil {
+                        Button(action: startNewConversation) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.pencil")
+                                    .font(.system(size: 9.5, weight: .medium))
+                                Text("New chat")
+                                    .font(.system(size: 10.5, weight: .medium))
+                            }
+                            .foregroundColor(Color(hex: "#7B8089"))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .help(String(localized: "New conversation (⌘K)"))
+                    }
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
                             showModelPicker.toggle()
@@ -1355,7 +1554,7 @@ struct PromptView: View {
                             Circle()
                                 .fill(Color(hex: state.chatProvider.accentHex))
                                 .frame(width: 6, height: 6)
-                            Text(state.activeChatModel)
+                            Text(state.chatModelLabel)
                                 .font(.system(size: 10.5, weight: .medium))
                                 .foregroundColor(Color(hex: "#7B8089"))
                             Image(systemName: "chevron.up.chevron.down")
@@ -1438,13 +1637,28 @@ struct PromptView: View {
             guard state.view == .prompt else { return }
             sendMessage()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .islandFocusChat)) { _ in
+            guard state.view == .prompt else { return }
+            // Cleared first: it can still read true from before the panel lost key.
+            focused = false
+            DispatchQueue.main.async { focused = true }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .islandNewConversation)) { _ in
             guard state.view == .prompt else { return }
-            text = ""
-            state.chatHistory = []
-            ClaudeService.shared.clearConversation()
-            focused = true
+            startNewConversation()
         }
+    }
+
+    /// Starts over: empties the thread and drops the attached file or window, so the next
+    /// question is not answered with the previous context.
+    private func startNewConversation() {
+        guard state.stateOverride != .thinking else { return }
+        text = ""
+        state.chatHistory = []
+        state.promptContext = nil
+        ClaudeService.shared.clearConversation()
+        SoundEngine.shared.play("pop")
+        focused = true
     }
 
     private func sendMessage() {
@@ -1505,6 +1719,11 @@ struct ChipFlowLayout: Layout {
 struct ModelPickerView: View {
     @ObservedObject var state: AppState
     @Binding var isPresented: Bool
+    @State private var query = ""
+    @FocusState private var searchFocused: Bool
+
+    /// A list longer than this gets a search field (SEARCH_FROM on Windows and Linux).
+    private static let searchFrom = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1512,6 +1731,10 @@ struct ModelPickerView: View {
             let visibleProviders = ChatProvider.allCases.filter { p in
                 if p == .ollama   { return !AppState.shared.ollamaServerURL.isEmpty   || state.chatProvider == .ollama }
                 if p == .lmstudio { return !AppState.shared.lmstudioServerURL.isEmpty || state.chatProvider == .lmstudio }
+                if p == .openwebui { return !AppState.shared.openWebUIServerURL.isEmpty || state.chatProvider == .openwebui }
+                #if APPSTORE
+                if p == .claudecode { return false }  // the sandbox cannot run the CLI
+                #endif
                 return true
             }
             ChipFlowLayout(spacing: 6) {
@@ -1552,6 +1775,10 @@ struct ModelPickerView: View {
             // Model list for current provider — fetched dynamically
             modelListView
                 .frame(height: 260, alignment: .top)
+
+            if state.chatProvider == .claudecode {
+                effortRow
+            }
         }
         .padding(14)
         .background(Color(hex: "#16171B"))
@@ -1564,11 +1791,40 @@ struct ModelPickerView: View {
             state.fetchModelsIfNeeded(for: state.chatProvider)
         }
         .onChange(of: state.chatProvider) { _, provider in
+            query = ""
             if provider.isLocal {
                 state.fetchedProviderModels[provider] = nil
                 state.providerModelFetchError[provider] = nil
             }
             state.fetchModelsIfNeeded(for: provider)
+        }
+    }
+
+    /// Claude Code's effort level, under its models; the same value Settings sets.
+    private var effortRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(String(localized: "Effort"))
+                .font(.system(size: 11))
+                .foregroundColor(Color(hex: "#8A8F98"))
+                .padding(.top, 5)
+            ChipFlowLayout(spacing: 6) {
+                ForEach([""] + ClaudeCodeChat.efforts, id: \.self) { level in
+                    let on = state.claudeCodeEffort == level
+                    Button {
+                        state.claudeCodeEffort = level
+                        SoundEngine.shared.play("blip")
+                    } label: {
+                        Text(level.isEmpty ? String(localized: "Default") : level)
+                            .font(.system(size: 11, weight: on ? .semibold : .regular))
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(on ? Color(hex: ChatProvider.claudecode.accentHex).opacity(0.18)
+                                           : Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
@@ -1589,48 +1845,101 @@ struct ModelPickerView: View {
                 .foregroundColor(Color(hex: "#8A8F98"))
                 .padding(.vertical, 4)
         } else if let models = state.fetchedProviderModels[state.chatProvider] {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(models, id: \.id) { model in
-                        Button {
-                            switch state.chatProvider {
-                            case .anthropic: state.claudeModel = model.id
-                            case .google:    state.googleChatModel = model.id
-                            case .openai:    state.openAIChatModel = model.id
-                            case .ollama:    state.ollamaChatModel = model.id
-                            case .lmstudio:  state.lmstudioChatModel = model.id
-                            case .deepseek:  state.deepseekChatModel = model.id
-                            case .qwen:      state.qwenChatModel = model.id
-                            case .moonshot:  state.moonshotChatModel = model.id
+            let searchable = models.count > Self.searchFrom
+            let needle = query.trimmingCharacters(in: .whitespaces).lowercased()
+            let matching = searchable && !needle.isEmpty
+                ? models.filter { $0.label.lowercased().contains(needle) || $0.id.lowercased().contains(needle) }
+                : models
+            VStack(alignment: .leading, spacing: 8) {
+                if searchable {
+                    TextField(String(localized: "Search models"), text: $query)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.04))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(searchFocused ? 0.25 : 0.1), lineWidth: 1))
+                        .focused($searchFocused)
+                        .onSubmit { if let first = matching.first { pick(first.id) } }
+                        .onAppear { searchFocused = true }
+                }
+                if matching.isEmpty {
+                    Text("No model matches.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(hex: "#8A8F98"))
+                        .padding(.vertical, 4)
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(matching.enumerated()), id: \.element.id) { index, model in
+                            if let title = sectionTitle(at: index, in: matching) {
+                                Text(title.uppercased())
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .tracking(0.4)
+                                    .foregroundColor(Color(hex: "#7B8089"))
+                                    .padding(.horizontal, 8)
+                                    .padding(.top, index == 0 ? 2 : 8)
                             }
-                            isPresented = false
-                            SoundEngine.shared.play("blip")
-                        } label: {
-                            HStack {
-                                Text(model.label)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(state.activeChatModel == model.id
-                                                     ? Color(hex: state.chatProvider.accentHex)
-                                                     : Color(hex: "#C8CDD4"))
-                                Spacer()
-                                if state.activeChatModel == model.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundColor(Color(hex: state.chatProvider.accentHex))
+                            Button {
+                                pick(model.id)
+                            } label: {
+                                HStack {
+                                    Text(model.label)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(state.activeChatModel == model.id
+                                                         ? Color(hex: state.chatProvider.accentHex)
+                                                         : Color(hex: "#C8CDD4"))
+                                    Spacer()
+                                    if state.activeChatModel == model.id {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(Color(hex: state.chatProvider.accentHex))
+                                    }
                                 }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(state.activeChatModel == model.id
+                                            ? Color(hex: state.chatProvider.accentHex).opacity(0.1)
+                                            : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .background(state.activeChatModel == model.id
-                                        ? Color(hex: state.chatProvider.accentHex).opacity(0.1)
-                                        : Color.clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
         }
+    }
+
+    /// Open WebUI's sections, above the first model of each: its most used
+    /// models, its workspace models, then the rest.
+    private func sectionTitle(at index: Int, in models: [(id: String, label: String)]) -> String? {
+        let groups = state.openWebUIModelGroups
+        guard state.chatProvider == .openwebui, !groups.isEmpty else { return nil }
+        let group = groups[models[index].id]
+        if index > 0, groups[models[index - 1].id] == group { return nil }
+        switch group {
+        case .used?:   return String(localized: "Most used")
+        case .custom?: return String(localized: "Workspace models")
+        case nil:      return String(localized: "All models")
+        }
+    }
+
+    private func pick(_ id: String) {
+        switch state.chatProvider {
+        case .anthropic: state.claudeModel = id
+        case .google:    state.googleChatModel = id
+        case .openai:    state.openAIChatModel = id
+        case .ollama:    state.ollamaChatModel = id
+        case .lmstudio:  state.lmstudioChatModel = id
+        case .openwebui: state.openWebUIChatModel = id
+        case .claudecode: state.claudeCodeChatModel = id
+        case .deepseek:  state.deepseekChatModel = id
+        case .qwen:      state.qwenChatModel = id
+        case .moonshot:  state.moonshotChatModel = id
+        }
+        isPresented = false
+        SoundEngine.shared.play("blip")
     }
 }
 
@@ -1811,10 +2120,12 @@ struct IntegrationCardView: View {
     #endif
 
     private var isConfigured: Bool {
+        // A session's own pill is Claude Code too.
+        if task.id.hasPrefix(PillCatalog.sessionPillPrefix) { return HookServer.claudeHooksInstalled() }
         switch task.id {
         // Cursor sessions are Claude Code running in Cursor's integrated terminal,
         // so the Cursor pill is set up exactly when the Claude Code hooks are.
-        case "integration_claude", "agent_cursor":
+        case "integration_claude", "workspace_claude", "agent_cursor":
             return HookServer.claudeHooksInstalled()
         case "agent_codex":
             #if !APPSTORE
@@ -1878,6 +2189,12 @@ struct IntegrationCardView: View {
             #else
             return false
             #endif
+        case "integration_whatsapp":
+            #if !APPSTORE
+            return WhatsAppSettings.enabled
+            #else
+            return false
+            #endif
         case "integration_crypto":
             return true  // public market data: no key, nothing to set up
         case "integration_portfolio":
@@ -1894,6 +2211,11 @@ struct IntegrationCardView: View {
         case "integration_stripe":  return KeychainStore.shared.get("stripe-api-key") != nil
         case "integration_notion":  return KeychainStore.shared.get("notion-api-key") != nil
         case "integration_calcom":  return KeychainStore.shared.get("calcom-api-key") != nil
+        case CalendarWatcher.pillId: return CalendarWatcher.hasAccess
+        case "integration_timely":  return KeychainStore.shared.get(TimelyPoller.Key.access) != nil
+        case "integration_slack":   return KeychainStore.shared.get("slack-token")    != nil
+        case "integration_betterstack": return KeychainStore.shared.get("betterstack-token") != nil
+        case "integration_linear":  return KeychainStore.shared.get("linear-api-key") != nil
         default: return false
         }
     }
@@ -1909,7 +2231,12 @@ struct IntegrationCardView: View {
         case "integration_github":  return URL(string: "https://github.com")
         case "integration_stripe":  return URL(string: "https://dashboard.stripe.com/payments")
         case "integration_notion":  return URL(string: "https://notion.so")
+        case "integration_slack":   return safeWebURL(appState.slackWorkspaceURL) ?? URL(string: "https://app.slack.com")
         case "integration_calcom":  return URL(string: "https://app.cal.com/bookings")
+        case CalendarWatcher.pillId: return URL(fileURLWithPath: "/System/Applications/Calendar.app")
+        case "integration_timely":  return TimelyAPI.webURL
+        case "integration_betterstack": return BetterStackAPI.page("incidents", team: BetterStackPoller.team)
+        case "integration_linear":  return URL(string: appState.linearInbox?.inboxURL ?? "https://linear.app")
         default: return nil
         }
     }
@@ -1957,9 +2284,35 @@ struct IntegrationCardView: View {
         task.id == "integration_calcom" && appState.calcomLoaded
     }
 
+    // Calendar: show the agenda once EventKit has been read
+    private var calendarHasData: Bool {
+        task.id == CalendarWatcher.pillId && appState.calendarLoaded
+    }
+
+    // Timely: show the day as soon as first poll completes
+    private var timelyHasData: Bool {
+        task.id == "integration_timely" && appState.timelyLoaded && appState.timelyDay != nil
+            && appState.timelyError == nil
+    }
+
+    // Slack: show messages as soon as first poll completes
+    private var slackHasData: Bool {
+        task.id == "integration_slack" && appState.slackLoaded && appState.slackError == nil
+    }
+
+    // Linear: show the inbox as soon as the first poll completes
+    private var linearHasData: Bool {
+        task.id == "integration_linear" && appState.linearInbox != nil
+    }
+
     // Notion: show pages as soon as first poll completes
     private var notionHasData: Bool {
         task.id == "integration_notion" && appState.notionLoaded
+    }
+
+    // Better Stack: show incidents as soon as first poll completes
+    private var betterstackHasData: Bool {
+        task.id == "integration_betterstack" && appState.betterstackLoaded
     }
 
     // Apple Music: show card when a track is loaded (playing or paused) or automation is denied
@@ -2006,9 +2359,15 @@ struct IntegrationCardView: View {
             return mailController.isMailRunning ? Color(hex: "#22C55E") : Color(hex: "#6B7079")
         }
         #endif
-        if PillCatalog.definition(for: task.id)?.comingSoon == true { return Color(hex: "#6B7079") }
+        if PillCatalog.definition(for: task.id)?.comingSoon == true || appState.quietSessionPills.contains(task.id) {
+            return Color(hex: "#6B7079")
+        }
         let svcErr = task.id == "integration_stripe" ? appState.stripeError
                    : task.id == "integration_calcom"  ? appState.calcomError
+                   : task.id == "integration_timely"  ? appState.timelyError
+                   : task.id == "integration_slack"   ? appState.slackError
+                   : task.id == "integration_betterstack" ? appState.betterstackError
+                   : task.id == "integration_linear"  ? appState.linearError
                    : nil
         if svcErr != nil { return Color(hex: "#F4505E") }
         return isConfigured ? Color(hex: "#22C55E") : Color(hex: "#F4505E")
@@ -2031,18 +2390,24 @@ struct IntegrationCardView: View {
         if PillCatalog.definition(for: task.id)?.comingSoon == true { return String(localized: "Coming soon") }
         let svcErr = task.id == "integration_stripe" ? appState.stripeError
                    : task.id == "integration_calcom"  ? appState.calcomError
+                   : task.id == "integration_timely"  ? appState.timelyError
+                   : task.id == "integration_slack"   ? appState.slackError
+                   : task.id == "integration_betterstack" ? appState.betterstackError
+                   : task.id == "integration_linear"  ? appState.linearError
                    : nil
         if let err = svcErr { return err }
         // Pills driven by hooks, never by a key: the idle card reports whether the
         // hooks are in place. integration_claude read "Connected · loading…" with
         // nothing left to load — a session replaces this card, it never resolves here.
-        let isHooks = task.id == "integration_claude" || task.id == "agent_gemini"
+        let isHooks = task.id == "integration_claude" || task.id == "workspace_claude"
+                   || task.id.hasPrefix(PillCatalog.sessionPillPrefix) || task.id == "agent_gemini"
                    || task.id == "agent_antigravity"  || task.id == "agent_cursor"
                    || task.id == "agent_codex"        || task.id == "agent_copilot"
                    || task.id == "agent_muse"         || task.id == "agent_opencode"
                    || task.id == "agent_amp"          || task.id == "agent_hermes"
         let isAI    = ChatProvider(pillID: task.id) != nil
         if isConfigured {
+            if isHooks && appState.quietSessionPills.contains(task.id) { return String(localized: "No activity since Coucou started") }
             if isHooks { return String(localized: "Hooks installed") }
             // No key or poller behind this pill: it only reflects hook events.
             if task.id == "agent_claude-desktop" { return String(localized: "Ready · no setup needed") }
@@ -2064,6 +2429,7 @@ struct IntegrationCardView: View {
             return String(localized: "Connected · loading…")
         } else {
             if isHooks { return String(localized: "Hooks not installed") }
+            if task.id == CalendarWatcher.pillId { return String(localized: "Calendar access not allowed") }
             if isAI {
                 let provider = ChatProvider(pillID: task.id)!
                 return provider.isLocal ? String(localized: "Not connected") : String(localized: "Key not configured")
@@ -2122,8 +2488,23 @@ struct IntegrationCardView: View {
         } else if calcomHasData {
             CalcomCardView()
                 .transition(.opacity)
+        } else if calendarHasData {
+            CalendarCardView()
+                .transition(.opacity)
+        } else if timelyHasData {
+            TimelyCardView()
+                .transition(.opacity)
+        } else if linearHasData {
+            LinearCardView()
+                .transition(.opacity)
         } else if notionHasData {
             NotionCardView()
+                .transition(.opacity)
+        } else if slackHasData {
+            SlackCardView()
+                .transition(.opacity)
+        } else if betterstackHasData {
+            BetterStackCardView()
                 .transition(.opacity)
         } else if musicIsActive {
             #if !APPSTORE
@@ -2137,6 +2518,12 @@ struct IntegrationCardView: View {
         } else if task.id == "integration_portfolio" {
             PortfolioCardView()
                 .transition(.opacity)
+        } else if task.id == "integration_whatsapp" {
+            // Its own card in every state (not linked, no message, conversations).
+            #if !APPSTORE
+            WhatsAppCardView()
+                .transition(.opacity)
+            #endif
         } else if mailHasData {
             #if !APPSTORE
             MailCardView()
@@ -2159,7 +2546,8 @@ struct IntegrationCardView: View {
                         .foregroundColor(Color(hex: "#F5F6F8"))
                         .lineLimit(1).truncationMode(.tail)
                         .layoutPriority(1)
-                    Text(PillCatalog.definition(for: task.id)?.sessionSubtitle ?? "Agent")
+                    Text(PillCatalog.definition(for: task.id)?.sessionSubtitle
+                         ?? (task.id.hasPrefix(PillCatalog.sessionPillPrefix) ? "Claude Code" : "Agent"))
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "#8E939C"))
                         .lineLimit(1).truncationMode(.tail)
@@ -2173,7 +2561,7 @@ struct IntegrationCardView: View {
                 }
                 .padding(.top, 6)
                 .padding(.leading, 108)
-                .padding(.trailing, 36)
+                .padding(.trailing, appState.codeSessions[task.id]?.hasContent == true ? 56 : 36)
 
                 TickerView(task: task, onDiffTap: onDiffTap)
                     .frame(height: 44)
@@ -2194,7 +2582,8 @@ struct IntegrationCardView: View {
                                                          : PillCatalog.definition(for: task.id)?.name ?? task.name)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(Color(hex: "#F5F6F8"))
-                    Text(PillCatalog.definition(for: task.id)?.subtitle ?? "Integration")
+                    Text(PillCatalog.definition(for: task.id)?.subtitle
+                         ?? (task.id.hasPrefix(PillCatalog.sessionPillPrefix) ? "Claude Code" : "Integration"))
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "#8E939C"))
                     Spacer(minLength: 2)
@@ -2213,8 +2602,8 @@ struct IntegrationCardView: View {
                 .padding(.top, 2)
 
                 HStack(spacing: 8) {
-                    if task.id == "integration_claude", task.hostApp != nil {
-                        Button("Open \(ClaudeHost.name(for: task.hostApp))") { ClaudeHost.activate(task.hostApp) }
+                    if task.id == "integration_claude" || task.id == "workspace_claude", task.hostApp != nil {
+                        Button("Open \(ClaudeHost.name(for: task.hostApp))") { ClaudeHost.activate(task.hostApp, tty: task.sessionTTY) }
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Color(hex: task.color).opacity(0.7))
                             .buttonStyle(.plain)
@@ -2325,6 +2714,36 @@ struct IntegrationCardView: View {
                             .foregroundColor(Color(hex: "#C9956A").opacity(0.85))
                             .buttonStyle(.plain)
                     }
+                    if task.id == CalendarWatcher.pillId && isConfigured {
+                        Button("Refresh") { CalendarWatcher.shared.refresh() }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: task.color).opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
+                    if task.id == "integration_timely" && isConfigured {
+                        Button("Refresh") { Task { @MainActor in TimelyPoller.shared.pollNow() } }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: task.color).opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
+                    if task.id == "integration_slack" && isConfigured {
+                        Button("Refresh") { SlackPoller.shared.pollNow() }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: "#E01E5A").opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
+                    if task.id == "integration_betterstack" && isConfigured {
+                        Button("Refresh") { BetterStackPoller.shared.pollNow() }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: task.color).opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
+                    if task.id == "integration_linear" && isConfigured {
+                        Button("Refresh") { Task { @MainActor in LinearPoller.shared.pollNow() } }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: "#5E6AD2").opacity(0.85))
+                            .buttonStyle(.plain)
+                    }
                     // Settings button: shown when not configured, except cursor/codex and music
                     if !isConfigured
                        && task.id != "agent_cursor"
@@ -2369,11 +2788,11 @@ struct IntegrationCardView: View {
             return
         }
 
-        // No cwd: activate running instance or launch fresh
-        if let running = ids.compactMap({ id in
+        // No cwd: bring the running instance forward or launch fresh
+        if let url = ids.compactMap({ id in
             NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == id }
-        }).first {
-            running.activate(options: .activateIgnoringOtherApps)
+        }).first?.bundleURL {
+            NSWorkspace.shared.openApplication(at: url, configuration: .init(), completionHandler: nil)
             return
         }
         if let appURL = appURL {
@@ -3637,6 +4056,96 @@ private struct CalcomDetailRow: View {
     }
 }
 
+// MARK: - Calendar Card View
+
+struct CalendarCardView: View {
+    @ObservedObject private var appState = AppState.shared
+    private static let accent = "#4F9DF7"
+    private static let maxRows = 3
+
+    var body: some View {
+        // Ticks only while on screen: the countdown stays right, nothing runs when hidden.
+        TimelineView(.periodic(from: .now, by: 30)) { ctx in
+            content(now: ctx.date)
+        }
+        .transition(.opacity)
+    }
+
+    private func content(now: Date) -> some View {
+        let agenda = CalendarAgenda(appState.calendarMeetings, now: now)
+        let rest = agenda.later.map { (Self.clock($0.start), $0.title) }
+                 + agenda.allDay.map { (String(localized: "All day"), $0.title) }
+        let shown = Array(rest.prefix(Self.maxRows - (agenda.next == nil ? 0 : 1)))
+
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: Self.accent)).frame(width: 7, height: 7)
+                Text(verbatim: "Calendar").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text("Today").font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 3) {
+                if let next = agenda.next {
+                    nextRow(next, now: now)
+                }
+                ForEach(shown.indices, id: \.self) { i in
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: Self.accent)).frame(width: 4, height: 4)
+                        Text(shown[i].0)
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(Color(hex: Self.accent)).fixedSize()
+                        Text(shown[i].1).font(.system(size: 11)).foregroundColor(Color(hex: "#9398A1"))
+                            .lineLimit(1).truncationMode(.tail)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                }
+                if agenda.next == nil && rest.isEmpty {
+                    Text("No more meetings today").font(.system(size: 11)).foregroundColor(Color(hex: "#6B7079"))
+                        .padding(.leading, 6)
+                }
+            }
+            .padding(.leading, 108).padding(.trailing, 12).padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
+    }
+
+    private func nextRow(_ meeting: CalendarMeeting, now: Date) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(Color(hex: Self.accent)).frame(width: 4, height: 4)
+            Text(Self.clock(meeting.start))
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundColor(Color(hex: Self.accent)).fixedSize()
+            Text(meeting.title).font(.system(size: 11)).foregroundColor(Color(hex: "#C5C8CD"))
+                .lineLimit(1).truncationMode(.tail).layoutPriority(1)
+            Spacer(minLength: 2)
+            Text(countdown(meeting, now: now)).font(.system(size: 10)).foregroundColor(Color(hex: "#8E939C")).fixedSize()
+            if let url = meeting.joinURL {
+                Button("Join") { NSWorkspace.shared.open(url) }
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(hex: Self.accent))
+                    .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(Color(hex: Self.accent).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private static func clock(_ date: Date) -> String {
+        date.formatted(date: .omitted, time: .shortened)
+    }
+
+    /// "Now", "in 12 min", "in 2 h 5" or "Tomorrow".
+    private func countdown(_ meeting: CalendarMeeting, now: Date) -> String {
+        if meeting.start <= now { return String(localized: "Now") }
+        if !Calendar.current.isDate(meeting.start, inSameDayAs: now) { return String(localized: "Tomorrow") }
+        let mins = Int((meeting.start.timeIntervalSince(now) / 60).rounded(.up))
+        if mins < 60 { return String(format: String(localized: "plan.reset-in-m %lld"), Int64(mins)) }
+        return String(format: String(localized: "plan.reset-in-hm %lld %lld"), Int64(mins / 60), Int64(mins % 60))
+    }
+}
+
 // MARK: - Notion Card View
 
 struct NotionCardView: View {
@@ -3680,6 +4189,287 @@ struct NotionCardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
         .transition(.opacity)
+    }
+}
+
+// MARK: - Timely Card View
+
+struct TimelyCardView: View {
+    @ObservedObject private var appState = AppState.shared
+
+    private var color: String { PillCatalog.definition(for: TimelyPoller.pillId)?.color ?? "#F5A524" }
+
+    var body: some View {
+        // Ticks only while the card is on screen, for the running timer.
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            if let day = appState.timelyDay { content(day, now: context.date) }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.top, 4)
+    }
+
+    private func content(_ day: TimelyDay, now: Date) -> some View {
+        let logged = TimelyFormat.hm(day.loggedSeconds(at: now))
+        let total = day.capacityHours.map { "\(logged) / \(TimelyFormat.hm(hours: $0))" } ?? logged
+        let others = day.entries.filter { !$0.isRunning }.suffix(2).reversed()
+
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: color)).frame(width: 7, height: 7)
+                Text("Timely").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text("Today").font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+                Text(total).font(.system(size: 11, weight: .medium)).foregroundColor(Color(hex: "#C5C8CD"))
+                    .monospacedDigit()
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 3) {
+                if let running = day.running {
+                    row(running, now: now, highlighted: true)
+                } else {
+                    Text("No timer running")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#6B7079"))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                }
+                ForEach(Array(others)) { entry in row(entry, now: now, highlighted: false) }
+            }
+            .padding(.top, 5).padding(.leading, 108).padding(.trailing, 12)
+        }
+    }
+
+    private func row(_ entry: TimelyEntry, now: Date, highlighted: Bool) -> some View {
+        let accent = Color(hex: entry.color)
+        return HStack(spacing: 5) {
+            Circle().fill(accent).frame(width: 5, height: 5)
+            Text(entry.project)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(Color(hex: highlighted ? "#C5C8CD" : "#9398A1"))
+                .lineLimit(1).truncationMode(.tail)
+                .layoutPriority(1)
+            if highlighted && !entry.note.isEmpty {
+                Text(entry.note)
+                    .font(.system(size: 10))
+                    .foregroundColor(Color(hex: "#4D5159"))
+                    .lineLimit(1).truncationMode(.tail)
+            }
+            Spacer(minLength: 4)
+            Text(TimelyFormat.hm(entry.seconds(at: now)))
+                .font(.system(size: 10))
+                .foregroundColor(Color(hex: "#6B7079"))
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(highlighted ? accent.opacity(0.08) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+}
+
+// MARK: - Slack Card View
+
+struct SlackCardView: View {
+    @ObservedObject private var appState = AppState.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: "#E01E5A")).frame(width: 7, height: 7)
+                Text("Slack").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text("Messages").font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+                Spacer(minLength: 4)
+                count(icon: "bubble.left.fill", value: appState.slackUnreadDMs)
+                count(icon: "at", value: appState.slackMentionCount)
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if appState.slackMessages.isEmpty {
+                    Text("No new messages").font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#6B7079"))
+                        .padding(.horizontal, 6).padding(.vertical, 4)
+                }
+                ForEach(appState.slackMessages.prefix(3)) { message in
+                    Button { SlackPoller.open(message) } label: { row(message) }
+                        .buttonStyle(.plain)
+                }
+            }
+            .padding(.leading, 102).padding(.trailing, 12).padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
+        .transition(.opacity)
+    }
+
+    private func count(icon: String, value: Int) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: icon).font(.system(size: 8, weight: .semibold))
+            Text("\(value)").font(.system(size: 10, weight: .semibold).monospacedDigit())
+        }
+        .foregroundColor(value > 0 ? Color(hex: "#E01E5A") : Color(hex: "#4B5563"))
+    }
+
+    private func row(_ message: SlackMessage) -> some View {
+        let accent = message.kind == .dm ? "#E01E5A" : "#ECB22E"
+        let place = message.kind == .dm ? message.author : "\(message.author) · #\(message.channelName ?? "")"
+        return HStack(spacing: 6) {
+            Circle().fill(Color(hex: accent)).frame(width: 5, height: 5).frame(width: 14)
+            Text(place).font(.system(size: 11, weight: .medium))
+                .foregroundColor(Color(hex: "#C5C8CD"))
+                .lineLimit(1).truncationMode(.tail)
+            Text(message.text).font(.system(size: 11))
+                .foregroundColor(Color(hex: "#8E939C"))
+                .lineLimit(1).truncationMode(.tail).layoutPriority(-1)
+            Spacer(minLength: 4)
+            Text(message.timeAgo).font(.system(size: 9))
+                .foregroundColor(Color(hex: "#4B5563"))
+        }
+        .padding(.horizontal, 6).padding(.vertical, 4)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Better Stack Card View
+
+struct BetterStackCardView: View {
+    @ObservedObject private var appState = AppState.shared
+
+    private static let red   = "#F4505E"
+    private static let amber = "#F29B38"
+    private static let green = "#22C55E"
+
+    private struct Row: Identifiable {
+        let id: String
+        let accent: String
+        let name: String
+        let detail: String
+        let trailing: String
+        let url: URL?
+    }
+
+    /// Incidents first; then down monitors that no open incident already names.
+    private var rows: [Row] {
+        let team = BetterStackPoller.team
+        let incidents = appState.betterstackIncidents.map {
+            Row(id: "i\($0.id)", accent: $0.acknowledged ? Self.amber : Self.red, name: $0.name,
+                detail: $0.acknowledged ? String(localized: "Acknowledged") : ($0.cause ?? ""),
+                trailing: $0.timeAgo, url: $0.webURL(team: team))
+        }
+        let named = Set(appState.betterstackIncidents.map(\.name))
+        let monitors = appState.betterstackDownMonitors.filter { !named.contains($0.name) }.map {
+            Row(id: "m\($0.id)", accent: Self.red, name: $0.name, detail: String(localized: "Down"),
+                trailing: "", url: $0.webURL(team: team))
+        }
+        return Array((incidents + monitors).prefix(3))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: "#5B5FEF")).frame(width: 7, height: 7)
+                Text("Better Stack").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text("Incidents").font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if rows.isEmpty {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: Self.green)).frame(width: 5, height: 5)
+                        Text("All monitors up").font(.system(size: 11))
+                            .foregroundColor(Color(hex: "#C5C8CD"))
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                }
+                ForEach(rows) { row in
+                    Button {
+                        if let url = row.url { NSWorkspace.shared.open(url) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle().fill(Color(hex: row.accent)).frame(width: 5, height: 5)
+                            Text(row.name).font(.system(size: 11, weight: .medium))
+                                .foregroundColor(Color(hex: "#C5C8CD"))
+                                .lineLimit(1).truncationMode(.tail).layoutPriority(1)
+                            Text(row.detail).font(.system(size: 10))
+                                .foregroundColor(Color(hex: "#6B7079"))
+                                .lineLimit(1).truncationMode(.tail)
+                            Spacer(minLength: 4)
+                            Text(row.trailing).font(.system(size: 9))
+                                .foregroundColor(Color(hex: "#4B5563"))
+                        }
+                        .padding(.horizontal, 6).padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.leading, 102).padding(.trailing, 12).padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
+        .transition(.opacity)
+    }
+}
+
+// MARK: - Linear Card View
+
+struct LinearCardView: View {
+    @ObservedObject private var appState = AppState.shared
+
+    private static let accent = "#5E6AD2"
+    private static let rowLimit = 3
+
+    private var inbox: LinearInbox? { appState.linearInbox }
+
+    private var subtitle: String {
+        String(localized: "\(inbox?.unread.count ?? 0) unread")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: Self.accent)).frame(width: 7, height: 7)
+                Text("Linear").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#F5F6F8"))
+                Text(subtitle).font(.system(size: 11)).foregroundColor(Color(hex: "#8E939C"))
+            }
+            .padding(.top, 6).padding(.leading, 108).padding(.trailing, 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach((inbox?.unread ?? []).prefix(Self.rowLimit)) { note in
+                    row(url: note.url, key: note.key, title: note.title, time: note.createdAt) {
+                        Image(systemName: note.reason.symbol).font(.system(size: 9))
+                            .foregroundColor(Color(hex: Self.accent))
+                    }
+                    .help(note.actor ?? "")
+                }
+            }
+            .padding(.leading, 102).padding(.trailing, 12).padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading).padding(.top, 4)
+        .transition(.opacity)
+    }
+
+    private func row<Icon: View>(url: String, key: String?, title: String, time: Date,
+                                 @ViewBuilder icon: () -> Icon) -> some View {
+        Button {
+            if let url = safeWebURL(url) { NSWorkspace.shared.open(url) }
+        } label: {
+            HStack(spacing: 6) {
+                icon().frame(width: 14)
+                if let key {
+                    Text(key).font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                        .lineLimit(1).fixedSize()
+                }
+                Text(title).font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#C5C8CD"))
+                    .lineLimit(1).truncationMode(.tail).layoutPriority(1)
+                Spacer(minLength: 4)
+                Text(linearTimeAgo(time)).font(.system(size: 9))
+                    .foregroundColor(Color(hex: "#4B5563"))
+            }
+            .padding(.horizontal, 6).padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -3996,11 +4786,7 @@ struct AgentPillsView: View {
     @State private var swapping = false
 
     private var others: [AgentTask] {
-        state.tasks.filter { $0.id != state.focusId }
-    }
-
-    private var displayTasks: [AgentTask] {
-        Array(others.prefix(4))
+        state.othersByActivity
     }
 
     private let columns = [
@@ -4009,47 +4795,58 @@ struct AgentPillsView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            LazyVGrid(columns: columns, spacing: 4) {
-                ForEach(displayTasks) { task in
-                    #if !APPSTORE
-                    if task.id == "integration_music" {
-                        MusicPill(task: task, state: state, swapping: $swapping) {
-                            swapping = true
-                            state.setFocus(task.id)
-                            SoundEngine.shared.play("blip")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
-                        }
-                    } else if task.id == "integration_spotify" {
-                        SpotifyPill(task: task, swapping: $swapping) {
-                            swapping = true
-                            state.setFocus(task.id)
-                            SoundEngine.shared.play("blip")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
-                        }
-                    } else {
-                        AgentPill(task: task, state: state, swapping: $swapping) {
-                            swapping = true
-                            state.setFocus(task.id)
-                            SoundEngine.shared.play("blip")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
-                        }
+        if others.count > 6 {
+            ScrollView(.vertical, showsIndicators: false) {
+                grid.padding(.vertical, 6)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                grid
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private var grid: some View {
+        LazyVGrid(columns: columns, spacing: 4) {
+            ForEach(others) { task in
+                #if !APPSTORE
+                if task.id == "integration_music" {
+                    MusicPill(task: task, state: state, swapping: $swapping) {
+                        swapping = true
+                        state.setFocus(task.id)
+                        SoundEngine.shared.play("blip")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
                     }
-                    #else
+                } else if task.id == "integration_spotify" {
+                    SpotifyPill(task: task, swapping: $swapping) {
+                        swapping = true
+                        state.setFocus(task.id)
+                        SoundEngine.shared.play("blip")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
+                    }
+                } else {
                     AgentPill(task: task, state: state, swapping: $swapping) {
                         swapping = true
                         state.setFocus(task.id)
                         SoundEngine.shared.play("blip")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
                     }
-                    #endif
                 }
+                #else
+                AgentPill(task: task, state: state, swapping: $swapping) {
+                    swapping = true
+                    state.setFocus(task.id)
+                    SoundEngine.shared.play("blip")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { swapping = false }
+                }
+                #endif
             }
-            .padding(.horizontal, 8)
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -4091,6 +4888,8 @@ struct AgentPill: View {
                                          : Color(hex: "#6B7079"))
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .padding(.leading, 34)
+                        .padding(.trailing, 10)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .frame(maxWidth: .infinity)
@@ -4358,13 +5157,9 @@ struct PillBadgeView: View {
 struct ColumnAgentsView: View {
     @ObservedObject var state: AppState
 
-    var others: [AgentTask] {
-        state.tasks.filter { $0.id != state.focusId }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(others.prefix(4).enumerated()), id: \.1.id) { idx, task in
+            ForEach(Array(state.othersByActivity.prefix(4).enumerated()), id: \.1.id) { idx, task in
                 MiniBotCanvasView(task: task)
                     .frame(width: 16 / 0.6, height: 16 / 0.6)
                     .frame(width: 16, height: 16)
@@ -4965,14 +5760,8 @@ struct SettingsIslandView: View {
         let url = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude/settings.json")
         guard let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let hooks = json["hooks"] as? [String: Any],
-              let ss = hooks["SessionStart"] as? [[String: Any]] else { return false }
-        return ss.contains { matcher in
-            (matcher["hooks"] as? [[String: Any]])?.contains {
-                ($0["command"] as? String)?.contains("NotchBuddy") == true
-            } ?? false
-        }
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        return coucouHooksPresent(inSettings: json)
     }
 
     private var apiConnected: Bool {
@@ -4993,7 +5782,7 @@ struct SettingsIslandView: View {
                     Text("Sound")
                         .font(.system(size: 12.5))
                         .foregroundColor(Color(hex: "#C5C8CD"))
-                    Slider(value: $state.soundVolume, in: 0...0.2)
+                    Slider(value: $state.soundVolume, in: 0...AppState.soundVolumeMax)
                         .frame(width: 72)
                         .opacity(state.soundEnabled ? 1 : 0.4)
                 }
