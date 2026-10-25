@@ -7,6 +7,13 @@
 
 import { Bridge } from "./bridge";
 
+/**
+ * On Linux every resume opens a new PipeWire stream, a few milliseconds long
+ * one first, and a shell can take that churn for a volume change (the DMS
+ * volume OSD): the output stays open there.
+ */
+const SUSPENDS_WHEN_IDLE = navigator.userAgent.includes("Windows");
+
 export const SOUND_NAMES = [
   "peek", "open", "close", "hover", "blip", "slap", "annoyed", "dizzy", "greet",
   "work", "finish", "error", "approval", "question", "approve", "gulp", "tick",
@@ -101,7 +108,7 @@ class SoundEngine {
    * would clip it — and `play()` resumes the context on its own.
    */
   idle() {
-    if (!this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
+    if (!SUSPENDS_WHEN_IDLE || !this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
     this.idleTimer = window.setTimeout(() => {
       this.idleTimer = null;
       void this.ctx?.suspend();
