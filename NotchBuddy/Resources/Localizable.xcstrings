@@ -1,6 +1,364 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Better Stack" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack"
+          }
+        }
+      }
+    },
+    "Claude Code" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code"
+          }
+        }
+      }
+    },
+    "http://127.0.0.1:8080" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "http://127.0.0.1:8080"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "http://127.0.0.1:8080"
+          }
+        }
+      }
+    },
+    "Linear" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear"
+          }
+        }
+      }
+    },
+    "Open WebUI" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI"
+          }
+        }
+      }
+    },
+    "Personal API key" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفتاح API شخصي"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ব্যক্তিগত API কী"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönlicher API-Schlüssel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave de API personal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé d'API personnelle"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "व्यक्तिगत API कुंजी"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunci API pribadi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave de API pessoal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Личный API-ключ"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คีย์ API ส่วนตัว"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kişisel API anahtarı"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人 API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個人 API 金鑰"
+          }
+        }
+      }
+    },
+    "Slack" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slack"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slack"
+          }
+        }
+      }
+    },
+    "Timely" : {
+      "localizations" : {
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timely"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timely"
+          }
+        }
+      }
+    },
+    "Uptime API token" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "رمز Uptime API"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime API টোকেন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime-API-Token"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token de la API de Uptime"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeton d'API Uptime"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime API टोकन"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token API Uptime"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token da API do Uptime"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Токен Uptime API"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โทเค็น Uptime API"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime API belirteci"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime API 令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uptime API 權杖"
+          }
+        }
+      }
+    },
+    "User token  (xoxp-…)" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "رمز المستخدم  (xoxp-…)"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ইউজার টোকেন  (xoxp-…)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benutzer-Token  (xoxp-…)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token de usuario  (xoxp-…)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeton utilisateur  (xoxp-…)"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यूज़र टोकन  (xoxp-…)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token pengguna  (xoxp-…)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token de usuário  (xoxp-…)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Токен пользователя  (xoxp-…)"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โทเค็นผู้ใช้  (xoxp-…)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı belirteci  (xoxp-…)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户令牌  (xoxp-…)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用者權杖  (xoxp-…)"
+          }
+        }
+      }
+    },
     "whatsnew.all-changes" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11064,6 +11422,18 @@
             "state" : "translated",
             "value" : "全屏时隐藏"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซ่อนเมื่อเต็มหน้าจอ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全螢幕時隱藏"
+          }
         }
       }
     },
@@ -11406,6 +11776,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当全屏应用（游戏或视频）占满其所在屏幕时，岛会让开。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แถบจะหลบไปเมื่อแอปแบบเต็มหน้าจอ เช่น เกมหรือวิดีโอ แสดงเต็มจอที่แถบอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當全螢幕 App（遊戲或影片）佔滿所在螢幕時，動態島會讓開。"
           }
         }
       }
@@ -75501,6 +75883,18 @@
             "state" : "translated",
             "value" : "%@ 不是文件夹。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ไม่ใช่โฟลเดอร์"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 不是資料夾。"
+          }
         }
       }
     },
@@ -75576,6 +75970,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "密钥只会通过 https 发送，或发送到本机上的服务器。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คีย์จะถูกส่งผ่าน https เท่านั้น หรือส่งไปยังเซิร์ฟเวอร์บนคอมพิวเตอร์เครื่องนี้"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "金鑰只會透過 https 傳送，或傳送到這部電腦上的伺服器。"
           }
         }
       }
@@ -75653,6 +76059,18 @@
             "state" : "translated",
             "value" : "由同时使用麦克风或摄像头的应用共享的屏幕。录屏或截图工具不算。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "หน้าจอที่แชร์โดยแอปที่ใช้ไมโครโฟนหรือกล้องอยู่ด้วย ไม่นับโปรแกรมอัดหน้าจอหรือเครื่องมือจับภาพหน้าจอ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由同時使用麥克風或相機的 App 分享的螢幕。錄影或截圖工具不算在內。"
+          }
         }
       }
     },
@@ -75728,6 +76146,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "来自 Slack 应用的用户令牌，需具备 im:read、users:read 和 search:read 权限范围。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โทเค็นผู้ใช้จากแอป Slack ที่มีสิทธิ์ im:read, users:read และ search:read"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自 Slack App 的使用者權杖，需具備 im:read、users:read 和 search:read 權限範圍。"
           }
         }
       }
@@ -76613,6 +77043,18 @@
             "state" : "translated",
             "value" : "已确认"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รับทราบแล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已確認"
+          }
         }
       }
     },
@@ -76688,6 +77130,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เพิ่ม"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
           }
         }
       }
@@ -76765,6 +77219,18 @@
             "state" : "translated",
             "value" : "请先在 设置 → 本地模型 中添加 Open WebUI API 密钥。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เพิ่มคีย์ API ของ Open WebUI ใน การตั้งค่า → โมเดลในเครื่อง ก่อน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先在「設定 → 本機模型」中新增 Open WebUI API 金鑰。"
+          }
         }
       }
     },
@@ -76840,6 +77306,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代理出错"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เอเจนต์เกิดข้อผิดพลาด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理程式出錯"
           }
         }
       }
@@ -76917,6 +77395,18 @@
             "state" : "translated",
             "value" : "代理已完成"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เอเจนต์ทำงานเสร็จแล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理程式已完成"
+          }
         }
       }
     },
@@ -76992,6 +77482,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "会打开岛的提醒"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การแจ้งเตือนที่เปิดแถบ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會展開動態島的提醒"
           }
         }
       }
@@ -77069,6 +77571,18 @@
             "state" : "translated",
             "value" : "全天"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ทั้งวัน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整天"
+          }
         }
       }
     },
@@ -77141,6 +77655,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有模型"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ทุกโมเดล"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有模型"
@@ -77221,6 +77747,18 @@
             "state" : "translated",
             "value" : "所有监控均正常"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ทุกมอนิเตอร์ทำงานปกติ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有監控皆正常"
+          }
         }
       }
     },
@@ -77296,6 +77834,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "允许访问日历"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อนุญาตให้เข้าถึงปฏิทิน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許存取行事曆"
           }
         }
       }
@@ -77373,6 +77923,18 @@
             "state" : "translated",
             "value" : "授权码"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รหัสการอนุญาต"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授權碼"
+          }
         }
       }
     },
@@ -77449,6 +78011,18 @@
             "state" : "translated",
             "value" : "自动隐藏"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซ่อนอัตโนมัติ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動隱藏"
+          }
         }
       }
     },
@@ -77521,6 +78095,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ย้อนกลับ"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "返回"
@@ -77601,6 +78187,18 @@
             "state" : "translated",
             "value" : "下"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ล่าง"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下"
+          }
         }
       }
     },
@@ -77676,6 +78274,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未允许访问日历"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่ได้รับอนุญาตให้เข้าถึงปฏิทิน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未允許存取行事曆"
           }
         }
       }
@@ -77753,6 +78363,18 @@
             "state" : "translated",
             "value" : "日历"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ปฏิทิน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "行事曆"
+          }
         }
       }
     },
@@ -77828,6 +78450,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通话"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การโทร"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通話"
           }
         }
       }
@@ -77905,6 +78539,18 @@
             "state" : "translated",
             "value" : "摄像头开启"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กล้องเปิดอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相機已開啟"
+          }
         }
       }
     },
@@ -77980,6 +78626,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你在这里的对话也会出现在 Open WebUI 中。获取密钥：管理员先打开 Admin Panel → Settings → Authentication → API Keys，然后在 Settings → Account → API keys → Secrets → Show 中创建。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แชตที่คุณมีที่นี่จะแสดงใน Open WebUI ด้วย สำหรับคีย์ ผู้ดูแลต้องเปิด Admin Panel → Settings → Authentication → API Keys ก่อน จากนั้นสร้างคีย์ได้ที่ Settings → Account → API keys → Secrets → Show"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在這裡的對話也會出現在 Open WebUI 中。取得金鑰：管理員先開啟 Admin Panel → Settings → Authentication → API Keys，然後在 Settings → Account → API keys → Secrets → Show 中建立。"
           }
         }
       }
@@ -78057,6 +78715,18 @@
             "state" : "translated",
             "value" : "未安装 Claude Code（找不到 `claude` 命令）。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ยังไม่ได้ติดตั้ง Claude Code (ไม่พบคำสั่ง `claude`)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安裝 Claude Code（找不到 `claude` 指令）。"
+          }
         }
       }
     },
@@ -78132,6 +78802,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通过 SSH（使用你的密钥和 ~/.ssh/config）查看其他机器上的 Claude Code 会话。请先在终端中连接每台主机一次，让其主机密钥被记录。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เซสชัน Claude Code บนเครื่องอื่นผ่าน SSH ด้วยคีย์ของคุณและ ~/.ssh/config เชื่อมต่อแต่ละโฮสต์ในเทอร์มินัลหนึ่งครั้งก่อน เพื่อให้รู้จักคีย์ของโฮสต์นั้น"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 SSH（使用你的金鑰和 ~/.ssh/config）查看其他電腦上的 Claude Code 工作階段。請先在終端機中連線每台主機一次，讓它的主機金鑰被記下。"
           }
         }
       }
@@ -78209,6 +78891,18 @@
             "state" : "translated",
             "value" : "Claude Code 的默认设置"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ค่าเริ่มต้นของ Claude Code"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code 的預設值"
+          }
         }
       }
     },
@@ -78284,6 +78978,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "客户端 ID"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client ID"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用戶端 ID"
           }
         }
       }
@@ -78361,6 +79067,18 @@
             "state" : "translated",
             "value" : "客户端密钥"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client secret"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用戶端密鑰"
+          }
         }
       }
     },
@@ -78436,6 +79154,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代码"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โค้ด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "程式碼"
           }
         }
       }
@@ -78513,6 +79243,18 @@
             "state" : "translated",
             "value" : "Coucou 聊天文件夹"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โฟลเดอร์แชตของ Coucou"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coucou 的聊天資料夾"
+          }
         }
       }
     },
@@ -78588,6 +79330,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "只计算工作中的智能体"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "นับเฉพาะเอเจนต์ที่กำลังทำงาน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只計算工作中的代理程式"
           }
         }
       }
@@ -78665,6 +79419,18 @@
             "state" : "translated",
             "value" : "宕机"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ล่ม"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止運作"
+          }
         }
       }
     },
@@ -78740,6 +79506,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code 编辑的每个文件都会在岛中实时打开，下一次编辑会替换它。关闭它即可停止跟随，直到下一条提示。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ทุกไฟล์ที่ Claude Code แก้ไขจะเปิดในแถบทันที และการแก้ไขครั้งถัดไปจะแทนที่ ปิดเพื่อหยุดติดตามจนถึงพรอมต์ถัดไป"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code 編輯的每個檔案都會即時在動態島中開啟，下一次編輯會取代它。關閉它即可停止跟隨，直到下一個提示。"
           }
         }
       }
@@ -78817,6 +79595,18 @@
             "state" : "translated",
             "value" : "思考强度"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ระดับความพยายาม"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思考強度"
+          }
         }
       }
     },
@@ -78892,6 +79682,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "实时跟随编辑"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ติดตามการแก้ไขแบบสด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時跟隨編輯"
           }
         }
       }
@@ -78969,6 +79771,18 @@
             "state" : "translated",
             "value" : "跟随最新活动"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ติดตามกิจกรรมล่าสุด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟隨最新活動"
+          }
         }
       }
     },
@@ -79045,6 +79859,18 @@
             "state" : "translated",
             "value" : "已在别处处理。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "จัดการที่อื่นแล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在其他地方處理。"
+          }
         }
       }
     },
@@ -79117,6 +79943,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事件"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เหตุขัดข้อง"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "事件"
@@ -79197,6 +80035,18 @@
             "state" : "translated",
             "value" : "加入"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เข้าร่วม"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入"
+          }
         }
       }
     },
@@ -79273,6 +80123,18 @@
             "state" : "translated",
             "value" : "留空则使用 Coucou 的聊天文件夹。选择项目文件夹，让 Claude Code 在该项目中工作。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เว้นว่างไว้เพื่อใช้โฟลเดอร์แชตของ Coucou เลือกโฟลเดอร์โปรเจกต์เพื่อให้ Claude Code ทำงานกับโปรเจกต์นั้น"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留空則使用 Coucou 的聊天資料夾。選擇專案資料夾，讓 Claude Code 在該專案中工作。"
+          }
         }
       }
     },
@@ -79345,6 +80207,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซ้าย"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "左"
@@ -79425,6 +80299,18 @@
             "state" : "translated",
             "value" : "实时"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時"
+          }
         }
       }
     },
@@ -79500,6 +80386,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "消息"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ข้อความ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訊息"
           }
         }
       }
@@ -79577,6 +80475,18 @@
             "state" : "translated",
             "value" : "麦克风开启"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไมโครโฟนเปิดอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "麥克風已開啟"
+          }
         }
       }
     },
@@ -79649,6 +80559,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最常用"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้บ่อยที่สุด"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "最常用"
@@ -79729,6 +80651,18 @@
             "state" : "translated",
             "value" : "新聊天"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แชตใหม่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新聊天"
+          }
         }
       }
     },
@@ -79804,6 +80738,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新建对话 (⌘K)"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การสนทนาใหม่ (⌘K)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話 (⌘K)"
           }
         }
       }
@@ -79881,6 +80827,18 @@
             "state" : "translated",
             "value" : "自 Coucou 启动以来没有活动"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่มีกิจกรรมตั้งแต่ Coucou เริ่มทำงาน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自 Coucou 啟動以來沒有活動"
+          }
         }
       }
     },
@@ -79956,6 +80914,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有匹配的模型。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่มีโมเดลที่ตรงกัน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有相符的模型。"
           }
         }
       }
@@ -80033,6 +81003,18 @@
             "state" : "translated",
             "value" : "今天没有更多会议"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "วันนี้ไม่มีประชุมแล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天沒有其他會議"
+          }
         }
       }
     },
@@ -80108,6 +81090,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有新消息"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่มีข้อความใหม่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有新訊息"
           }
         }
       }
@@ -80185,6 +81179,18 @@
             "state" : "translated",
             "value" : "没有回复内容。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่มีข้อความตอบกลับ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有回覆內容。"
+          }
         }
       }
     },
@@ -80260,6 +81266,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有正在计时的条目"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่มีตัวจับเวลาที่ทำงานอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有正在計時的項目"
           }
         }
       }
@@ -80337,6 +81355,18 @@
             "state" : "translated",
             "value" : "不是有效的主机名"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่ใช่ชื่อโฮสต์"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不是主機名稱"
+          }
         }
       }
     },
@@ -80412,6 +81442,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "现在"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตอนนี้"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在"
           }
         }
       }
@@ -80489,6 +81531,18 @@
             "state" : "translated",
             "value" : "Open WebUI 没有可供此账户使用的模型。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI ไม่มีโมเดลสำหรับบัญชีนี้"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI 沒有可供此帳號使用的模型。"
+          }
         }
       }
     },
@@ -80564,6 +81618,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在管理员已开启网页搜索的情况下，Open WebUI 会先搜索网页再回答。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WebUI จะค้นหาเว็บก่อนตอบ หากผู้ดูแลเปิดการค้นหาเว็บไว้"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在管理員已開啟網頁搜尋的情況下，Open WebUI 會先搜尋網頁再回答。"
           }
         }
       }
@@ -80641,6 +81707,18 @@
             "state" : "translated",
             "value" : "有新活动时打开岛"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เปิดแถบเมื่อมีกิจกรรมใหม่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有新活動時展開動態島"
+          }
         }
       }
     },
@@ -80716,6 +81794,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "边距"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ระยะขอบ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邊距"
           }
         }
       }
@@ -80793,6 +81883,18 @@
             "state" : "translated",
             "value" : "请先在聊天框上方选择一个模型。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เลือกโมเดลด้านบนช่องแชตก่อน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先在聊天框上方選擇一個模型。"
+          }
         }
       }
     },
@@ -80868,6 +81970,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "读取“日历”App 中的日历，包括 Google 账户。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อ่านปฏิทินจากแอปปฏิทิน รวมถึงบัญชี Google"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取「行事曆」App 中的行事曆，包括 Google 帳號。"
           }
         }
       }
@@ -80945,6 +82059,18 @@
             "state" : "translated",
             "value" : "远程主机"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โฮสต์ระยะไกล"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遠端主機"
+          }
         }
       }
     },
@@ -81017,6 +82143,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลบ"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除"
@@ -81097,6 +82235,18 @@
             "state" : "translated",
             "value" : "已解决"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แก้ไขแล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已解決"
+          }
         }
       }
     },
@@ -81169,6 +82319,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ขวา"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "右"
@@ -81249,6 +82411,18 @@
             "state" : "translated",
             "value" : "屏幕共享"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การแชร์หน้าจอ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "螢幕分享"
+          }
         }
       }
     },
@@ -81324,6 +82498,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索模型"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ค้นหาโมเดล"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋模型"
           }
         }
       }
@@ -81401,6 +82587,18 @@
             "state" : "translated",
             "value" : "在收起的岛中显示套餐用量"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แสดงการใช้งานแพ็กเกจในแถบที่พับอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在收合的動態島中顯示方案用量"
+          }
         }
       }
     },
@@ -81476,6 +82674,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在收起的岛中显示代理数量"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แสดงจำนวนเอเจนต์ในแถบที่พับอยู่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在收合的動態島中顯示代理程式數量"
           }
         }
       }
@@ -81553,6 +82763,18 @@
             "state" : "translated",
             "value" : "仅显示数字"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แสดงเฉพาะตัวเลข"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只顯示數字"
+          }
         }
       }
     },
@@ -81628,6 +82850,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "团队 ID（可选）"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team ID (ไม่บังคับ)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "團隊 ID（選填）"
           }
         }
       }
@@ -81705,6 +82939,18 @@
             "state" : "translated",
             "value" : "终端"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เทอร์มินัล"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終端機"
+          }
         }
       }
     },
@@ -81780,6 +83026,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "卡片显示最近有动作的代理"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การ์ดแสดงเอเจนต์ที่ทำบางอย่างล่าสุด"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片顯示最近有動作的代理程式"
           }
         }
       }
@@ -81857,6 +83115,18 @@
             "state" : "translated",
             "value" : "{host} 上 settings.json 的更改。Coucou 还会把它的中继复制到该主机的 ~/.local/share/coucou/bin。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การเปลี่ยนแปลง settings.json บน {host} Coucou จะคัดลอกตัวรีเลย์ของตนไปไว้ที่ ~/.local/share/coucou/bin บนเครื่องนั้นด้วย"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{host} 上 settings.json 的變更。Coucou 也會把它的中繼程式複製到該主機的 ~/.local/share/coucou/bin。"
+          }
         }
       }
     },
@@ -81932,6 +83202,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其中任何一项使用时，岛会隐藏并保持静音。数据来自菜单栏的摄像头、麦克风和屏幕指示器。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แถบจะซ่อนและเงียบเสียงขณะที่มีการใช้งานอย่างใดอย่างหนึ่งเหล่านี้ อ่านจากไฟแสดงสถานะกล้อง ไมโครโฟน และหน้าจอบนแถบเมนู"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其中任何一項使用中時，動態島會隱藏並保持靜音。資料來自選單列的相機、麥克風和螢幕指示燈。"
           }
         }
       }
@@ -82009,6 +83291,18 @@
             "state" : "translated",
             "value" : "服务器拒绝了该密钥。请检查后重新连接。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เซิร์ฟเวอร์ปฏิเสธคีย์ ตรวจสอบคีย์แล้วเชื่อมต่ออีกครั้ง"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器拒絕了該金鑰。請檢查後重新連線。"
+          }
         }
       }
     },
@@ -82084,6 +83378,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最后一次活动一分钟后，小岛会隐藏。关闭后，它会留在屏幕顶部。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แถบเล็กจะซ่อนหลังจากกิจกรรมล่าสุดหนึ่งนาที ปิดไว้: แถบจะอยู่ที่ด้านบนของหน้าจอ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後一次活動一分鐘後，小動態島會隱藏。關閉時，它會留在螢幕頂端。"
           }
         }
       }
@@ -82161,6 +83467,18 @@
             "state" : "translated",
             "value" : "此对话已在 Open WebUI 中删除。再次发送即可开始新对话。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แชตนี้ถูกลบใน Open WebUI แล้ว ส่งอีกครั้งเพื่อเริ่มแชตใหม่"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此對話已在 Open WebUI 中刪除。再次傳送即可開始新對話。"
+          }
         }
       }
     },
@@ -82233,6 +83551,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "วันนี้"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天"
@@ -82313,6 +83643,18 @@
             "state" : "translated",
             "value" : "明天"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "พรุ่งนี้"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明天"
+          }
         }
       }
     },
@@ -82385,6 +83727,18 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "บน"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "上"
@@ -82465,6 +83819,18 @@
             "state" : "translated",
             "value" : "使用 Claude Code 及其登录、MCP 服务器、技能和钩子。无需 API 密钥。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้ Claude Code พร้อมการลงชื่อเข้าใช้ เซิร์ฟเวอร์ MCP สกิล และฮุกของมัน ไม่ต้องใช้คีย์ API"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Claude Code 及其登入、MCP 伺服器、技能和 hook。不需要 API 金鑰。"
+          }
         }
       }
     },
@@ -82540,6 +83906,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "网页搜索"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ค้นหาเว็บ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網頁搜尋"
           }
         }
       }
@@ -82617,6 +83995,18 @@
             "state" : "translated",
             "value" : "工作文件夹"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โฟลเดอร์ทำงาน"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作資料夾"
+          }
         }
       }
     },
@@ -82692,6 +84082,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作区模型"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "โมเดลของเวิร์กสเปซ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作區模型"
           }
         }
       }
@@ -82769,6 +84171,18 @@
             "state" : "translated",
             "value" : "devbox 或 user@host，与你在 ssh 后输入的一样"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "devbox หรือ user@host ตามที่คุณพิมพ์หลัง ssh"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "devbox 或 user@host，和你在 ssh 後面輸入的一樣"
+          }
         }
       }
     },
@@ -82844,6 +84258,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Better Stack → API tokens → Team-based tokens：一个 Uptime API 令牌。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack → API tokens → Team-based tokens: โทเค็น Uptime API"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Better Stack → API tokens → Team-based tokens：一個 Uptime API 權杖。"
           }
         }
       }
@@ -82921,6 +84347,18 @@
             "state" : "translated",
             "value" : "Linear 个人 API 密钥：Settings → Account → Security & access。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คีย์ API ส่วนตัวจาก Linear: Settings → Account → Security & access"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear 的個人 API 金鑰：Settings → Account → Security & access。"
+          }
         }
       }
     },
@@ -82996,6 +84434,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 Timely 中打开 Settings → Devs，注册一个应用，重定向 URI 填 urn:ietf:wg:oauth:2.0:oob。填入它的客户端 ID 和密钥并连接，然后粘贴 Timely 显示的代码。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใน Timely เปิด Settings → Devs แล้วลงทะเบียนแอปด้วย redirect URI urn:ietf:wg:oauth:2.0:oob ใส่ client ID และ secret ของแอป เชื่อมต่อ แล้ววางรหัสที่ Timely แสดง"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Timely 中開啟 Settings → Devs，註冊一個 App，重新導向 URI 填 urn:ietf:wg:oauth:2.0:oob。輸入它的用戶端 ID 和密鑰並連線，然後貼上 Timely 顯示的代碼。"
           }
         }
       }
@@ -83073,6 +84523,18 @@
             "state" : "translated",
             "value" : "收起的岛边缘与 Mochi 或标签页之间的像素"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "จำนวนพิกเซลระหว่างขอบแถบที่พับอยู่กับ Mochi หรือป้าย"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收合的動態島邊緣與 Mochi 或標籤之間的像素"
+          }
         }
       }
     },
@@ -83148,6 +84610,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "✓ 已连接 Timely。"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓ เชื่อมต่อ Timely แล้ว"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓ 已連線 Timely。"
           }
         }
       }
@@ -83225,6 +84699,18 @@
             "state" : "translated",
             "value" : "❌ Timely 未接受该代码。请检查客户端 ID 和密钥，然后重新连接。"
           }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Timely ไม่ยอมรับรหัส ตรวจสอบ client ID และ secret แล้วเชื่อมต่ออีกครั้ง"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Timely 不接受這個代碼。請檢查用戶端 ID 和密鑰，然後重新連線。"
+          }
         }
       }
     },
@@ -83300,6 +84786,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "后台：%lld"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เบื้องหลัง: %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景：%lld"
           }
         }
       }

@@ -6840,6 +6840,19 @@
    "de": "Person {0}",
    "tr": "Kişi {0}"
   },
+  "Personal API key": {
+   "zh-Hans": "个人 API 密钥",
+   "hi": "व्यक्तिगत API कुंजी",
+   "es": "Clave de API personal",
+   "ar": "مفتاح API شخصي",
+   "fr": "Clé d'API personnelle",
+   "bn": "ব্যক্তিগত API কী",
+   "pt-BR": "Chave de API pessoal",
+   "ru": "Личный API-ключ",
+   "id": "Kunci API pribadi",
+   "de": "Persönlicher API-Schlüssel",
+   "tr": "Kişisel API anahtarı"
+  },
   "Personal API key from Linear: Settings → Account → Security & access.": {
    "zh-Hans": "Linear 个人 API 密钥：Settings → Account → Security & access。",
    "hi": "Linear की निजी API कुंजी: Settings → Account → Security & access.",
@@ -9765,6 +9778,19 @@
    "de": "{name} wird hochgeladen",
    "tr": "{name} yükleniyor"
   },
+  "Uptime API token": {
+   "zh-Hans": "Uptime API 令牌",
+   "hi": "Uptime API टोकन",
+   "es": "Token de la API de Uptime",
+   "ar": "رمز Uptime API",
+   "fr": "Jeton d'API Uptime",
+   "bn": "Uptime API টোকেন",
+   "pt-BR": "Token da API do Uptime",
+   "ru": "Токен Uptime API",
+   "id": "Token API Uptime",
+   "de": "Uptime-API-Token",
+   "tr": "Uptime API belirteci"
+  },
   "Used by the chat. The list comes from your Anthropic account.": {
    "zh-Hans": "由聊天使用。列表来自你的 Anthropic 账户。",
    "hi": "चैट द्वारा उपयोग किया जाता है। सूची आपके Anthropic खाते से आती है।",
@@ -9777,6 +9803,19 @@
    "id": "Digunakan oleh chat. Daftar berasal dari akun Anthropic Anda.",
    "de": "Wird im Chat verwendet. Die Liste stammt aus deinem Anthropic-Konto.",
    "tr": "Sohbette kullanılır. Liste Anthropic hesabından alınır."
+  },
+  "User token  (xoxp-…)": {
+   "zh-Hans": "用户令牌  (xoxp-…)",
+   "hi": "यूज़र टोकन  (xoxp-…)",
+   "es": "Token de usuario  (xoxp-…)",
+   "ar": "رمز المستخدم  (xoxp-…)",
+   "fr": "Jeton utilisateur  (xoxp-…)",
+   "bn": "ইউজার টোকেন  (xoxp-…)",
+   "pt-BR": "Token de usuário  (xoxp-…)",
+   "ru": "Токен пользователя  (xoxp-…)",
+   "id": "Token pengguna  (xoxp-…)",
+   "de": "Benutzer-Token  (xoxp-…)",
+   "tr": "Kullanıcı belirteci  (xoxp-…)"
   },
   "Uses Claude Code with its sign-in, MCP servers, skills and hooks. No API key needed.": {
    "zh-Hans": "使用 Claude Code 及其登录、MCP 服务器、技能和钩子。无需 API 密钥。",
