@@ -31,8 +31,11 @@ import { calendarAgenda } from "./calendar";
 import { DesktopLink } from "./desktop";
 import type { ViewCommand } from "./shortcuts";
 import { DRAG_THRESHOLD, gazePoint } from "../mochi/desktop-logic";
+import { Updates } from "./update";
+import { UPDATE_BLUE, showsUpdateHint } from "../whats-new/whats-new";
 
 const BOT_OVERHANG = 40;
+const UPDATE_BLUE_RGB = hexToRGB(UPDATE_BLUE);
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
 /** Extra canvas on each side of Mochi, for the witch hat's brim and the Santa hat's tip. */
 const BOT_SIDE = 24;
@@ -97,6 +100,8 @@ export class Island {
   private lastFrame = 0;
   private dirty = true;
   private canvasPx = 0;
+  /** The pixel ratio Mochi's bitmap was sized for: it changes with the monitor. */
+  private canvasDpr = 0;
 
   // Rust starts the window at full size so the launch greeting has room.
   private collapsed = false;
@@ -106,6 +111,8 @@ export class Island {
   get pointerOnIsland(): boolean {
     return this.wasInIsland;
   }
+  /** A reply is being typed in a card (WhatsApp): the island stays open. */
+  private holdingOpen = false;
   /** Last shape handed to Rust for the click-through test. */
   private pushedRect = { x: -1, y: -1, w: -1, h: -1 };
 
@@ -212,12 +219,15 @@ export class Island {
           integration_calendar: calendarAgenda()?.next?.joinUrl ?? "https://calendar.google.com",
           integration_timely: "https://app.timelyapp.com",
           integration_betterstack: "https://uptime.betterstack.com/incidents",
+          // No WhatsApp app to bring forward here as on the Mac: WhatsApp Web, in the browser.
+          integration_whatsapp: "https://web.whatsapp.com",
         };
         if (task.id === CLAUDE_DESKTOP_ID) void Bridge.openClaudeDesktop();
         else if (task.id === "integration_claude" || task.sessionId) {
           void Bridge.openSession(task.sessionId ?? null, task.sessionCwd ?? null);
         } else if (task.id === "integration_n8n") void Bridge.openN8n();
         else if (task.id === "integration_slack") void Bridge.slackOpenWorkspace();
+        else if (task.id === "integration_gitea") void Bridge.openGitea();
         else if (task.id === SPOTIFY_ID) void Bridge.spotifyOpen();
         else if (task.id === "integration_linear") void Bridge.openUrl(linearInboxUrl());
         else if (urls[task.id]) void Bridge.openUrl(urls[task.id]);
@@ -278,6 +288,22 @@ export class Island {
       previewOutfit: (outfit) => {
         State.wardrobePreview = outfit;
         State.notify();
+      },
+      keyboard: (on) => {
+        // The chat view manages the keyboard on its own.
+        if (on) void Bridge.focusWindow(true);
+        else if (State.view !== "prompt" && State.mode === "expanded") void Bridge.focusWindow(false);
+      },
+      holdOpen: (on) => {
+        if (this.holdingOpen === on) return;
+        this.holdingOpen = on;
+        if (on) {
+          this.fsm.pinned = true;
+          this.fsm.cancelTimers();
+        } else {
+          this.fsm.pinned = State.isPinned || State.pendingApproval != null;
+          if (!this.fsm.pinned && !this.wasInIsland && this.fsm.state === "home") this.fsm.mouseLeft();
+        }
       },
     };
 
@@ -357,7 +383,7 @@ export class Island {
           if (!this.wasInIsland) this.fsm.mouseLeft();
           break;
         case "home":
-          this.expand(State.defaultView());
+          this.expand(this.openingView());
           if (!this.wasInIsland) this.fsm.mouseLeft();
           // Hooks may have been installed in a terminal since: the idle cards
           // say so on the next open, without polling while the island is shut.
@@ -470,6 +496,20 @@ export class Island {
     // change: an alert on an island that is already open, with the mouse
     // elsewhere, would otherwise stay open for good.
     if (!this.wasInIsland) this.fsm.mouseLeft();
+  }
+
+  /** A new Coucou waits and Mochi has nothing else to say (he is blue). */
+  private updateHintOn(): boolean {
+    return !State.paused && showsUpdateHint(Updates.waiting(), State.effectiveState, State.pendingApproval != null);
+  }
+
+  /**
+   * What a click or a hover opens on: while Mochi is blue, the new version
+   * ("Coucou X is out", Update now); otherwise the usual view. A waiting
+   * permission or question always comes first.
+   */
+  private openingView(): IslandViewName {
+    return this.updateHintOn() ? "update" : State.defaultView();
   }
 
   reveal() {
@@ -1039,6 +1079,10 @@ export class Island {
       const gctx = this.greetingCanvas.getContext("2d");
       if (gctx) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (this.greetingCanvas.width !== Math.round(EXPANDED_W * dpr)) {
+          this.greetingCanvas.width = Math.round(EXPANDED_W * dpr);
+          this.greetingCanvas.height = Math.round(150 * dpr);
+        }
         gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.greeting.draw(gctx);
       }
@@ -1141,13 +1185,16 @@ export class Island {
     const hCss = w + BOT_OVERHANG;
     const wCss = w + BOT_SIDE * 2;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    // The canvas only grows: WebKitGTK leaves a shrunk canvas's old pixels on screen.
-    if (w > this.canvasPx) {
-      this.canvasPx = w;
-      this.botCanvas.width = Math.round((w + BOT_SIDE * 2) * dpr);
-      this.botCanvas.height = Math.round((w + BOT_OVERHANG) * dpr);
-      this.botCanvas.style.width = `${w + BOT_SIDE * 2}px`;
-      this.botCanvas.style.height = `${w + BOT_OVERHANG}px`;
+    // The canvas only grows (WebKitGTK leaves a shrunk canvas's old pixels on
+    // screen), drawn at the current ratio: a bitmap sized for another monitor's
+    // would show Mochi too big and cut, or too small.
+    if (w > this.canvasPx || this.canvasDpr !== dpr) {
+      this.canvasPx = Math.max(w, this.canvasPx);
+      this.canvasDpr = dpr;
+      this.botCanvas.width = Math.round((this.canvasPx + BOT_SIDE * 2) * dpr);
+      this.botCanvas.height = Math.round((this.canvasPx + BOT_OVERHANG) * dpr);
+      this.botCanvas.style.width = `${this.canvasPx + BOT_SIDE * 2}px`;
+      this.botCanvas.style.height = `${this.canvasPx + BOT_OVERHANG}px`;
     }
     const cw = this.canvasPx + BOT_SIDE * 2;
     const ch = this.canvasPx + BOT_OVERHANG;
@@ -1158,12 +1205,17 @@ export class Island {
     if (!ctx) return;
 
     const focus = State.focusTask;
+    // A new Coucou waits: over an idle or sleeping Mochi, the blue and the arrow
+    // badge (whats-new.ts). Anything Mochi has to say comes first.
+    this.engine.setUpdateHint(this.updateHintOn() ? UPDATE_BLUE_RGB : null);
     // While a plan card is open Mochi wears the plan's colour, like its pill.
     this.engine.bodyColor = planCardOpen()
       ? hexToRGB(openPlanColor())
-      : focus?.isIntegration
-        ? hexToRGB(focus.color)
-        : null;
+      : this.engine.showsUpdateHint
+        ? UPDATE_BLUE_RGB
+        : focus?.isIntegration
+          ? hexToRGB(focus.color)
+          : null;
     this.engine.particleOverhang = BOT_OVERHANG;
     this.engine.lookX = this.lookX();
     this.engine.lookY = this.lookY();

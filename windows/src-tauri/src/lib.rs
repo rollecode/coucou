@@ -48,6 +48,7 @@ mod update;
 mod voice;
 #[cfg(windows)]
 mod webview_drop;
+mod whatsapp;
 
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -118,6 +119,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         settings.phone_answers = current.phone_answers;
         settings.phone_diffs = current.phone_diffs;
         settings.phone_usage = current.phone_usage;
+        settings.phone_recap = current.phone_recap;
         settings.phone_services = current.phone_services.clone();
         settings.phone_relay = current.phone_relay;
         settings.phone_relay_url = current.phone_relay_url.clone();
@@ -148,6 +150,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
     integrations::settings_saved(&app, &settings.active_integrations);
     spotify::sync(&app, &settings.active_integrations);
     remote::sync(&app, &settings.remote_hosts, &settings.remote_client_id);
+    whatsapp::sync(&settings.active_integrations);
     if shortcuts_changed {
         shortcuts::apply(&app, &settings.shortcuts);
     }
@@ -268,6 +271,47 @@ async fn file_snippet(cwd: String, path: String, find: String, context: usize) -
         .await
         .ok()
         .flatten()
+}
+
+/// Opens a GitLab link only when it belongs to the configured instance. This
+/// also covers self-hosted installations without exposing their token.
+#[tauri::command]
+fn open_gitlab_url(url: String) {
+    let base = secrets::get("gitlab-url").unwrap_or_else(|| "https://gitlab.com".into());
+    let (Ok(target), Ok(instance)) = (reqwest::Url::parse(&url), reqwest::Url::parse(base.trim())) else { return };
+    if is_forge_instance_url(&target, &instance) {
+        open_url(url);
+    }
+}
+
+fn is_forge_instance_url(target: &reqwest::Url, instance: &reqwest::Url) -> bool {
+    if !matches!(target.scheme(), "http" | "https")
+        || target.scheme() != instance.scheme()
+        || target.host_str() != instance.host_str()
+        || target.port_or_known_default() != instance.port_or_known_default()
+    {
+        return false;
+    }
+    let base = instance.path().trim_end_matches('/');
+    base.is_empty() || target.path() == base || target.path().starts_with(&format!("{base}/"))
+}
+
+/// The configured Gitea address is a credential-store value, so the island
+/// asks Rust to open it instead of ever receiving it.
+#[tauri::command]
+fn open_gitea() {
+    if let Some(url) = secrets::get("gitea-url") {
+        open_url(url);
+    }
+}
+
+#[tauri::command]
+fn open_gitea_url(url: String) {
+    let (Ok(target), Some(base)) = (reqwest::Url::parse(&url), secrets::get("gitea-url")) else { return };
+    let Ok(instance) = reqwest::Url::parse(&base) else { return };
+    if is_forge_instance_url(&target, &instance) {
+        open_url(url);
+    }
 }
 
 /// "Open terminal" opens the working folder in VS Code when `code` is on PATH,
@@ -697,6 +741,9 @@ fn secret_set(app: AppHandle, key: String, value: String) -> Result<(), String> 
             }
         }
     }
+    if key == "gitea-token" || key == "gitea-url" {
+        integrations::gitea_credentials_changed(&app);
+    }
     Ok(())
 }
 
@@ -712,6 +759,9 @@ fn secret_clear(app: AppHandle, key: String) -> Result<(), String> {
     }
     if had {
         integrations::github_token_changed(&app);
+    }
+    if key == "gitea-token" || key == "gitea-url" {
+        integrations::gitea_credentials_changed(&app);
     }
     Ok(())
 }
@@ -938,6 +988,9 @@ pub fn run() {
             hub_shown,
             list_monitors,
             open_url,
+            open_gitlab_url,
+            open_gitea,
+            open_gitea_url,
             open_in_vscode,
             file_snippet,
             open_session,
@@ -998,10 +1051,13 @@ pub fn run() {
             phone_link::phone_link_send_diff,
             phone_link::phone_usage_status,
             phone_link::phone_usage_set_enabled,
+            phone_link::phone_recap_status,
+            phone_link::phone_recap_set_enabled,
             phone_link::phone_relay_status,
             phone_link::phone_relay_set,
             phone_link::phone_relay_set_access,
             phone_link::phone_link_publish_usage,
+            phone_link::phone_link_publish_recap,
             phone_link::phone_services_status,
             phone_link::phone_services_set,
             phone_link::phone_link_publish_services,
@@ -1037,6 +1093,17 @@ pub fn run() {
             spotify::spotify_control,
             spotify::spotify_open,
             spotify::spotify_installed,
+            whatsapp::whatsapp_island,
+            whatsapp::whatsapp_open,
+            whatsapp::whatsapp_close,
+            whatsapp::whatsapp_send,
+            whatsapp::whatsapp_ignore,
+            whatsapp::whatsapp_unignore,
+            whatsapp::whatsapp_settings,
+            whatsapp::whatsapp_set_options,
+            whatsapp::whatsapp_save_gateway,
+            whatsapp::whatsapp_test,
+            whatsapp::whatsapp_install,
             flow::flow_status,
             flow::flow_set_prefs,
             flow::flow_history,
@@ -1083,6 +1150,7 @@ pub fn run() {
             update::update_shown,
             update::update_show,
             update::update_later,
+            tray::tray_update_hint,
             update::update_dismiss,
             update::update_install,
             update::update_open_page,
@@ -1148,6 +1216,8 @@ pub fn run() {
                 }
             }
             calls::start(handle.clone());
+            // WhatsApp (experimental): nothing runs unless it is turned on and its pill is active.
+            whatsapp::start(&handle, &loaded.active_integrations);
             shortcuts::apply(&handle, &loaded.shortcuts);
             // New versions: nothing goes to GitHub until the user agrees (update.rs).
             update::start(handle.clone());
@@ -1169,13 +1239,32 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 phone_link::stop_on_exit(app);
                 notes::shutdown(app);
+                // GOWA started by Coucou stops with it; the conversations were only in memory.
+                whatsapp::shutdown();
             }
         });
 }
 
 #[cfg(test)]
 mod tests {
-    use super::diff_file;
+    use super::{diff_file, is_forge_instance_url};
+
+    #[test]
+    fn forge_links_stay_on_the_configured_instance() {
+        let instance = reqwest::Url::parse("https://git.example.com/team/").unwrap();
+        assert!(is_forge_instance_url(
+            &reqwest::Url::parse("https://git.example.com/team/me/project").unwrap(),
+            &instance,
+        ));
+        assert!(!is_forge_instance_url(
+            &reqwest::Url::parse("https://git.example.com/other/project").unwrap(),
+            &instance,
+        ));
+        assert!(!is_forge_instance_url(
+            &reqwest::Url::parse("https://evil.example/team/me/project").unwrap(),
+            &instance,
+        ));
+    }
 
     #[test]
     fn only_an_existing_file_by_its_full_path_reaches_the_editor() {
