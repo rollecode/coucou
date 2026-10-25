@@ -33,6 +33,7 @@ export const LANGUAGES = ["en", "zh-Hans", "hi", "es", "ar", "fr", "bn", "pt-BR"
 const RENAMES = {
   "Auto-close · %llds": ["seconds"],
   "Chat with %@": ["name"],
+  "step.background %lld": ["count"],
   "Claude is reading %@…": ["name"],
   "Connected · %@": ["detail"],
   "Key configured · %@": ["model"],

@@ -20,7 +20,7 @@ tauri-plugin-autostart = "2"
 tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
-tokio = { version = "1", features = ["net", "io-util", "sync", "time", "rt", "macros"] }
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "rt", "process", "macros"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 # Phone link (phone_link/): a TLS server for the Android app, off unless the user
 # turns it on. Every crate here is justified in docs/ANDROID_LINK.md.
@@ -49,6 +49,10 @@ sherpa-onnx = { version = "1.13.8", default-features = false, features = ["stati
 # The microphone, and the computer's own sound for the Notetaker (WASAPI
 # loopback on Windows, a PulseAudio/PipeWire monitor on Linux). Apache-2.0.
 cpal = "0.18"
+# WhatsApp's "Install WhatsApp" takes GOWA's binary out of the zip GOWA publishes (whatsapp/archive.rs):
+# the raw DEFLATE decoder only, already in the tree through png (the same 0.8.9), so nothing new is
+# downloaded or compiled. MIT/Zlib/Apache-2.0.
+miniz_oxide = "0.8"
 
 [target.'cfg(windows)'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
@@ -78,6 +82,9 @@ windows = { version = "0.61", features = [
   "Win32_System_Registry",
   "Win32_System_SystemInformation",
   "Win32_System_Threading",
+  # Hide in full screen: the foreground window's size against its display's.
+  "Win32_Graphics_Gdi",
+  "Win32_UI_Accessibility",
   "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_Shell",
   "Win32_UI_WindowsAndMessaging",

@@ -30,6 +30,11 @@ final class N8nPoller: @unchecked Sendable {
             return   // not configured: nothing to do, nothing to log (this runs every 15 s)
         }
         let base = rawBase.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        // The API key rides every request: only https, or an n8n on this Mac.
+        guard let url = URL(string: base), let host = url.host?.lowercased(),
+              url.scheme == "https" || LoopbackHost.matches(host) else {
+            return   // a cleartext URL would leak the key; runs every 15 s, so no log line
+        }
         let endpoints = [
             "\(base)/api/v1/executions?limit=1&includeData=false",
             "\(base)/rest/executions?limit=1&includeData=false",
@@ -237,6 +242,7 @@ final class N8nPoller: @unchecked Sendable {
             state.tasks[idx].pillBadge = success ? .finished : .error
         }
         SoundEngine.shared.play(success ? "finish" : "error")
+        state.openForAlert("integration_n8n", pill: "integration_n8n")
 
         // Auto-clear after 60s (user needs time to read detail)
         DispatchQueue.main.asyncAfter(deadline: .now() + 60) {

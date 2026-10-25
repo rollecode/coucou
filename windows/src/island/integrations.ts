@@ -4,7 +4,9 @@
 
 import { onEvent, Bridge, type IntegrationUpdate } from "../core/bridge";
 import { gitHubAlert, type GitHubEvent } from "../core/github";
+import { openForAlert, type AlertHost } from "../core/alerts";
 import { availablePills } from "../core/pills";
+import { PORTFOLIO_ID, hasAnyAccount } from "../core/portfolio";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
 import type { Island } from "./island";
@@ -15,9 +17,10 @@ const clearTimers = new Map<string, number>();
 
 export function registerIntegrationHandlers(island: Island) {
   void onEvent<IntegrationUpdate>("integration", (update) => handle(island, update));
-  void onEvent<GitHubEvent[]>("github-alerts", handleGitHubAlerts);
+  void onEvent<GitHubEvent[]>("github-alerts", (events) => handleGitHubAlerts(island, events));
   void refreshConfigured();
   State.subscribe(refreshGitHubWhenShown);
+  State.subscribe(refreshPortfolioWhenShown);
 }
 
 /**
@@ -26,7 +29,7 @@ export function registerIntegrationHandlers(island: Island) {
  * integrations it leaves Mochi's state alone and the badge stays until the pill
  * is focused, as on macOS.
  */
-export function handleGitHubAlerts(events: GitHubEvent[]) {
+export function handleGitHubAlerts(island: AlertHost, events: GitHubEvent[]) {
   if (State.paused) return;
   const alert = gitHubAlert(events);
   if (!alert) return;
@@ -34,6 +37,7 @@ export function handleGitHubAlerts(events: GitHubEvent[]) {
   if (!task) return;
   if (State.focusId !== GITHUB) task.pillBadge = alert.badge;
   Sound.play(alert.sound);
+  openForAlert(island, GITHUB, GITHUB, "overview");
   State.notify();
 }
 
@@ -44,6 +48,19 @@ function refreshGitHubWhenShown() {
   const shown = State.mode === "expanded" && State.focusTask?.id === GITHUB;
   if (shown && !gitHubShown) void Bridge.githubRefresh("pulse");
   gitHubShown = shown;
+}
+
+/** Same as GitHub, with the Mac's limit: the Portfolio card refetches when shown on data older than 30 s. */
+const PORTFOLIO_STALE_MS = 30_000;
+let portfolioShown = false;
+
+function refreshPortfolioWhenShown() {
+  const shown = State.mode === "expanded" && State.focusTask?.id === PORTFOLIO_ID;
+  const fetchedAt = Number(State.integrations[PORTFOLIO_ID]?.data.fetchedAt ?? 0);
+  if (shown && !portfolioShown && Date.now() - fetchedAt > PORTFOLIO_STALE_MS) {
+    void Bridge.refreshIntegration(PORTFOLIO_ID);
+  }
+  portfolioShown = shown;
 }
 
 /**
@@ -62,12 +79,17 @@ export async function refreshConfigured() {
       case "hooks":
         // Without an answer from Rust (a plain browser), the Claude Code pill
         // falls back to what the settings say about its hooks.
-        configured = hooks?.[def.id] ??
-          (def.id === "integration_claude" ? State.settings.hooksInstalled : false);
+        // Both Claude Code pills stand on the same hooks.
+        const claude = def.id === "integration_claude" || def.id === "workspace_claude";
+        configured = hooks?.[claude ? "integration_claude" : def.id] ??
+          (claude ? State.settings.hooksInstalled : false);
         break;
       case "server":
         // A local model server counts once the chat is connected to it.
         configured = State.settings[def.connect.field] !== "";
+        break;
+      case "portfolio":
+        configured = hasAnyAccount(await Bridge.portfolioStatus());
         break;
       case "none":
         configured = true;
@@ -113,8 +135,10 @@ function handle(island: Island, update: IntegrationUpdate) {
       }
       Sound.play(event.success ? "finish" : "error");
       // Same as the Swift pollers: show the compact island so the badge is seen,
-      // but never steal the screen for a successful deploy.
-      island.reveal();
+      // but never steal the screen for a successful deploy unless Settings asks to.
+      if (!openForAlert(island, update.id, update.id, "overview")) {
+        island.reveal();
+      }
 
       const existing = clearTimers.get(update.id);
       if (existing != null) window.clearTimeout(existing);

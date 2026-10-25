@@ -53,7 +53,7 @@ struct PillDefinition {
     /// Label shown in the active-session card header (workspace/agent pills only).
     var sessionSubtitle: String {
         switch id {
-        case "integration_claude": return "Claude Code"
+        case "integration_claude", "workspace_claude": return "Claude Code"
         case "agent_cursor":       return "Cursor"
         case "agent_codex":        return "Codex"
         case "agent_hermes":       return "Hermes"
@@ -66,6 +66,9 @@ struct PillDefinition {
 // MARK: - Catalog
 
 enum PillCatalog {
+    /// Prefix of the pill each extra Claude Code session running at once gets (HookServer).
+    static let sessionPillPrefix = "session_"
+
     // All declared pills in display order.
     static let all: [PillDefinition] = [
         // ── Where you code ───────────────────────────────────────────────────
@@ -77,6 +80,9 @@ enum PillCatalog {
               category: .workspace, subtitle: String(localized: "Integration"),  source: .agent,  githubOnly: true),
         .init(id: "agent_codex",         name: "Codex",       color: "#2DD4BF",
               category: .workspace, subtitle: String(localized: "Integration"),  source: .agent,  githubOnly: true),
+        // Claude Code in a plain terminal, as the main tool for those who code there.
+        .init(id: "workspace_claude",    name: "Claude Code", color: "#E07950",
+              category: .workspace, subtitle: String(localized: "Terminal"),     source: .claudeCode),
         // ── Agents ───────────────────────────────────────────────────────────
         .init(id: "agent_gemini",        name: "Gemini CLI",  color: "#8AB4F8",
               category: .agent,     subtitle: String(localized: "Agent"),        source: .agent,  githubOnly: true),
@@ -118,7 +124,18 @@ enum PillCatalog {
               category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
         .init(id: "integration_calcom",  name: "Cal.com",     color: "#C9956A",
               category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
+        // EventKit on the Mac (CalendarWatcher), a secret iCal address on Windows and Linux.
+        .init(id: "integration_calendar", name: "Calendar",   color: "#4F9DF7",
+              category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
         .init(id: "integration_stripe",  name: "Stripe",      color: "#0570DE",
+              category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
+        .init(id: "integration_timely",  name: "Timely",      color: "#F5A524",
+              category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
+        .init(id: "integration_slack",   name: "Slack",       color: "#E01E5A",
+              category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
+        .init(id: "integration_betterstack", name: "Better Stack", color: "#5B5FEF",
+              category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
+        .init(id: "integration_linear",  name: "Linear",      color: "#5E6AD2",
               category: .service,   subtitle: String(localized: "Integration"),  source: .n8n),
         .init(id: "integration_music",   name: "Apple Music", color: "#FA2D48",
               category: .service,   subtitle: String(localized: "Integration"),  source: .n8n, githubOnly: true),

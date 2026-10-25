@@ -64,6 +64,7 @@ final class KeychainStore: @unchecked Sendable {
         "anthropic-api-key",
         "google-api-key",
         "openai-api-key",
+        "open-webui-key",
         "deepseek-api-key",
         "qwen-api-key",
         "moonshot-api-key",
@@ -74,6 +75,11 @@ final class KeychainStore: @unchecked Sendable {
         "stripe-api-key",
         "calcom-api-key",
         "notion-api-key",
+        "timely-client-id", "timely-client-secret", "timely-access-token", "timely-refresh-token",
+        "slack-token",
+        "betterstack-token",
+        "betterstack-team",
+        "linear-api-key",
         "elevenlabs-api-key",
         // WhatsApp (local gateway): its address, credentials and the webhook's signing secret
         "whatsapp-url", "whatsapp-api-key", "whatsapp-webhook-secret",
@@ -213,8 +219,63 @@ final class ClaudeService {
     // Multi-turn conversation messages (for API)
     private var conversationMessages: [[String: Any]] = []
 
+    /// Identifies the file/window context already sent in this conversation, so a file
+    /// dropped mid-chat is attached to the next message instead of being ignored.
+    private var sentContextKey: String?
+
     func clearConversation() {
         conversationMessages = []
+        sentContextKey = nil
+        openWebUIThread = nil
+        conversationEpoch += 1
+        claudeCodeSession = nil
+        ClaudeCodeChat.cancel()
+    }
+
+    /// Where Open WebUI keeps this conversation. Dropped when the chat is cleared
+    /// or another provider answers a turn.
+    private var openWebUIThread: OpenWebUI.Thread?
+    private var conversationEpoch = 0
+
+    /// The Claude Code session this conversation continues; nil until its first answer.
+    private var claudeCodeSession: String?
+
+    /// A long conversation stays bounded, as on Windows and Linux: the oldest turns
+    /// go in pairs, so a question never loses its answer.
+    private func trimHistory(state: AppState) {
+        let maxContext = 80, maxBubbles = 100   // 40 turns sent, 100 bubbles shown
+        if conversationMessages.count > maxContext {
+            let drop = conversationMessages.count - maxContext
+            conversationMessages.removeFirst(drop + drop % 2)
+        }
+        if state.chatHistory.count > maxBubbles {
+            let drop = state.chatHistory.count - maxBubbles
+            state.chatHistory.removeFirst(drop + drop % 2)
+        }
+    }
+
+    /// A new file was dropped: attach it to the next message even if one with the same
+    /// name was sent before (it may be an updated version).
+    func contextDidChange() {
+        sentContextKey = nil
+    }
+
+    /// File contexts are keyed by name: the drop handler swaps the original URL for the
+    /// inbox copy, which must not count as a new file.
+    private static func contextKey(_ context: PromptContext) -> String {
+        switch context {
+        case .window(let app, let title, let url): return "window:\(app)|\(title)|\(url ?? "")"
+        case .file(let name, _):                   return "file:\(name)"
+        }
+    }
+
+    /// The context to add to this turn, or nil when it was already sent. Window context
+    /// only makes sense at the start of a conversation; a file is attached whenever a new
+    /// one shows up.
+    private func pendingContext(_ context: PromptContext?) -> PromptContext? {
+        guard let context, Self.contextKey(context) != sentContextKey else { return nil }
+        if case .window = context, !conversationMessages.isEmpty { return nil }
+        return context
     }
 
     /// Resolved once: NSFullUserName() is a system call, and the name cannot change under us
@@ -250,6 +311,16 @@ final class ClaudeService {
             state.stateOverride = nil
             return
         }
+        trimHistory(state: state)
+        if state.chatProvider == .openwebui {
+            await chatOpenWebUI(query: query, context: context, state: state)
+            return
+        }
+        openWebUIThread = nil
+        if state.chatProvider == .claudecode {
+            await chatClaudeCode(query: query, context: context, state: state)
+            return
+        }
         guard state.chatProvider == .anthropic else {
             await chatOpenAICompatible(query: query, context: context, state: state)
             return
@@ -262,8 +333,8 @@ final class ClaudeService {
         // Build user content for this turn
         var userContent: [[String: Any]] = []
 
-        // Add file/window context on first message only
-        if conversationMessages.isEmpty, let context = context {
+        let attached = pendingContext(context)
+        if let context = attached {
             switch context {
             case .window(let app, let title, let url):
                 var text = "Context — App: \(app), Window: \(title)"
@@ -290,11 +361,97 @@ final class ClaudeService {
 
         do {
             let data = try await callAPI(body: body, key: key, beta: "web-search-2025-03-05")
+            if let attached { sentContextKey = Self.contextKey(attached) }
             await handleChatResult(data, state: state)
         } catch {
             conversationMessages.removeLast()
             await showError(error.localizedDescription, state: state)
         }
+    }
+
+    // MARK: - Claude Code (the user's own CLI, ClaudeCodeChat.swift)
+
+    func chatClaudeCode(query: String, context: PromptContext?, state: AppState) async {
+        #if APPSTORE
+        // The sandbox cannot run the user's CLI; the provider is hidden there.
+        await showError(String(localized: "Claude Code isn't installed (no `claude` command found)."), state: state)
+        #else
+        guard let exe = await Task.detached(operation: { ClaudeCodeChat.locate() }).value else {
+            await showError(String(localized: "Claude Code isn't installed (no `claude` command found)."), state: state)
+            return
+        }
+        let dir: URL
+        do {
+            dir = try ClaudeCodeChat.workDir(picked: state.claudeCodeDir, supportDir: HookServer.supportDir)
+        } catch {
+            await showError(error.localizedDescription, state: state)
+            return
+        }
+
+        let first = conversationMessages.isEmpty
+        var contextLine: String? = nil
+        var extraDir: String? = nil
+        if first, let context {
+            switch context {
+            case .window(let app, let title, let url):
+                contextLine = "Context — App: \(app), Window: \(title)" + (url.map { ", URL: \($0)" } ?? "")
+            case .file(let name, let fileURL):
+                contextLine = "File: \(name)" + (fileURL.map { " (\($0.path))" } ?? "")
+                // Claude Code may only read inside its folder unless told about this one.
+                // Before the inbox copy is done, none: reading the original asks first.
+                extraDir = ClaudeCodeChat.extraDir(file: fileURL,
+                                                   inbox: HookServer.supportDir.appendingPathComponent("inbox"))
+            }
+        }
+        // Turns another provider answered, as plain text.
+        let earlier: [(user: Bool, text: String)] = conversationMessages.map { m in
+            let content = m["content"]
+            let text = content as? String
+                ?? (content as? [[String: Any]])?.first(where: { ($0["type"] as? String) == "text" })?["text"] as? String
+                ?? ""
+            return (user: (m["role"] as? String) == "user", text: text)
+        }
+        let resume = claudeCodeSession
+        let prompt = ClaudeCodeChat.question(first: first, resuming: resume != nil, earlier: earlier,
+                                             context: contextLine, query: query)
+        let arguments = ClaudeCodeChat.arguments(systemPrompt: systemPrompt, model: state.claudeCodeChatModel,
+                                                 effort: state.claudeCodeEffort, resume: resume, extraDir: extraDir)
+        conversationMessages.append(["role": "user", "content": query])
+
+        // Placeholder, hidden until the first text by ChatBubble's empty-content guard.
+        let placeholder = ChatMessage(role: .assistant, content: "")
+        let msgId = placeholder.id
+        state.chatHistory.append(placeholder)
+        state.stateOverride = .thinking
+        do {
+            let result = try await ClaudeCodeChat.run(
+                executable: exe, arguments: arguments, directory: dir, prompt: prompt, resume: resume
+            ) { [state, msgId] visible in
+                if !visible.isEmpty, state.stateOverride == .thinking {
+                    state.stateOverride = nil
+                }
+                if let idx = state.chatHistory.firstIndex(where: { $0.id == msgId }) {
+                    state.chatHistory[idx].content = visible
+                }
+            }
+            // Stopped by New chat: the conversation is already gone.
+            guard let result else {
+                state.chatHistory.removeAll { $0.id == msgId }
+                state.stateOverride = nil
+                return
+            }
+            claudeCodeSession = result.session
+            conversationMessages.append(["role": "assistant", "content": result.answer])
+            state.stateOverride = nil
+            state.view = .prompt
+            NotificationCenter.default.post(name: .triggerEmote, object: BotEmote.happy)
+        } catch {
+            if !conversationMessages.isEmpty { conversationMessages.removeLast() }
+            state.chatHistory.removeAll { $0.id == msgId }
+            state.stateOverride = nil
+            await showError(error.localizedDescription, state: state)
+        }
+        #endif
     }
 
     // MARK: - OpenAI-compatible chat (Google Gemini / OpenAI / Ollama / LM Studio)
@@ -315,7 +472,7 @@ final class ClaudeService {
             case .deepseek:  baseURL = "https://api.deepseek.com/v1"
             case .qwen:      baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
             case .moonshot:  baseURL = "https://api.moonshot.cn/v1"
-            case .anthropic, .ollama, .lmstudio: baseURL = ""
+            case .anthropic, .ollama, .lmstudio, .openwebui, .claudecode: baseURL = ""
             }
         }
 
@@ -347,40 +504,22 @@ final class ClaudeService {
         var msgs: [[String: Any]] = [["role": "system", "content": systemPrompt]]
         for m in conversationMessages {
             var simplified = m
-            if let content = m["content"] as? [[String: Any]],
-               let textBlock = content.first(where: { ($0["type"] as? String) == "text" }),
-               let text = textBlock["text"] as? String {
-                simplified["content"] = text
+            // Anthropic turns hold several blocks (file label + question): keep all the text
+            if let content = m["content"] as? [[String: Any]] {
+                let texts = content.compactMap { block -> String? in
+                    (block["type"] as? String) == "text" ? block["text"] as? String : nil
+                }
+                if !texts.isEmpty { simplified["content"] = texts.joined(separator: "\n\n") }
             }
             msgs.append(simplified)
         }
-        var userText = query
-        if conversationMessages.isEmpty, let ctx = context {
-            switch ctx {
-            case .window(let app, let title, let url):
-                var prefix = "Context — App: \(app), Window: \(title)"
-                if let u = url { prefix += ", URL: \(u)" }
-                userText = prefix + "\n\n" + query
-            case .file(let name, let fileURL):
-                if provider.isLocal, let fileURL = fileURL {
-                    let ext = fileURL.pathExtension.lowercased()
-                    let binaryExts = ["pdf", "jpg", "jpeg", "png", "gif", "webp"]
-                    if !binaryExts.contains(ext),
-                       let text = try? String(contentsOf: fileURL, encoding: .utf8), !text.isEmpty {
-                        let truncated = text.count > 24_000
-                            ? String(text.prefix(24_000)) + "\n[truncated]"
-                            : text
-                        userText = "File: \(name)\n\n\(truncated)\n\n" + query
-                    } else {
-                        userText = "File: \(name)\n\n" + query
-                    }
-                } else {
-                    userText = "File: \(name)\n\n" + query
-                }
-            }
-        }
+        let attached = pendingContext(context)
+        let userText = firstTurnText(query, context: attached, inlineFiles: provider.isLocal)
         msgs.append(["role": "user", "content": userText])
         conversationMessages.append(["role": "user", "content": userText])
+        // Marked sent up front; each failure path below hands the turn back.
+        let previousContextKey = sentContextKey
+        if let attached { sentContextKey = Self.contextKey(attached) }
 
         let useStream = provider.isLocal || provider == .deepseek || provider == .qwen || provider == .moonshot
         var body: [String: Any] = [
@@ -433,6 +572,7 @@ final class ClaudeService {
                 NotificationCenter.default.post(name: .triggerEmote, object: BotEmote.happy)
             } catch let e as LocalChatError {
                 conversationMessages.removeLast()
+                sentContextKey = previousContextKey
                 state.chatHistory.removeAll { $0.id == msgId }
                 state.stateOverride = nil
                 let msg: String
@@ -453,6 +593,7 @@ final class ClaudeService {
                 await showError(msg, state: state)
             } catch {
                 conversationMessages.removeLast()
+                sentContextKey = previousContextKey
                 state.chatHistory.removeAll { $0.id == msgId }
                 state.stateOverride = nil
                 await showError(error.localizedDescription, state: state)
@@ -482,8 +623,112 @@ final class ClaudeService {
                 NotificationCenter.default.post(name: .triggerEmote, object: BotEmote.happy)
             } catch {
                 conversationMessages.removeLast()
+                sentContextKey = previousContextKey
                 await showError(error.localizedDescription, state: state)
             }
+        }
+    }
+
+    /// The question, with the window or file it is about on the first turn.
+    /// A text file's content goes along for the model servers, which cannot read files.
+    private func firstTurnText(_ query: String, context: PromptContext?, inlineFiles: Bool) -> String {
+        guard let ctx = context else { return query }
+        switch ctx {
+        case .window(let app, let title, let url):
+            var prefix = "Context — App: \(app), Window: \(title)"
+            if let u = url { prefix += ", URL: \(u)" }
+            return prefix + "\n\n" + query
+        case .file(let name, let fileURL):
+            guard inlineFiles, let fileURL = fileURL else { return "File: \(name)\n\n" + query }
+            let ext = fileURL.pathExtension.lowercased()
+            let binaryExts = ["pdf", "jpg", "jpeg", "png", "gif", "webp"]
+            guard !binaryExts.contains(ext),
+                  let text = try? String(contentsOf: fileURL, encoding: .utf8), !text.isEmpty else {
+                return "File: \(name)\n\n" + query
+            }
+            let truncated = text.count > 24_000
+                ? String(text.prefix(24_000)) + "\n[truncated]"
+                : text
+            return "File: \(name)\n\n\(truncated)\n\n" + query
+        }
+    }
+
+    // MARK: - Open WebUI (the conversation also lands in its chat history)
+
+    private func chatOpenWebUI(query: String, context: PromptContext?, state: AppState) async {
+        let baseURL = LocalChat.normaliseURL(state.openWebUIServerURL)
+        guard !baseURL.isEmpty else {
+            await showError("Connect Open WebUI in Settings → Chat first.", state: state)
+            return
+        }
+        guard let key = OpenWebUI.key(stored: KeychainStore.shared.get(OpenWebUI.keychainKey), url: baseURL) else {
+            await showError(String(localized: "Add an Open WebUI API key in Settings → Local models first."), state: state)
+            return
+        }
+        let model = state.openWebUIChatModel
+        guard !model.isEmpty else {
+            await showError(String(localized: "Pick a model above the chat box first."), state: state)
+            return
+        }
+
+        // Earlier turns as plain text: a new Open WebUI chat starts with them.
+        let history: [(role: String, content: String)] = conversationMessages.compactMap { m in
+            guard let role = m["role"] as? String else { return nil }
+            if let text = m["content"] as? String { return (role: role, content: text) }
+            let blocks = m["content"] as? [[String: Any]] ?? []
+            guard let text = blocks.first(where: { ($0["type"] as? String) == "text" })?["text"] as? String else { return nil }
+            return (role: role, content: text)
+        }
+        let attached = pendingContext(context)
+        let userText = firstTurnText(query, context: attached, inlineFiles: true)
+        if let attached { sentContextKey = Self.contextKey(attached) }
+        conversationMessages.append(["role": "user", "content": userText])
+
+        let placeholder = ChatMessage(role: .assistant, content: "")
+        let msgId = placeholder.id
+        state.chatHistory.append(placeholder)
+        state.stateOverride = .thinking
+        let epoch = conversationEpoch
+        do {
+            let reply = try await OpenWebUI.send(
+                baseURL: baseURL, key: key, model: model, thread: openWebUIThread,
+                history: history, text: userText, system: systemPrompt,
+                variables: OpenWebUI.promptVariables(), webSearch: state.openWebUIWebSearch,
+                onThread: { [weak self] thread in
+                    // Kept even if the turn fails, so a retry lands in the same chat.
+                    guard let self, self.conversationEpoch == epoch else { return }
+                    self.openWebUIThread = thread
+                },
+                onUpdate: { [state, msgId] visible in
+                    if !visible.isEmpty, state.stateOverride == .thinking { state.stateOverride = nil }
+                    if let idx = state.chatHistory.firstIndex(where: { $0.id == msgId }) {
+                        state.chatHistory[idx].content = visible
+                    }
+                }
+            )
+            if conversationEpoch == epoch { openWebUIThread = reply.thread }
+            conversationMessages.append(["role": "assistant", "content": reply.answer])
+            if let idx = state.chatHistory.firstIndex(where: { $0.id == msgId }) {
+                state.chatHistory[idx].content = reply.answer
+            }
+            state.stateOverride = nil
+            state.view = .prompt
+            NotificationCenter.default.post(name: .triggerEmote, object: BotEmote.happy)
+        } catch {
+            conversationMessages.removeLast()
+            state.chatHistory.removeAll { $0.id == msgId }
+            state.stateOverride = nil
+            let message: String
+            switch error {
+            case is OpenWebUI.ChatGone:
+                openWebUIThread = nil
+                message = String(localized: "This chat was deleted in Open WebUI. Send again to start a new one.")
+            case let e as LocalChatError:
+                message = e.localizedDescription
+            default:
+                message = error.localizedDescription
+            }
+            await showError(message, state: state)
         }
     }
 

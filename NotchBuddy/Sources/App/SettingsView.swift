@@ -95,6 +95,9 @@ struct SettingsView: View {
     @State private var lmstudioURL:  String = AppState.shared.lmstudioServerURL
     @State private var connectingOllama:    Bool = false
     @State private var connectingLMStudio:  Bool = false
+    @State private var openWebUIURL:        String = AppState.shared.openWebUIServerURL
+    @State private var openWebUIKey:        String = ""
+    @State private var connectingOpenWebUI: Bool = false
 
     // Integration keys
     @State private var resendKey: String    = KeychainStore.shared.get("resend-api-key")  ?? ""
@@ -106,6 +109,17 @@ struct SettingsView: View {
     @State private var stripeKey: String    = KeychainStore.shared.get("stripe-api-key")  ?? ""
     @State private var calcomKey: String    = KeychainStore.shared.get("calcom-api-key")  ?? ""
     @State private var notionKey: String    = KeychainStore.shared.get("notion-api-key")  ?? ""
+    @State private var calendarAccess: Bool = CalendarWatcher.hasAccess
+    @State private var calendarNames: [String] = []
+    @State private var timelyClientId: String     = KeychainStore.shared.get(TimelyPoller.Key.clientId)     ?? ""
+    @State private var timelyClientSecret: String = KeychainStore.shared.get(TimelyPoller.Key.clientSecret) ?? ""
+    @State private var timelyCode: String = ""
+    @State private var timelyConnected: Bool = KeychainStore.shared.get(TimelyPoller.Key.access) != nil
+    @State private var timelyConnecting: Bool = false
+    @State private var slackToken: String   = KeychainStore.shared.get("slack-token")     ?? ""
+    @State private var betterstackToken: String = KeychainStore.shared.get("betterstack-token") ?? ""
+    @State private var betterstackTeam: String = KeychainStore.shared.get("betterstack-team") ?? ""
+    @State private var linearKey: String    = KeychainStore.shared.get("linear-api-key")  ?? ""
     @AppStorage(CryptoSettings.exchangeKey)     private var cryptoExchange = CryptoExchange.coinbase.rawValue
     @AppStorage(CryptoSettings.currencyKey)     private var cryptoCurrency = "EUR"
     @AppStorage(CryptoSettings.coinsKey)        private var cryptoCoins = CryptoSettings.defaultCoins
@@ -123,6 +137,16 @@ struct SettingsView: View {
     // n8n workflow filter
     @State private var n8nWorkflows: [String] = []
     @State private var loadingN8n: Bool = false
+
+    // One alert key of state.expandOnAlert as a switch
+    private func alertBinding(_ key: String) -> Binding<Bool> {
+        Binding(
+            get: { state.expandOnAlert.contains(key) },
+            set: { on in
+                if on { state.expandOnAlert.insert(key) } else { state.expandOnAlert.remove(key) }
+            }
+        )
+    }
 
     // Bindings in minutes for the absence field
     private var absenceMinutes: Binding<Double> {
@@ -310,9 +334,9 @@ struct SettingsView: View {
                 HStack(spacing: 8) {
                     Text("Volume")
                         .frame(width: 56, alignment: .leading)
-                    Slider(value: $state.soundVolume, in: 0...0.2)
+                    Slider(value: $state.soundVolume, in: 0...AppState.soundVolumeMax)
                         .disabled(!state.soundEnabled)
-                    Text("\(Int(state.soundVolume / 0.2 * 100)) %")
+                    Text("\(Int(state.soundVolume / AppState.soundVolumeMax * 100)) %")
                         .frame(width: 36, alignment: .trailing)
                         .monospacedDigit()
                 }
@@ -338,10 +362,45 @@ struct SettingsView: View {
             .padding(6)
         }
 
+        #if !APPSTORE
+        GroupBox("Calls") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("The island hides and goes silent while one of these is in use. Read from the menu bar's camera, microphone and screen indicators.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Toggle("Camera on", isOn: $state.quietOnCamera)
+                Toggle("Microphone on", isOn: $state.quietOnMic)
+                Toggle("Screen sharing", isOn: $state.quietOnScreenShare)
+                    .help("A screen shared by an app that is also on the mic or the camera. A recorder or a screenshot tool does not count.")
+            }
+            .padding(6)
+        }
+        #endif
+
         GroupBox("Behavior") {
             VStack(alignment: .leading, spacing: 10) {
                 Toggle("Open on hover", isOn: $state.openOnHover)
                     .help("Hovering the island opens it; it folds again shortly after the pointer leaves. Click inside to keep it open.")
+                Toggle("Auto-hide", isOn: $state.autoHide)
+                    .help("The small island hides a minute after the last activity. Off: it stays at the top of the screen.")
+                Toggle("Follow edits live", isOn: $state.followEdits)
+                    .help("Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.")
+                Toggle("Follow the latest activity", isOn: $state.followActivity)
+                    .help("The card shows the agent that did something last")
+                Toggle("Open the island on new activity", isOn: $state.expandOnActivity)
+                    .disabled(!state.followActivity)
+                    .padding(.leading, 20)
+                Text("Alerts that open the island")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Toggle("Agent finished", isOn: alertBinding(AlertExpansion.agentFinished))
+                Toggle("Agent error", isOn: alertBinding(AlertExpansion.agentError))
+                ForEach(PillCatalog.available.filter { AlertExpansion.pills.contains($0.id) }, id: \.id) { def in
+                    Toggle(def.name, isOn: alertBinding(def.id))
+                }
+                Toggle("Hide in full screen", isOn: $state.hideInFullScreen)
+                    .help("The island steps aside while a full-screen app, a game or a video, fills its display.")
                 Toggle(String(localized: "alerts.all-pills"), isOn: $state.alertsFromAllPills)
                     .help(String(localized: "alerts.all-pills.help"))
                 HStack(spacing: 8) {
@@ -358,6 +417,24 @@ struct SettingsView: View {
                         .frame(width: 48)
                     Text("min without movement")
                 }
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text("Padding")
+                    Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                        GridRow {
+                            paddingLabel("Top")
+                            paddingField($state.compactPaddingTop)
+                            paddingLabel("Right")
+                            paddingField($state.compactPaddingRight)
+                        }
+                        GridRow {
+                            paddingLabel("Bottom")
+                            paddingField($state.compactPaddingBottom)
+                            paddingLabel("Left")
+                            paddingField($state.compactPaddingLeft)
+                        }
+                    }
+                }
+                .help("pixels between the folded island's edges and Mochi or the pills")
             }
             .padding(6)
         }
@@ -377,11 +454,21 @@ struct SettingsView: View {
                         Text("Saved screen (not connected)").tag(state.islandDisplay)
                     }
                 }
-                .frame(maxWidth: 360)
+                .frame(maxWidth: 360, alignment: .leading)
                 Text("On a screen without a notch, Mochi sits in a small bar at the top. Follow the mouse moves it to your cursor's screen while it is closed.")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Toggle("Show the number of agents in the folded island", isOn: $state.compactShowAgents)
+                Toggle("Show the number only", isOn: $state.compactAgentsNumberOnly)
+                    .disabled(!state.compactShowAgents)
+                    .padding(.leading, 20)
+                Toggle("Count working agents only", isOn: $state.compactAgentsWorkingOnly)
+                    .disabled(!state.compactShowAgents)
+                    .padding(.leading, 20)
+                #if !APPSTORE
+                Toggle("Show plan usage in the folded island", isOn: $state.compactShowPlan)
+                #endif
             }
             .padding(6)
             .onAppear { refreshConnectedScreens() }
@@ -551,10 +638,6 @@ struct SettingsView: View {
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
-                Text(String(format: String(localized: "settings.slots-used %lld"), Int64(state.activeIntegrations.count)))
-                    .font(.system(size: 11))
-                    .foregroundColor(state.activeIntegrations.count >= 4 ? .orange : .secondary)
-
                 Picker(String(localized: "settings.main-pill"), selection: $state.mainPillId) {
                     ForEach(PillCatalog.available.filter { $0.category == .workspace && !$0.comingSoon }, id: \.id) { def in
                         Text(def.name).tag(def.id)
@@ -651,6 +734,7 @@ struct SettingsView: View {
         }
 
         #if !APPSTORE
+        RemoteHostsSection()
         ClaudeDesktopChatSettingsSection()
 
         GroupBox(String(localized: "hooks.gemini.title")) {
@@ -1229,9 +1313,87 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Divider()
+
+                // ── Open WebUI ──────────────────────────────────────────────────
+                HStack(spacing: 8) {
+                    Circle().fill(Color(hex: ChatProvider.openwebui.accentHex)).frame(width: 8, height: 8)
+                    Text("Open WebUI").font(.system(size: 12, weight: .semibold))
+                    if !state.openWebUIServerURL.isEmpty {
+                        Text(String(localized: "Connected"))
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(hex: "#22C55E"))
+                    }
+                }
+                if state.openWebUIServerURL.isEmpty {
+                    TextField("http://127.0.0.1:8080", text: $openWebUIURL)
+                        .textFieldStyle(.roundedBorder)
+                    SecureField(String(localized: "API key"), text: $openWebUIKey)
+                        .textFieldStyle(.roundedBorder)
+                    Text(String(localized: "Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one."))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(connectingOpenWebUI ? String(localized: "chat.connecting") : String(localized: "chat.connect")) {
+                        Task { await connectOpenWebUI() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(connectingOpenWebUI)
+                } else {
+                    Text(state.openWebUIServerURL)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Toggle(String(localized: "Web search"), isOn: $state.openWebUIWebSearch)
+                    Text(String(localized: "Open WebUI searches the web before answering, where its admin has turned web search on."))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(String(localized: "chat.disconnect")) {
+                        state.openWebUIServerURL = ""
+                        openWebUIURL = ""
+                        KeychainStore.shared.remove(OpenWebUI.keychainKey)
+                        state.fetchedProviderModels[.openwebui] = nil
+                        state.providerModelFetchError[.openwebui] = nil
+                        state.openWebUIModelGroups = [:]
+                        if state.chatProvider == .openwebui { state.chatProvider = .anthropic }
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
             .padding(.vertical, 4)
         }
+
+        #if !APPSTORE
+        // Claude Code in the chat: what it starts with. The picker above the chat box changes the same values.
+        GroupBox("Claude Code") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(String(localized: "Uses Claude Code with its sign-in, MCP servers, skills and hooks. No API key needed."))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                Picker(String(localized: "chat.model"), selection: $state.claudeCodeChatModel) {
+                    ForEach(ClaudeCodeChat.modelList, id: \.id) { m in
+                        Text(m.label).tag(m.id)
+                    }
+                }
+                Picker(String(localized: "Effort"), selection: $state.claudeCodeEffort) {
+                    Text(String(localized: "Claude Code's default")).tag("")
+                    ForEach(ClaudeCodeChat.efforts, id: \.self) { level in
+                        Text(level).tag(level)
+                    }
+                }
+                HStack {
+                    Text(String(localized: "Working folder"))
+                    TextField(String(localized: "Coucou's chat folder"), text: $state.claudeCodeDir)
+                        .textFieldStyle(.roundedBorder)
+                }
+                Text(String(localized: "Leave empty to use Coucou's chat folder. Pick a project folder to let Claude Code work on that project."))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+        #endif
     }
 
     // MARK: - Integrations section
@@ -1321,6 +1483,37 @@ struct SettingsView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
+                // Calendar (EventKit, no key)
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#4F9DF7")).frame(width: 8, height: 8)
+                        Text(verbatim: "Calendar").font(.system(size: 12, weight: .semibold))
+                    }
+                    if calendarAccess {
+                        IntegrationFilterRow(
+                            label: String(localized: "Calendars"),
+                            items: calendarNames,
+                            filter: $state.calendarFilter,
+                            loading: false,
+                            onLoad: { calendarNames = CalendarWatcher.shared.calendarLabels() }
+                        )
+                    } else if CalendarWatcher.accessDenied {
+                        Button("Open Settings…") { CalendarWatcher.shared.openPrivacySettings() }
+                            .controlSize(.small)
+                    } else {
+                        Button("Allow calendar access") {
+                            Task {
+                                calendarAccess = await CalendarWatcher.shared.requestAccess()
+                                if calendarAccess { calendarNames = CalendarWatcher.shared.calendarLabels() }
+                            }
+                        }
+                        .controlSize(.small)
+                    }
+                    Text("Reads the calendars of the Calendar app, Google accounts included.")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                }
+
                 // Notion
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
@@ -1331,6 +1524,89 @@ struct SettingsView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
+                // Timely
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#F5A524")).frame(width: 8, height: 8)
+                        Text("Timely").font(.system(size: 12, weight: .semibold))
+                    }
+                    TextField(String(localized: "Client ID"), text: $timelyClientId)
+                        .textFieldStyle(.roundedBorder)
+                    SecureField(String(localized: "Client secret"), text: $timelyClientSecret)
+                        .textFieldStyle(.roundedBorder)
+                    if timelyConnected {
+                        HStack(spacing: 8) {
+                            Text(String(localized: "Connected"))
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(hex: "#22C55E"))
+                            Button(String(localized: "chat.disconnect")) {
+                                TimelyPoller.shared.disconnect()
+                                timelyConnected = false
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    } else {
+                        HStack(spacing: 8) {
+                            Button(String(localized: "chat.connect")) { openTimelyAuthorization() }
+                                .buttonStyle(.bordered)
+                                .disabled(timelyClientId.isEmpty || timelyClientSecret.isEmpty)
+                            TextField(String(localized: "Authorization code"), text: $timelyCode)
+                                .textFieldStyle(.roundedBorder)
+                            Button(timelyConnecting ? String(localized: "chat.connecting") : String(localized: "Save")) {
+                                finishTimelyAuthorization()
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(timelyCode.isEmpty || timelyConnecting)
+                        }
+                    }
+                    Text(String(localized: "integrations.timely.hint"))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                        .textSelection(.enabled)
+                }
+
+                // Slack
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#E01E5A")).frame(width: 8, height: 8)
+                        Text("Slack").font(.system(size: 12, weight: .semibold))
+                    }
+                    SecureField("User token  (xoxp-…)", text: $slackToken)
+                        .textFieldStyle(.roundedBorder)
+                    Text("A user token from a Slack app with the scopes im:read, users:read and search:read.")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+
+                // Better Stack
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#5B5FEF")).frame(width: 8, height: 8)
+                        Text("Better Stack").font(.system(size: 12, weight: .semibold))
+                    }
+                    SecureField("Uptime API token", text: $betterstackToken)
+                        .textFieldStyle(.roundedBorder)
+                    TextField(String(localized: "Team ID (optional)"), text: $betterstackTeam)
+                        .textFieldStyle(.roundedBorder)
+                    Text(String(localized: "integrations.betterstack.token-hint"))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                }
+
+                // Linear
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#5E6AD2")).frame(width: 8, height: 8)
+                        Text("Linear").font(.system(size: 12, weight: .semibold))
+                    }
+                    SecureField("Personal API key", text: $linearKey)
+                        .textFieldStyle(.roundedBorder)
+                    Text(String(localized: "integrations.linear.key-hint"))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                }
+
+                Button(String(localized: "integrations.save")) { saveIntegrations() }
                 // Crypto: public prices, no key. Changes apply at once.
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
@@ -1751,6 +2027,50 @@ struct SettingsView: View {
         }
     }
 
+    /// Stores the key with the address it is for (it is only ever sent there),
+    /// then checks that Open WebUI answers with models for it.
+    private func connectOpenWebUI() async {
+        let normalised = LocalChat.normaliseURL(openWebUIURL)
+        guard normalised.hasPrefix("http://") || normalised.hasPrefix("https://") else {
+            statusMessage = String(localized: "status.local.url-invalid")
+            return
+        }
+        let typedKey = openWebUIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !typedKey.isEmpty {
+            guard OpenWebUI.mayCarryKey(normalised) else {
+                statusMessage = String(localized: "A key is only sent over https, or to a server on this computer.")
+                return
+            }
+            KeychainStore.shared.set(OpenWebUI.keychainKey, value: OpenWebUI.boundKey(typedKey, url: normalised))
+            openWebUIKey = ""
+        }
+        guard let key = OpenWebUI.key(stored: KeychainStore.shared.get(OpenWebUI.keychainKey), url: normalised) else {
+            statusMessage = String(localized: "Add an Open WebUI API key in Settings → Local models first.")
+            return
+        }
+        connectingOpenWebUI = true
+        statusMessage = ""
+        do {
+            let models = try await OpenWebUI.models(baseURL: normalised, key: key)
+            connectingOpenWebUI = false
+            guard !models.isEmpty else {
+                statusMessage = String(localized: "Open WebUI has no models for this account.")
+                return
+            }
+            state.openWebUIServerURL = normalised
+            openWebUIURL = normalised
+            state.fetchedProviderModels[.openwebui] = nil
+            state.providerModelFetchError[.openwebui] = nil
+            statusMessage = String(localized: "status.local.connected \(models.count)")
+        } catch let failure as OpenWebUI.Failure {
+            connectingOpenWebUI = false
+            statusMessage = failure.message
+        } catch {
+            connectingOpenWebUI = false
+            statusMessage = String(format: String(localized: "status.local.unreachable %1$@ %2$@"), "Open WebUI", normalised)
+        }
+    }
+
     private func installHooks() {
         do {
             pendingHookJSON = try HookServer.shared.previewClaudeHooks()
@@ -2101,7 +2421,53 @@ struct SettingsView: View {
         saveKey("stripe-api-key",  value: stripeKey)
         saveKey("calcom-api-key",  value: calcomKey)
         saveKey("notion-api-key",  value: notionKey)
+        saveTimelyClient()
+        saveKey("slack-token",     value: slackToken)
+        SlackPoller.shared.pollNow()
+
+        let prevBetterstack = KeychainStore.shared.get("betterstack-token")
+        saveKey("betterstack-token", value: betterstackToken)
+        saveKey("betterstack-team", value: BetterStackAPI.team(from: betterstackTeam) ?? "")
+        if KeychainStore.shared.get("betterstack-token") != prevBetterstack {
+            BetterStackPoller.shared.reset()
+            BetterStackPoller.shared.pollNow()
+        }
+
+        let prevLinearKey = KeychainStore.shared.get("linear-api-key")
+        saveKey("linear-api-key",  value: linearKey)
+        if KeychainStore.shared.get("linear-api-key") != prevLinearKey {
+            LinearPoller.shared.reset()
+            LinearPoller.shared.pollNow()
+        }
         statusMessage = String(localized: "status.integrations-saved")
+    }
+
+    // MARK: - Timely sign-in
+
+    private func saveTimelyClient() {
+        saveKey(TimelyPoller.Key.clientId,     value: timelyClientId.trimmingCharacters(in: .whitespaces))
+        saveKey(TimelyPoller.Key.clientSecret, value: timelyClientSecret.trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Opens Timely's consent page; Timely then shows a code to paste back here.
+    private func openTimelyAuthorization() {
+        saveTimelyClient()
+        guard let url = TimelyAPI.authorizeURL(clientId: timelyClientId.trimmingCharacters(in: .whitespaces))
+        else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func finishTimelyAuthorization() {
+        saveTimelyClient()
+        let code = timelyCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        timelyConnecting = true
+        Task { @MainActor in
+            let ok = await TimelyPoller.shared.connect(code: code)
+            timelyConnecting = false
+            timelyConnected = ok
+            if ok { timelyCode = "" }
+            statusMessage = ok ? String(localized: "status.timely-connected") : String(localized: "status.timely-failed")
+        }
     }
 
     private func saveKey(_ key: String, value: String) {
@@ -2181,11 +2547,24 @@ struct SettingsView: View {
         }.resume()
     }
 
+    private func paddingLabel(_ label: LocalizedStringKey) -> some View {
+        Text(label).foregroundColor(.secondary).fixedSize()
+    }
+
+    private func paddingField(_ value: Binding<Double>) -> some View {
+        HStack(spacing: 4) {
+            TextField("", value: value, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 44)
+            Stepper("", value: value, in: 0...IslandConst.compactPaddingMax, step: 1)
+                .labelsHidden()
+        }
+    }
+
     @ViewBuilder
     private func pillRow(_ def: PillDefinition) -> some View {
         let isMain = def.id == state.mainPillId
         let isOn   = state.activeIntegrations.contains(def.id)
-        let atMax  = state.activeIntegrations.count >= 4 && !isOn && !isMain
         let hint: String? = {
             if isMain { return nil }
             if def.comingSoon { return String(localized: "Coming soon") }
@@ -2239,7 +2618,7 @@ struct SettingsView: View {
             }
             Text(def.name)
                 .font(.system(size: 12))
-                .foregroundColor(atMax ? .secondary : .primary)
+                .foregroundColor(.primary)
             Spacer()
             if isMain {
                 Text("Main")
@@ -2256,7 +2635,6 @@ struct SettingsView: View {
                     set: { _ in state.toggleIntegration(def.id) }
                 ))
                 .labelsHidden()
-                .disabled(atMax)
             }
         }
     }

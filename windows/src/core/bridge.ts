@@ -8,7 +8,9 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
+import type { ExchangeId, PortfolioStatus, WalletKind } from "./portfolio";
 import type { UpdateStatus } from "./update";
+import type { WaIslandView, WaSettingsView, WaTestResult } from "./whatsapp";
 
 export const IS_TAURI =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -21,6 +23,16 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T |
     console.error(`[coucou] ${cmd} failed`, err);
     return null;
   }
+}
+
+/** The lines around an edit, read from the file itself (see snippet.rs). */
+export interface Snippet {
+  /** Line number (1-based) of `lines[0]`. */
+  start: number;
+  lines: string[];
+  /** Where the edited block begins in `lines`, and how many lines it spans. */
+  at: number;
+  len: number;
 }
 
 export interface BootInfo {
@@ -137,6 +149,25 @@ export interface PhoneLinkUsage {
   codex: PhoneLinkPlan | null;
 }
 
+/**
+ * Last week's recap as the phone gets it: counts, the week's Monday and the busiest agent's name (cap `recap`). The project is a folder name that
+ * Rust sends only to a phone that also may see session details. A week with no session is not sent: all zero clears the phone's card.
+ */
+export interface PhoneLinkRecap {
+  /** The Monday that starts the week, YYYY-MM-DD (local). */
+  week: string;
+  minutes: number;
+  sessions: number;
+  files: number;
+  linesAdded: number;
+  linesRemoved: number;
+  commands: number;
+  allowed: number;
+  denied: number;
+  topAgent?: string;
+  topProject?: string;
+}
+
 /** What one service pill says, for a phone whose user allowed it (Rust cuts every text to size). */
 export interface PhoneLinkService {
   id: string;
@@ -152,6 +183,10 @@ export interface PhoneServicesStatus {
 }
 
 export interface PhoneUsageStatus {
+  enabled: boolean;
+}
+
+export interface PhoneRecapStatus {
   enabled: boolean;
 }
 
@@ -206,6 +241,12 @@ export const Bridge = {
   listMonitors: () => call<{ key: string; label: string }[]>("list_monitors"),
 
   openUrl: (url: string) => call<void>("open_url", { url }),
+  /** Opens a GitLab link only when it belongs to the configured instance. */
+  openGitLabUrl: (url: string) => call<void>("open_gitlab_url", { url }),
+  /** Opens the configured Gitea instance without exposing its URL to the page. */
+  openGitea: () => call<void>("open_gitea"),
+  /** Opens a Gitea link only if it belongs to the configured instance. */
+  openGiteaUrl: (url: string) => call<void>("open_gitea_url", { url }),
 
   /** Which of these sounds have a file of the user's own in the sounds folder. */
   customSounds: (names: readonly string[]) => call<string[]>("custom_sounds", { names }),
@@ -224,6 +265,10 @@ export const Bridge = {
    */
   openSession: (sessionId: string | null, path: string | null) =>
     call<boolean>("open_session", { sessionId, path }),
+
+  /** The lines around an edit, read from the file (null: unreadable, outside the session folder, not found). */
+  fileSnippet: (cwd: string, path: string, find: string, context: number) =>
+    call<Snippet>("file_snippet", { cwd, path, find, context }),
 
   /** The Claude desktop app, for the Claude Desktop pill (Windows only). */
   openClaudeDesktop: () => call<boolean>("open_claude_desktop"),
@@ -250,6 +295,15 @@ export const Bridge = {
    */
   hooksApply: (install: boolean, fingerprint: string) =>
     callOrThrow<string>("hooks_apply", { install, fingerprint }),
+
+  // ── Remote hosts (Claude Code over SSH, Linux) ────────────────────────────
+  remoteStatus: () => call<RemoteStatus[]>("remote_status"),
+  /** Same rules as hooksPreview, for ~/.claude/settings.json on `host`. */
+  remotePreview: (host: string, install: boolean) =>
+    callOrThrow<HookPreview>("remote_preview", { host, install }),
+  /** Same rules as hooksApply; installing also puts the relay on the host. */
+  remoteApply: (host: string, install: boolean, fingerprint: string) =>
+    callOrThrow<string>("remote_apply", { host, install, fingerprint }),
 
   // ── Other agents (Gemini CLI, Codex, Cursor…) ─────────────────────────────
   agentHooksList: () => call<AgentHookStatus[]>("agent_hooks_list"),
@@ -317,6 +371,9 @@ export const Bridge = {
   /** Off by default; only from the switch in Settings. Phones are reconnected so they learn about it. */
   phoneUsageSetEnabled: (enabled: boolean) => callOrThrow<PhoneUsageStatus>("phone_usage_set_enabled", { enabled }),
   phoneLinkPublishUsage: (usage: PhoneLinkUsage) => call<void>("phone_link_publish_usage", { usage }),
+  phoneRecapStatus: () => call<PhoneRecapStatus>("phone_recap_status"),
+  phoneRecapSetEnabled: (enabled: boolean) => callOrThrow<PhoneRecapStatus>("phone_recap_set_enabled", { enabled }),
+  phoneLinkPublishRecap: (recap: PhoneLinkRecap | null) => call<void>("phone_link_publish_recap", { recap: recap ?? {} }),
   phoneChatStatus: () => call<PhoneChatStatus>("phone_chat_status"),
   /** Off by default; only from the switch in Settings. Phones are reconnected so they learn about it. */
   phoneChatSetEnabled: (enabled: boolean) => callOrThrow<PhoneChatStatus>("phone_chat_set_enabled", { enabled }),
@@ -329,19 +386,22 @@ export const Bridge = {
 
   // ── Chat, files, secrets ──────────────────────────────────────────────────
   /** One chat turn. The API key and any file bytes never leave Rust. */
-  chatSend: (query: string, context: ChatContext | null) =>
-    callOrThrow<{ text: string }>("chat_send", { query, context }),
+  chatSend: (query: string, context: ChatContext | null, variables: Record<string, string> = {}) =>
+    callOrThrow<{ text: string }>("chat_send", { query, context, variables }),
   chatReset: () => call<void>("chat_reset"),
+  /** The Claude Code sessions running now (Linux), for their pills before any event. */
+  claudeSessions: () => call<{ pid: number; cwd: string; name: string }[]>("claude_sessions"),
   /**
    * The models a provider offers, for the picker in the chat view. Rust asks
    * the provider only when it has a key (or a server address).
    */
   chatModels: (provider: string) => callOrThrow<ModelInfo[]>("chat_models", { provider }),
   /** Settings → Local models → Connect: does the server answer, and with which models? */
-  /** The custom server's key, bound to the address it is entered for. */
-  localSetKey: (url: string, key: string) => call<void>("local_set_key", { url, key }),
+  /** A server's key (custom, Open WebUI), bound to the address it is entered for. */
+  localSetKey: (provider: "custom" | "openwebui", url: string, key: string) =>
+    call<void>("local_set_key", { provider, url, key }),
 
-  localConnect: (provider: "ollama" | "lmstudio" | "custom", url: string) =>
+  localConnect: (provider: "ollama" | "lmstudio" | "custom" | "openwebui", url: string) =>
     callOrThrow<LocalServer>("local_connect", { provider, url }),
   /** Copies a dropped file into the inbox. */
   ingestFile: (path: string) => callOrThrow<DroppedFile>("ingest_file", { path }),
@@ -356,9 +416,20 @@ export const Bridge = {
   githubRefresh: (section: "pulse" | "activity") => call<void>("github_refresh", { section }),
   /** Opens the configured n8n instance in the browser. */
   openN8n: () => call<void>("open_n8n"),
+  /** Opens Timely's consent page; false when no client ID is stored. */
+  timelyAuthorize: () => call<boolean>("timely_authorize"),
+  /** Trades the code Timely showed for tokens. */
+  timelyConnect: (code: string) => callOrThrow<void>("timely_connect", { code }),
+  timelyDisconnect: () => call<void>("timely_disconnect"),
+  /** A Slack conversation in the Slack app, else in the browser. */
+  slackOpen: (channel: string, permalink: string | null) => call<void>("slack_open", { channel, permalink }),
+  /** The Slack app, else the workspace in the browser. */
+  slackOpenWorkspace: () => call<void>("slack_open_workspace"),
 
   /** Tray → Pause. Stops the integration pollers, not just the island. */
   setPaused: (paused: boolean) => call<void>("set_paused", { paused }),
+  /** `cam`, `mic`, `scr` held by another app (calls.rs); updates come as "call-sensors". */
+  callSensors: () => call<string[]>("call_sensors"),
 
   // ── Global shortcuts ──────────────────────────────────────────────────────
   /** How each global shortcut went when Rust last registered them. */
@@ -411,6 +482,42 @@ export const Bridge = {
   /** Whether there is a Spotify to launch (Settings). */
   spotifyInstalled: () => call<boolean>("spotify_installed"),
 
+  // ── Portfolio (src-tauri/src/portfolio.rs) ────────────────────────────────
+  portfolioStatus: () => call<PortfolioStatus>("portfolio_status"),
+  portfolioAddressPlausible: (kind: WalletKind, address: string) =>
+    call<boolean>("portfolio_address_plausible", { kind, address }),
+  /** Test & Save: rejects with the exchange's error; the keys are kept only when the test went through. */
+  portfolioAddExchange: (exchange: ExchangeId, key: string, secret: string, passphrase: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_exchange", { exchange, key, secret, passphrase }),
+  portfolioRemoveExchange: (exchange: ExchangeId) =>
+    callOrThrow<PortfolioStatus>("portfolio_remove_exchange", { exchange }),
+  /** Verify & Save: the address is kept once its balance could be read. */
+  portfolioAddWallet: (kind: WalletKind, address: string, label: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_wallet", { kind, address, label }),
+  portfolioRemoveWallet: (address: string) => callOrThrow<PortfolioStatus>("portfolio_remove_wallet", { address }),
+  // ── WhatsApp (src-tauri/src/whatsapp) ─────────────────────────────────────
+  /** The island's copy, asked once at start (then the "whatsapp" event). Island only. */
+  whatsappIsland: () => call<WaIslandView>("whatsapp_island"),
+  /** A conversation opened in the card: its latest messages, the receipt if Settings says so. */
+  whatsappOpen: (chat: string) => call<void>("whatsapp_open", { chat }),
+  whatsappClose: (chat: string) => call<void>("whatsapp_close", { chat }),
+  /** Enter or the send button only. True once the gateway took it. */
+  whatsappSend: (chat: string, text: string) => call<boolean>("whatsapp_send", { chat, text }),
+  /** A chat id, or (Settings) a phone number. */
+  whatsappIgnore: (chat: string) => call<void>("whatsapp_ignore", { chat }),
+  whatsappUnignore: (chat: string) => call<void>("whatsapp_unignore", { chat }),
+  /** Settings only, from here down. */
+  whatsappSettings: () => call<WaSettingsView>("whatsapp_settings"),
+  whatsappSetOptions: (enabled: boolean, muteGroups: boolean, markReadOnOpen: boolean) =>
+    callOrThrow<void>("whatsapp_set_options", { enabled, muteGroups, markReadOnOpen }),
+  /** `credential`: null keeps the stored one, "" removes it. */
+  whatsappSaveGateway: (g: {
+    gateway: "gowa" | "openwa"; url: string; credential: string | null; port: number; autoStart: boolean; gowaPath: string;
+  }) => callOrThrow<void>("whatsapp_save_gateway", g),
+  whatsappTest: () => call<WaTestResult>("whatsapp_test"),
+  /** "Install WhatsApp" / "Update": GOWA from its GitHub releases, on this click only. */
+  whatsappInstall: () => call<void>("whatsapp_install"),
+
   // ── New versions (src-tauri/src/update.rs) ────────────────────────────────
   updateStatus: () => call<UpdateStatus>("update_status"),
   /** The island's question or Settings' toggle: may Coucou look at GitHub on its own? */
@@ -422,6 +529,8 @@ export const Bridge = {
   /** Settings → Install X: opens the island's update card. */
   updateShow: () => call<void>("update_show"),
   updateLater: () => call<void>("update_later"),
+  /** Blue Mochi in the tray while a new version waits (tray.rs). */
+  trayUpdateHint: (on: boolean) => call<void>("tray_update_hint", { on }),
   updateDismiss: () => call<void>("update_dismiss"),
   /** "Update now" (Windows): download, check the SHA-256, run the installer, quit. */
   updateInstall: () => call<void>("update_install"),
@@ -481,6 +590,8 @@ export type ChatContext =
 export interface ModelInfo {
   id: string;
   label: string;
+  /** The picker's section (Open WebUI): its most used models, its workspace models. */
+  group?: "used" | "custom";
 }
 
 export interface LocalServer {
@@ -529,6 +640,13 @@ export interface AgentHookPlan {
   fingerprint: string;
 }
 
+export interface RemoteStatus {
+  host: string;
+  state: "connecting" | "connected" | "error";
+  /** ssh's own words when it failed. */
+  error: string;
+}
+
 export interface HookPreview {
   diff: string;
   backup: string;
@@ -547,7 +665,8 @@ export type BridgeEvent =
   | { name: "cursor"; payload: { x: number; y: number } }
   | { name: "tray"; payload: string }
   | { name: "hook"; payload: Record<string, unknown> }
-  | { name: "screen-changed"; payload: null };
+  | { name: "screen-changed"; payload: null }
+  | { name: "blur"; payload: null };
 
 export interface DragDropPayload {
   type: "enter" | "over" | "drop" | "leave";

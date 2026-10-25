@@ -93,6 +93,58 @@
    "de": "7 Tage",
    "tr": "7 gün"
   },
+  "A few replies a minute at most: wait a moment.": {
+   "zh-Hans": "每分钟最多回复几条：请稍等。",
+   "hi": "एक मिनट में कुछ ही जवाब: थोड़ा रुकें।",
+   "es": "Unas pocas respuestas por minuto como máximo: espera un momento.",
+   "ar": "بضعة ردود في الدقيقة كحد أقصى: انتظر قليلًا.",
+   "fr": "Quelques réponses par minute au maximum : attends un instant.",
+   "bn": "মিনিটে সর্বোচ্চ কয়েকটি উত্তর: একটু অপেক্ষা করুন।",
+   "pt-BR": "No máximo algumas respostas por minuto: espere um pouco.",
+   "ru": "Не больше нескольких ответов в минуту: подождите немного.",
+   "id": "Paling banyak beberapa balasan per menit: tunggu sebentar.",
+   "de": "Höchstens ein paar Antworten pro Minute: einen Moment warten.",
+   "tr": "Dakikada en fazla birkaç yanıt: biraz bekleyin."
+  },
+  "A key is only sent over https, or to a server on this computer.": {
+   "zh-Hans": "密钥只会通过 https 发送，或发送到本机上的服务器。",
+   "hi": "कुंजी केवल https पर, या इसी कंप्यूटर के सर्वर को भेजी जाती है।",
+   "es": "La clave solo se envía por https o a un servidor de este ordenador.",
+   "ar": "لا يُرسَل المفتاح إلا عبر https، أو إلى خادم على هذا الحاسوب.",
+   "fr": "La clé n'est envoyée qu'en https, ou à un serveur sur cet ordinateur.",
+   "bn": "কী কেবল https-এর মাধ্যমে, অথবা এই কম্পিউটারের কোনো সার্ভারে পাঠানো হয়।",
+   "pt-BR": "A chave só é enviada por https ou para um servidor neste computador.",
+   "ru": "Ключ отправляется только по https или на сервер на этом компьютере.",
+   "id": "Kunci hanya dikirim lewat https, atau ke server di komputer ini.",
+   "de": "Ein Schlüssel wird nur über https oder an einen Server auf diesem Computer gesendet.",
+   "tr": "Anahtar yalnızca https üzerinden veya bu bilgisayardaki bir sunucuya gönderilir."
+  },
+  "A screen shared by an app that is also on the mic or the camera. A recorder or a screenshot tool does not count.": {
+   "zh-Hans": "由同时使用麦克风或摄像头的应用共享的屏幕。录屏或截图工具不算。",
+   "hi": "ऐसे ऐप द्वारा साझा स्क्रीन जो माइक या कैमरे का भी उपयोग कर रहा हो। रिकॉर्डर या स्क्रीनशॉट टूल नहीं गिना जाता।",
+   "es": "Una pantalla compartida por una app que también usa el micrófono o la cámara. Un grabador o una herramienta de capturas no cuenta.",
+   "ar": "شاشة يشاركها تطبيق يستخدم أيضًا الميكروفون أو الكاميرا. لا يُحتسب مسجّل الشاشة أو أداة لقطات الشاشة.",
+   "fr": "Un écran partagé par une app qui utilise aussi le micro ou la caméra. Un enregistreur ou un outil de capture ne compte pas.",
+   "bn": "এমন অ্যাপের শেয়ার করা স্ক্রিন যা মাইক বা ক্যামেরাও ব্যবহার করছে। রেকর্ডার বা স্ক্রিনশট টুল গণ্য হয় না।",
+   "pt-BR": "Uma tela compartilhada por um app que também usa o microfone ou a câmera. Um gravador ou uma ferramenta de captura não conta.",
+   "ru": "Экран, который показывает приложение, также использующее микрофон или камеру. Запись экрана и скриншоты не считаются.",
+   "id": "Layar yang dibagikan oleh aplikasi yang juga memakai mikrofon atau kamera. Perekam atau alat tangkapan layar tidak dihitung.",
+   "de": "Ein Bildschirm, den eine App teilt, die auch Mikrofon oder Kamera nutzt. Ein Rekorder oder ein Bildschirmfoto-Tool zählt nicht.",
+   "tr": "Mikrofonu veya kamerayı da kullanan bir uygulamanın paylaştığı ekran. Kayıt ya da ekran görüntüsü aracı sayılmaz."
+  },
+  "A user token from a Slack app with the scopes im:read, users:read and search:read.": {
+   "zh-Hans": "来自 Slack 应用的用户令牌，需具备 im:read、users:read 和 search:read 权限范围。",
+   "hi": "im:read, users:read और search:read स्कोप वाले Slack ऐप का यूज़र टोकन।",
+   "es": "Un token de usuario de una app de Slack con los permisos im:read, users:read y search:read.",
+   "ar": "رمز مستخدم من تطبيق Slack بالنطاقات im:read وusers:read وsearch:read.",
+   "fr": "Un jeton utilisateur d'une app Slack avec les portées im:read, users:read et search:read.",
+   "bn": "im:read, users:read ও search:read স্কোপসহ একটি Slack অ্যাপের ইউজার টোকেন।",
+   "pt-BR": "Um token de usuário de um app do Slack com os escopos im:read, users:read e search:read.",
+   "ru": "Токен пользователя из приложения Slack с правами im:read, users:read и search:read.",
+   "id": "Token pengguna dari aplikasi Slack dengan scope im:read, users:read, dan search:read.",
+   "de": "Ein User-Token einer Slack-App mit den Scopes im:read, users:read und search:read.",
+   "tr": "im:read, users:read ve search:read kapsamlarına sahip bir Slack uygulamasından kullanıcı token’ı."
+  },
   "A wrong word, or the wrong person? Fix it from the line's ⋯ menu. Words you correct are remembered for your next calls.": {
    "zh-Hans": "词听错了，或说话人不对？在该行的 ⋯ 菜单里修改。你改正的词会被记住，用于之后的通话。",
    "hi": "कोई शब्द गलत है, या व्यक्ति गलत? पंक्ति के ⋯ मेनू से ठीक करें। आप जो शब्द सुधारते हैं, वे अगली कॉल के लिए याद रखे जाते हैं।",
@@ -144,6 +196,19 @@
    "id": "Kunci API  (cal_live_…)",
    "de": "API-Schlüssel  (cal_live_…)",
    "tr": "API anahtarı  (cal_live_…)"
+  },
+  "API key  (owa_k1_…)": {
+   "zh-Hans": "API 密钥（owa_k1_…）",
+   "hi": "API कुंजी  (owa_k1_…)",
+   "es": "Clave API  (owa_k1_…)",
+   "ar": "مفتاح API  (owa_k1_…)",
+   "fr": "Clé API  (owa_k1_…)",
+   "bn": "API কী  (owa_k1_…)",
+   "pt-BR": "Chave de API  (owa_k1_…)",
+   "ru": "API-ключ  (owa_k1_…)",
+   "id": "Kunci API  (owa_k1_…)",
+   "de": "API-Schlüssel  (owa_k1_…)",
+   "tr": "API anahtarı  (owa_k1_…)"
   },
   "API key  (re_…)": {
    "zh-Hans": "API 密钥（re_…）",
@@ -236,6 +301,19 @@
    "de": "Bedienungshilfen zum Einfügen erforderlich",
    "tr": "Yapıştırmak için Erişilebilirlik izni gerekiyor"
   },
+  "Acknowledged": {
+   "zh-Hans": "已确认",
+   "hi": "स्वीकार किया गया",
+   "es": "Reconocido",
+   "ar": "تم الإقرار",
+   "fr": "Pris en compte",
+   "bn": "স্বীকৃত",
+   "pt-BR": "Reconhecido",
+   "ru": "Подтверждён",
+   "id": "Diakui",
+   "de": "Bestätigt",
+   "tr": "Onaylandı"
+  },
   "Active pills": {
    "zh-Hans": "活跃标签页",
    "hi": "सक्रिय टैब",
@@ -288,6 +366,19 @@
    "de": "Wort hinzufügen, z. B. Supabase",
    "tr": "Sözcük ekle, ör. Supabase"
   },
+  "Add an Open WebUI API key in Settings → Local models first.": {
+   "zh-Hans": "请先在 设置 → 本地模型 中添加 Open WebUI API 密钥。",
+   "hi": "पहले सेटिंग्स → स्थानीय मॉडल में Open WebUI API कुंजी जोड़ें।",
+   "es": "Añade primero una clave API de Open WebUI en Configuración → Modelos locales.",
+   "ar": "أضف أولًا مفتاح Open WebUI API في الإعدادات ← النماذج المحلية.",
+   "fr": "Ajoute d'abord une clé API Open WebUI dans Réglages → Modèles locaux.",
+   "bn": "আগে সেটিংস → স্থানীয় মডেলে একটি Open WebUI API কী যোগ করুন।",
+   "pt-BR": "Adicione primeiro uma chave de API do Open WebUI em Configurações → Modelos locais.",
+   "ru": "Сначала добавьте API-ключ Open WebUI в Настройки → Локальные модели.",
+   "id": "Tambahkan kunci API Open WebUI di Pengaturan → Model lokal terlebih dahulu.",
+   "de": "Zuerst einen Open WebUI-API-Schlüssel unter Einstellungen → Lokale Modelle hinzufügen.",
+   "tr": "Önce Ayarlar → Yerel modeller bölümünde bir Open WebUI API anahtarı ekleyin."
+  },
   "Add an app": {
    "zh-Hans": "添加 App",
    "hi": "ऐप जोड़ें",
@@ -326,6 +417,32 @@
    "id": "Tambahkan dulu kunci API Anthropic-mu di Pengaturan → Chat.",
    "de": "Füge zuerst deinen Anthropic-API-Schlüssel unter Einstellungen → Chat hinzu.",
    "tr": "Önce Ayarlar → Sohbet bölümünden Anthropic API anahtarını ekle."
+  },
+  "Address": {
+   "zh-Hans": "地址",
+   "hi": "पता",
+   "es": "Dirección",
+   "ar": "العنوان",
+   "fr": "Adresse",
+   "bn": "ঠিকানা",
+   "pt-BR": "Endereço",
+   "ru": "Адрес",
+   "id": "Alamat",
+   "de": "Adresse",
+   "tr": "Adres"
+  },
+  "Advanced: your own gateway": {
+   "zh-Hans": "高级：你自己的网关",
+   "hi": "एडवांस्ड: अपना गेटवे",
+   "es": "Avanzado: tu propia pasarela",
+   "ar": "متقدم: بوابتك الخاصة",
+   "fr": "Avancé : ta propre passerelle",
+   "bn": "অ্যাডভান্সড: নিজের গেটওয়ে",
+   "pt-BR": "Avançado: seu próprio gateway",
+   "ru": "Дополнительно: свой шлюз",
+   "id": "Lanjutan: gateway sendiri",
+   "de": "Erweitert: eigenes Gateway",
+   "tr": "Gelişmiş: kendi ağ geçidiniz"
   },
   "Advertisement": {
    "zh-Hans": "广告",
@@ -366,6 +483,45 @@
    "de": "Agent",
    "tr": "Ajan"
   },
+  "Agent error": {
+   "zh-Hans": "代理出错",
+   "hi": "एजेंट त्रुटि",
+   "es": "Error del agente",
+   "ar": "خطأ في الوكيل",
+   "fr": "Erreur de l'agent",
+   "bn": "এজেন্টের ত্রুটি",
+   "pt-BR": "Erro do agente",
+   "ru": "Ошибка агента",
+   "id": "Kesalahan agen",
+   "de": "Agent-Fehler",
+   "tr": "Ajan hatası"
+  },
+  "Agent finished": {
+   "zh-Hans": "代理已完成",
+   "hi": "एजेंट समाप्त",
+   "es": "Agente terminó",
+   "ar": "انتهى الوكيل",
+   "fr": "Agent terminé",
+   "bn": "এজেন্ট শেষ করেছে",
+   "pt-BR": "Agente terminou",
+   "ru": "Агент завершил работу",
+   "id": "Agen selesai",
+   "de": "Agent fertig",
+   "tr": "Ajan bitirdi"
+  },
+  "Agent sessions": {
+   "zh-Hans": "智能体会话",
+   "hi": "एजेंट सत्र",
+   "es": "Sesiones de agentes",
+   "ar": "جلسات الوكلاء",
+   "fr": "Sessions d’agents",
+   "bn": "এজেন্ট সেশন",
+   "pt-BR": "Sessões de agentes",
+   "ru": "Сессии агентов",
+   "id": "Sesi agen",
+   "de": "Agent-Sitzungen",
+   "tr": "Ajan oturumları"
+  },
   "Agents": {
    "zh-Hans": "代理",
    "hi": "एजेंट्स",
@@ -392,6 +548,19 @@
    "de": "Benachrichtige mich, wenn sich ein Coin um {0} % bewegt",
    "tr": "Bir kripto para {0} % hareket ettiğinde beni uyar"
   },
+  "Alerts that open the island": {
+   "zh-Hans": "会打开岛的提醒",
+   "hi": "अलर्ट जो आइलैंड खोलते हैं",
+   "es": "Alertas que abren la isla",
+   "ar": "التنبيهات التي تفتح الجزيرة",
+   "fr": "Alertes qui ouvrent l'île",
+   "bn": "যে সতর্কতাগুলো আইল্যান্ড খোলে",
+   "pt-BR": "Alertas que abrem a ilha",
+   "ru": "Оповещения, открывающие остров",
+   "id": "Peringatan yang membuka pulau",
+   "de": "Warnungen, die die Insel öffnen",
+   "tr": "Adayı açan uyarılar"
+  },
   "All": {
    "zh-Hans": "全部",
    "hi": "सब",
@@ -404,6 +573,58 @@
    "id": "Semua",
    "de": "Alle",
    "tr": "Tümü"
+  },
+  "All changes": {
+   "zh-Hans": "全部更新内容",
+   "hi": "सभी बदलाव",
+   "es": "Todos los cambios",
+   "ar": "كل التغييرات",
+   "fr": "Tous les changements",
+   "bn": "সব পরিবর্তন",
+   "pt-BR": "Todas as mudanças",
+   "ru": "Все изменения",
+   "id": "Semua perubahan",
+   "de": "Alle Änderungen",
+   "tr": "Tüm değişiklikler"
+  },
+  "All day": {
+   "zh-Hans": "全天",
+   "hi": "पूरे दिन",
+   "es": "Todo el día",
+   "ar": "طوال اليوم",
+   "fr": "Toute la journée",
+   "bn": "সারাদিন",
+   "pt-BR": "Dia inteiro",
+   "ru": "Весь день",
+   "id": "Sepanjang hari",
+   "de": "Ganztägig",
+   "tr": "Tüm gün"
+  },
+  "All models": {
+   "zh-Hans": "所有模型",
+   "hi": "सभी मॉडल",
+   "es": "Todos los modelos",
+   "ar": "كل النماذج",
+   "fr": "Tous les modèles",
+   "bn": "সব মডেল",
+   "pt-BR": "Todos os modelos",
+   "ru": "Все модели",
+   "id": "Semua model",
+   "de": "Alle Modelle",
+   "tr": "Tüm modeller"
+  },
+  "All monitors up": {
+   "zh-Hans": "所有监控均正常",
+   "hi": "सभी मॉनिटर चालू हैं",
+   "es": "Todos los monitores activos",
+   "ar": "جميع أدوات المراقبة تعمل",
+   "fr": "Tous les moniteurs sont en ligne",
+   "bn": "সব মনিটর চালু",
+   "pt-BR": "Todos os monitores no ar",
+   "ru": "Все мониторы работают",
+   "id": "Semua monitor aktif",
+   "de": "Alle Monitore erreichbar",
+   "tr": "Tüm monitörler çalışıyor"
   },
   "Allow": {
    "zh-Hans": "允许",
@@ -469,6 +690,19 @@
    "id": "Izinkan Coucou mengontrol Spotify",
    "de": "Coucou erlauben, Spotify zu steuern",
    "tr": "Coucou'nun Spotify'ı kontrol etmesine izin ver"
+  },
+  "Allow calendar access": {
+   "zh-Hans": "允许访问日历",
+   "hi": "कैलेंडर एक्सेस की अनुमति दें",
+   "es": "Permitir acceso al calendario",
+   "ar": "السماح بالوصول إلى التقويم",
+   "fr": "Autoriser l'accès au calendrier",
+   "bn": "ক্যালেন্ডারে অ্যাক্সেসের অনুমতি দিন",
+   "pt-BR": "Permitir acesso ao calendário",
+   "ru": "Разрешить доступ к календарю",
+   "id": "Izinkan akses kalender",
+   "de": "Kalenderzugriff erlauben",
+   "tr": "Takvim erişimine izin ver"
   },
   "Already active": {
    "zh-Hans": "已激活",
@@ -652,6 +886,19 @@
    "de": "Genehmigt",
    "tr": "Onaylandı"
   },
+  "Approved from the notch": {
+   "zh-Hans": "在刘海中批准",
+   "hi": "नॉच से मंज़ूर",
+   "es": "Aprobados desde el notch",
+   "ar": "موافقات من النوتش",
+   "fr": "Validés depuis le notch",
+   "bn": "নচ থেকে অনুমোদিত",
+   "pt-BR": "Aprovados pelo notch",
+   "ru": "Одобрено из выреза",
+   "id": "Disetujui dari notch",
+   "de": "In der Notch freigegeben",
+   "tr": "Çentikten onaylanan"
+  },
   "As said": {
    "zh-Hans": "原样",
    "hi": "जैसा बोला",
@@ -743,6 +990,19 @@
    "de": "Vorderstes Fenster anhängen",
    "tr": "Öndeki pencereyi ekle"
   },
+  "Authorization code": {
+   "zh-Hans": "授权码",
+   "hi": "ऑथराइज़ेशन कोड",
+   "es": "Código de autorización",
+   "ar": "رمز التفويض",
+   "fr": "Code d'autorisation",
+   "bn": "অনুমোদন কোড",
+   "pt-BR": "Código de autorização",
+   "ru": "Код авторизации",
+   "id": "Kode otorisasi",
+   "de": "Autorisierungscode",
+   "tr": "Yetkilendirme kodu"
+  },
   "Auto (seasons)": {
    "zh-Hans": "自动（随季节）",
    "hi": "ऑटो (मौसम के अनुसार)",
@@ -781,6 +1041,19 @@
    "id": "Tutup otomatis · {seconds}dt",
    "de": "Automatisch schließen · {seconds} s",
    "tr": "Otomatik kapanma · {seconds} sn"
+  },
+  "Auto-hide": {
+   "zh-Hans": "自动隐藏",
+   "hi": "अपने-आप छिपाएँ",
+   "es": "Ocultar automáticamente",
+   "ar": "إخفاء تلقائي",
+   "fr": "Masquer automatiquement",
+   "bn": "স্বয়ংক্রিয়ভাবে লুকান",
+   "pt-BR": "Ocultar automaticamente",
+   "ru": "Автоскрытие",
+   "id": "Sembunyikan otomatis",
+   "de": "Automatisch ausblenden",
+   "tr": "Otomatik gizle"
   },
   "Automatic": {
    "zh-Hans": "自动",
@@ -821,6 +1094,32 @@
    "de": "Automation nicht erlaubt",
    "tr": "Otomasyona izin verilmedi"
   },
+  "Back": {
+   "zh-Hans": "返回",
+   "hi": "वापस",
+   "es": "Atrás",
+   "ar": "رجوع",
+   "fr": "Retour",
+   "bn": "ফিরে যান",
+   "pt-BR": "Voltar",
+   "ru": "Назад",
+   "id": "Kembali",
+   "de": "Zurück",
+   "tr": "Geri"
+  },
+  "Basic auth  (user:password, if set)": {
+   "zh-Hans": "基本认证（用户:密码，如已设置）",
+   "hi": "बेसिक ऑथ  (user:password, अगर सेट हो)",
+   "es": "Auth básica  (usuario:contraseña, si la hay)",
+   "ar": "مصادقة أساسية  (مستخدم:كلمة مرور، إن وُجدت)",
+   "fr": "Auth basique  (utilisateur:mot de passe, si activée)",
+   "bn": "বেসিক অথ  (user:password, থাকলে)",
+   "pt-BR": "Auth básica  (usuário:senha, se houver)",
+   "ru": "Basic auth  (пользователь:пароль, если задан)",
+   "id": "Basic auth  (pengguna:sandi, jika ada)",
+   "de": "Basic Auth  (Benutzer:Passwort, falls gesetzt)",
+   "tr": "Temel kimlik doğrulama  (kullanıcı:parola, ayarlıysa)"
+  },
   "Battery {0} %": {
    "zh-Hans": "电量 {0}%",
    "hi": "बैटरी {0} %",
@@ -860,6 +1159,19 @@
    "de": "Verhalten",
    "tr": "Davranış"
   },
+  "Better Stack → API tokens → Team-based tokens: an Uptime API token.": {
+   "zh-Hans": "Better Stack → API tokens → Team-based tokens：一个 Uptime API 令牌。",
+   "hi": "Better Stack → API tokens → Team-based tokens: एक Uptime API टोकन।",
+   "es": "Better Stack → API tokens → Team-based tokens: un token de la API de Uptime.",
+   "ar": "Better Stack → API tokens → Team-based tokens: رمز Uptime API.",
+   "fr": "Better Stack → API tokens → Team-based tokens : un jeton de l'API Uptime.",
+   "bn": "Better Stack → API tokens → Team-based tokens: একটি Uptime API টোকেন।",
+   "pt-BR": "Better Stack → API tokens → Team-based tokens: um token da API Uptime.",
+   "ru": "Better Stack → API tokens → Team-based tokens: токен Uptime API.",
+   "id": "Better Stack → API tokens → Team-based tokens: token API Uptime.",
+   "de": "Better Stack → API tokens → Team-based tokens: ein Uptime-API-Token.",
+   "tr": "Better Stack → API tokens → Team-based tokens: bir Uptime API token’ı."
+  },
   "Billing problem on the Claude account.": {
    "zh-Hans": "Claude 账户存在账单问题。",
    "hi": "Claude खाते में बिलिंग की समस्या है।",
@@ -887,14 +1199,14 @@
    "tr": "İkisi de kendi anahtarınla Claude'u kullanır: Anthropic'e yalnızca metin gönderilir; sesin her zaman Mac'inde kalır. Claude zamanında yanıt vermezse sözlerin duyulduğu gibi yapıştırılır."
   },
   "Bottom": {
-   "zh-Hans": "底部",
+   "zh-Hans": "下",
    "hi": "नीचे",
    "es": "Abajo",
    "ar": "أسفل",
-   "fr": "En bas",
+   "fr": "Bas",
    "bn": "নিচে",
-   "pt-BR": "Embaixo",
-   "ru": "Внизу",
+   "pt-BR": "Base",
+   "ru": "Снизу",
    "id": "Bawah",
    "de": "Unten",
    "tr": "Alt"
@@ -938,6 +1250,19 @@
    "de": "Aktivster Tag",
    "tr": "En yoğun gün"
   },
+  "Buy Mochi a coffee": {
+   "zh-Hans": "请 Mochi 喝咖啡",
+   "hi": "Mochi को कॉफ़ी पिलाएँ",
+   "es": "Invitar a Mochi a un café",
+   "ar": "ادعُ Mochi إلى قهوة",
+   "fr": "Offrir un café à Mochi",
+   "bn": "Mochi-কে কফি খাওয়ান",
+   "pt-BR": "Pagar um café para o Mochi",
+   "ru": "Угостить Mochi кофе",
+   "id": "Traktir Mochi kopi",
+   "de": "Mochi einen Kaffee spendieren",
+   "tr": "Mochi’ye kahve ısmarla"
+  },
   "COMMANDS": {
    "zh-Hans": "命令",
    "hi": "कमांड",
@@ -951,6 +1276,32 @@
    "de": "BEFEHLE",
    "tr": "KOMUTLAR"
   },
+  "Calendar access not allowed": {
+   "zh-Hans": "未允许访问日历",
+   "hi": "कैलेंडर एक्सेस की अनुमति नहीं है",
+   "es": "Acceso al calendario no permitido",
+   "ar": "الوصول إلى التقويم غير مسموح",
+   "fr": "Accès au calendrier non autorisé",
+   "bn": "ক্যালেন্ডার অ্যাক্সেসের অনুমতি নেই",
+   "pt-BR": "Acesso ao calendário não permitido",
+   "ru": "Доступ к календарю не разрешён",
+   "id": "Akses kalender tidak diizinkan",
+   "de": "Kalenderzugriff nicht erlaubt",
+   "tr": "Takvim erişimine izin verilmedi"
+  },
+  "Calendars": {
+   "zh-Hans": "日历",
+   "hi": "कैलेंडर",
+   "es": "Calendarios",
+   "ar": "التقويمات",
+   "fr": "Calendriers",
+   "bn": "ক্যালেন্ডার",
+   "pt-BR": "Calendários",
+   "ru": "Календари",
+   "id": "Kalender",
+   "de": "Kalender",
+   "tr": "Takvimler"
+  },
   "Call · {0}": {
    "zh-Hans": "通话 · {0}",
    "hi": "कॉल · {0}",
@@ -963,6 +1314,45 @@
    "id": "Panggilan · {0}",
    "de": "Gespräch · {0}",
    "tr": "Görüşme · {0}"
+  },
+  "Calls": {
+   "zh-Hans": "通话",
+   "hi": "कॉल",
+   "es": "Llamadas",
+   "ar": "المكالمات",
+   "fr": "Appels",
+   "bn": "কল",
+   "pt-BR": "Chamadas",
+   "ru": "Звонки",
+   "id": "Panggilan",
+   "de": "Anrufe",
+   "tr": "Aramalar"
+  },
+  "Calls transcribed": {
+   "zh-Hans": "已转写的通话",
+   "hi": "ट्रांसक्राइब की गई कॉल",
+   "es": "Llamadas transcritas",
+   "ar": "مكالمات مُفرّغة",
+   "fr": "Appels transcrits",
+   "bn": "ট্রান্সক্রাইব করা কল",
+   "pt-BR": "Chamadas transcritas",
+   "ru": "Звонков расшифровано",
+   "id": "Panggilan ditranskripsi",
+   "de": "Transkribierte Anrufe",
+   "tr": "Yazıya dökülen aramalar"
+  },
+  "Camera on": {
+   "zh-Hans": "摄像头开启",
+   "hi": "कैमरा चालू",
+   "es": "Cámara activada",
+   "ar": "الكاميرا قيد الاستخدام",
+   "fr": "Caméra allumée",
+   "bn": "ক্যামেরা চালু",
+   "pt-BR": "Câmera ligada",
+   "ru": "Камера включена",
+   "id": "Kamera menyala",
+   "de": "Kamera an",
+   "tr": "Kamera açık"
   },
   "Can't reach {name} at {url}. Is it running?": {
    "zh-Hans": "无法访问 {name}（{url}）。它正在运行吗？",
@@ -1081,6 +1471,19 @@
    "de": "Chat — andere Anbieter",
    "tr": "Sohbet — diğer sağlayıcılar"
   },
+  "Chats you have here also show up in Open WebUI. For the key, an admin turns on Admin Panel → Settings → Authentication → API Keys; then Settings → Account → API keys → Secrets → Show creates one.": {
+   "zh-Hans": "你在这里的对话也会出现在 Open WebUI 中。获取密钥：管理员先打开 Admin Panel → Settings → Authentication → API Keys，然后在 Settings → Account → API keys → Secrets → Show 中创建。",
+   "hi": "यहाँ की आपकी चैट Open WebUI में भी दिखती हैं। कुंजी के लिए, एक एडमिन Admin Panel → Settings → Authentication → API Keys चालू करता है; फिर Settings → Account → API keys → Secrets → Show से एक बनती है।",
+   "es": "Los chats que tengas aquí también aparecen en Open WebUI. Para la clave, un administrador activa Admin Panel → Settings → Authentication → API Keys; después Settings → Account → API keys → Secrets → Show crea una.",
+   "ar": "تظهر دردشاتك هنا في Open WebUI أيضًا. للحصول على المفتاح، يفعّل المسؤول Admin Panel → Settings → Authentication → API Keys؛ ثم تنشئه من Settings → Account → API keys → Secrets → Show.",
+   "fr": "Les chats que tu as ici apparaissent aussi dans Open WebUI. Pour la clé, un administrateur active Admin Panel → Settings → Authentication → API Keys ; ensuite Settings → Account → API keys → Secrets → Show en crée une.",
+   "bn": "এখানকার আপনার চ্যাটগুলো Open WebUI-তেও দেখা যায়। কী পেতে, একজন অ্যাডমিন Admin Panel → Settings → Authentication → API Keys চালু করেন; তারপর Settings → Account → API keys → Secrets → Show থেকে একটি তৈরি হয়।",
+   "pt-BR": "Os chats que você tem aqui também aparecem no Open WebUI. Para a chave, um administrador ativa Admin Panel → Settings → Authentication → API Keys; depois Settings → Account → API keys → Secrets → Show cria uma.",
+   "ru": "Ваши чаты здесь также появляются в Open WebUI. Для ключа администратор включает Admin Panel → Settings → Authentication → API Keys; затем Settings → Account → API keys → Secrets → Show создаёт его.",
+   "id": "Obrolan Anda di sini juga muncul di Open WebUI. Untuk kunci, admin menyalakan Admin Panel → Settings → Authentication → API Keys; lalu Settings → Account → API keys → Secrets → Show membuatnya.",
+   "de": "Chats, die hier geführt werden, erscheinen auch in Open WebUI. Für den Schlüssel aktiviert ein Admin Admin Panel → Settings → Authentication → API Keys; danach erstellt Settings → Account → API keys → Secrets → Show einen.",
+   "tr": "Burada yaptığınız sohbetler Open WebUI’da da görünür. Anahtar için bir yönetici Admin Panel → Settings → Authentication → API Keys seçeneğini açar; ardından Settings → Account → API keys → Secrets → Show bir anahtar oluşturur."
+  },
   "Check now": {
    "zh-Hans": "立即检查",
    "hi": "अभी जाँचें",
@@ -1093,6 +1496,19 @@
    "id": "Periksa sekarang",
    "de": "Jetzt prüfen",
    "tr": "Şimdi kontrol et"
+  },
+  "Checking for new messages every 20 s.": {
+   "zh-Hans": "每 20 秒检查一次新消息。",
+   "hi": "हर 20 सेकंड में नए संदेश जाँचे जा रहे हैं।",
+   "es": "Comprobando mensajes nuevos cada 20 s.",
+   "ar": "التحقق من الرسائل الجديدة كل 20 ث.",
+   "fr": "Vérification des nouveaux messages toutes les 20 s.",
+   "bn": "প্রতি ২০ সেকেন্ডে নতুন বার্তা দেখা হচ্ছে।",
+   "pt-BR": "Verificando novas mensagens a cada 20 s.",
+   "ru": "Проверка новых сообщений каждые 20 с.",
+   "id": "Memeriksa pesan baru setiap 20 dtk.",
+   "de": "Neue Nachrichten werden alle 20 s abgerufen.",
+   "tr": "Yeni iletiler 20 sn’de bir denetleniyor."
   },
   "Checking the download…": {
    "zh-Hans": "正在校验下载内容…",
@@ -1132,6 +1548,19 @@
    "id": "Pilih alat yang Anda gunakan. Coucou hanya menampilkan yang Anda deklarasikan di sini.",
    "de": "Wähle deine Werkzeuge. Coucou zeigt nur an, was du hier auswählst.",
    "tr": "Kullandığın araçları seç. Coucou yalnızca burada belirttiğin araçları gösterir."
+  },
+  "Choose…": {
+   "zh-Hans": "选择…",
+   "hi": "चुनें…",
+   "es": "Elegir…",
+   "ar": "اختيار…",
+   "fr": "Choisir…",
+   "bn": "বেছে নাও…",
+   "pt-BR": "Escolher…",
+   "ru": "Выбрать…",
+   "id": "Pilih…",
+   "de": "Auswählen…",
+   "tr": "Seç…"
   },
   "City": {
    "zh-Hans": "城市",
@@ -1223,6 +1652,45 @@
    "id": "Claude Code belum masuk, atau kuncinya sudah tidak berlaku.",
    "de": "Claude Code ist nicht angemeldet oder der Schlüssel ist nicht mehr gültig.",
    "tr": "Claude Code oturumu açık değil veya anahtarı artık geçerli değil."
+  },
+  "Claude Code isn't installed (no `claude` command found).": {
+   "zh-Hans": "未安装 Claude Code（找不到 `claude` 命令）。",
+   "hi": "Claude Code इंस्टॉल नहीं है (`claude` कमांड नहीं मिला)।",
+   "es": "Claude Code no está instalado (no se encontró el comando `claude`).",
+   "ar": "Claude Code غير مثبّت (لم يُعثر على الأمر `claude`).",
+   "fr": "Claude Code n'est pas installé (commande `claude` introuvable).",
+   "bn": "Claude Code ইনস্টল করা নেই (`claude` কমান্ড পাওয়া যায়নি)।",
+   "pt-BR": "O Claude Code não está instalado (comando `claude` não encontrado).",
+   "ru": "Claude Code не установлен (команда `claude` не найдена).",
+   "id": "Claude Code belum terpasang (perintah `claude` tidak ditemukan).",
+   "de": "Claude Code ist nicht installiert (kein `claude`-Befehl gefunden).",
+   "tr": "Claude Code yüklü değil (`claude` komutu bulunamadı)."
+  },
+  "Claude Code sessions on other machines, over SSH with your keys and ~/.ssh/config. Connect to each host once in a terminal first so its host key is known.": {
+   "zh-Hans": "通过 SSH（使用你的密钥和 ~/.ssh/config）查看其他机器上的 Claude Code 会话。请先在终端中连接每台主机一次，让其主机密钥被记录。",
+   "hi": "दूसरी मशीनों पर चल रहे Claude Code सत्र, आपकी कुंजियों और ~/.ssh/config के साथ SSH से। पहले हर होस्ट से टर्मिनल में एक बार जुड़ें ताकि उसकी होस्ट कुंजी पहचानी जाए।",
+   "es": "Sesiones de Claude Code en otras máquinas, por SSH con tus claves y ~/.ssh/config. Conéctate antes una vez a cada host desde una terminal para que su clave sea conocida.",
+   "ar": "جلسات Claude Code على أجهزة أخرى عبر SSH بمفاتيحك و‎~/.ssh/config. اتصل بكل مضيف مرة واحدة في الطرفية أولًا ليُعرف مفتاحه.",
+   "fr": "Les sessions Claude Code d'autres machines, par SSH avec tes clés et ~/.ssh/config. Connecte-toi d'abord une fois à chaque hôte dans un terminal pour que sa clé soit connue.",
+   "bn": "অন্য মেশিনের Claude Code সেশন, আপনার কী আর ~/.ssh/config দিয়ে SSH-এর মাধ্যমে। প্রথমে প্রতিটি হোস্টে টার্মিনাল থেকে একবার যুক্ত হন, যাতে তার হোস্ট কী জানা থাকে।",
+   "pt-BR": "Sessões do Claude Code em outras máquinas, por SSH com suas chaves e ~/.ssh/config. Conecte-se uma vez a cada host em um terminal antes, para que a chave dele seja conhecida.",
+   "ru": "Сеансы Claude Code на других машинах по SSH с вашими ключами и ~/.ssh/config. Сначала подключитесь к каждому хосту один раз в терминале, чтобы его ключ был известен.",
+   "id": "Sesi Claude Code di mesin lain, lewat SSH dengan kunci dan ~/.ssh/config Anda. Sambungkan ke tiap host sekali di terminal dulu agar kunci host-nya dikenal.",
+   "de": "Claude Code-Sitzungen auf anderen Rechnern, über SSH mit den eigenen Schlüsseln und ~/.ssh/config. Zuerst einmal in einem Terminal mit jedem Host verbinden, damit sein Host-Key bekannt ist.",
+   "tr": "Diğer makinelerdeki Claude Code oturumları, anahtarlarınız ve ~/.ssh/config ile SSH üzerinden. Ana bilgisayar anahtarının bilinmesi için önce her ana bilgisayara bir terminalde bir kez bağlanın."
+  },
+  "Claude Code's default": {
+   "zh-Hans": "Claude Code 的默认设置",
+   "hi": "Claude Code का डिफ़ॉल्ट",
+   "es": "Lo predeterminado de Claude Code",
+   "ar": "الافتراضي في Claude Code",
+   "fr": "Par défaut de Claude Code",
+   "bn": "Claude Code-এর ডিফল্ট",
+   "pt-BR": "Padrão do Claude Code",
+   "ru": "По умолчанию в Claude Code",
+   "id": "Bawaan Claude Code",
+   "de": "Standard von Claude Code",
+   "tr": "Claude Code varsayılanı"
   },
   "Claude Code, Codex and the other agents Mochi follows.": {
    "zh-Hans": "Mochi 关注的 Claude Code、Codex 和其他智能体。",
@@ -1393,6 +1861,32 @@
    "de": "Verlauf löschen",
    "tr": "Geçmişi temizle"
   },
+  "Client ID": {
+   "zh-Hans": "客户端 ID",
+   "hi": "क्लाइंट ID",
+   "es": "ID de cliente",
+   "ar": "معرّف العميل",
+   "fr": "ID client",
+   "bn": "ক্লায়েন্ট আইডি",
+   "pt-BR": "ID do cliente",
+   "ru": "ID клиента",
+   "id": "ID klien",
+   "de": "Client-ID",
+   "tr": "İstemci kimliği"
+  },
+  "Client secret": {
+   "zh-Hans": "客户端密钥",
+   "hi": "क्लाइंट सीक्रेट",
+   "es": "Secreto de cliente",
+   "ar": "سر العميل",
+   "fr": "Secret client",
+   "bn": "ক্লায়েন্ট সিক্রেট",
+   "pt-BR": "Segredo do cliente",
+   "ru": "Секрет клиента",
+   "id": "Rahasia klien",
+   "de": "Client-Secret",
+   "tr": "İstemci gizli anahtarı"
+  },
   "Close": {
    "zh-Hans": "关闭",
    "hi": "बंद करें",
@@ -1432,6 +1926,19 @@
    "de": "Notch schließen (falls nicht angeheftet)",
    "tr": "Adayı kapat (sabitlenmemişse)"
   },
+  "Code": {
+   "zh-Hans": "代码",
+   "hi": "कोड",
+   "es": "Código",
+   "ar": "شيفرة",
+   "fr": "Code",
+   "bn": "কোড",
+   "pt-BR": "Código",
+   "ru": "Код",
+   "id": "Kode",
+   "de": "Code",
+   "tr": "Kod"
+  },
   "Codex hooks": {
    "zh-Hans": "Codex 钩子",
    "hi": "Codex हुक",
@@ -1444,6 +1951,19 @@
    "id": "Hooks Codex",
    "de": "Codex-Hooks",
    "tr": "Codex hook'ları"
+  },
+  "Codex plan": {
+   "zh-Hans": "Codex 套餐",
+   "hi": "Codex प्लान",
+   "es": "Plan de Codex",
+   "ar": "خطة Codex",
+   "fr": "Forfait Codex",
+   "bn": "Codex প্ল্যান",
+   "pt-BR": "Plano Codex",
+   "ru": "Тариф Codex",
+   "id": "Paket Codex",
+   "de": "Codex-Tarif",
+   "tr": "Codex planı"
   },
   "Coins (BTC, ETH, SOL…)": {
    "zh-Hans": "币种（BTC, ETH, SOL…）",
@@ -1562,6 +2082,32 @@
    "de": "Verbunden",
    "tr": "Bağlı"
   },
+  "Connected as {0}": {
+   "zh-Hans": "已连接：{0}",
+   "hi": "{0} के रूप में कनेक्टेड",
+   "es": "Conectado como {0}",
+   "ar": "متصل باسم {0}",
+   "fr": "Connecté en tant que {0}",
+   "bn": "{0} হিসেবে সংযুক্ত",
+   "pt-BR": "Conectado como {0}",
+   "ru": "Подключено как {0}",
+   "id": "Terhubung sebagai {0}",
+   "de": "Verbunden als {0}",
+   "tr": "{0} olarak bağlı"
+  },
+  "Connected as {0}.": {
+   "zh-Hans": "已连接：{0}。",
+   "hi": "{0} के रूप में कनेक्टेड।",
+   "es": "Conectado como {0}.",
+   "ar": "متصل باسم {0}.",
+   "fr": "Connecté en tant que {0}.",
+   "bn": "{0} হিসেবে সংযুক্ত।",
+   "pt-BR": "Conectado como {0}.",
+   "ru": "Подключено как {0}.",
+   "id": "Terhubung sebagai {0}.",
+   "de": "Verbunden als {0}.",
+   "tr": "{0} olarak bağlı."
+  },
   "Connected · loading…": {
    "zh-Hans": "已连接 · 加载中…",
    "hi": "जुड़ा है · लोड हो रहा है…",
@@ -1588,6 +2134,19 @@
    "de": "Verbunden · {detail}",
    "tr": "Bağlı · {detail}"
   },
+  "Connecting to the gateway…": {
+   "zh-Hans": "正在连接网关…",
+   "hi": "गेटवे से जुड़ रहा है…",
+   "es": "Conectando con la pasarela…",
+   "ar": "جارٍ الاتصال بالبوابة…",
+   "fr": "Connexion à la passerelle…",
+   "bn": "গেটওয়েতে সংযুক্ত হচ্ছে…",
+   "pt-BR": "Conectando ao gateway…",
+   "ru": "Подключение к шлюзу…",
+   "id": "Menghubungkan ke gateway…",
+   "de": "Verbindung zum Gateway wird hergestellt…",
+   "tr": "Ağ geçidine bağlanılıyor…"
+  },
   "Connecting…": {
    "zh-Hans": "正在连接…",
    "hi": "कनेक्ट हो रहा है…",
@@ -1600,6 +2159,19 @@
    "id": "Menghubungkan…",
    "de": "Verbindung wird hergestellt…",
    "tr": "Bağlanıyor…"
+  },
+  "Contact": {
+   "zh-Hans": "联系人",
+   "hi": "संपर्क",
+   "es": "Contacto",
+   "ar": "جهة اتصال",
+   "fr": "Contact",
+   "bn": "পরিচিতি",
+   "pt-BR": "Contato",
+   "ru": "Контакт",
+   "id": "Kontak",
+   "de": "Kontakt",
+   "tr": "Kişi"
   },
   "Continue…": {
    "zh-Hans": "继续…",
@@ -1757,6 +2329,32 @@
    "de": "Coucou konnte nicht einfügen: Deine Worte wurden kopiert. Drücke ⌘V und erlaube Bedienungshilfen, damit Coucou sie für dich einfügt.",
    "tr": "Coucou yapıştıramadı: sözlerin kopyalandı. ⌘V tuşlarına bas ve Coucou'nun senin için yapıştırabilmesi için Erişilebilirlik izni ver."
   },
+  "Coucou downloads GOWA, the open-source gateway, from its GitHub page (about 15 MB, once), checks it and starts it. Then scan the QR code with your phone. No Terminal needed.": {
+   "zh-Hans": "Coucou 会从 GitHub 页面下载开源网关 GOWA（约 15 MB，仅一次），校验后启动。然后用手机扫描二维码即可。无需终端。",
+   "hi": "Coucou ओपन-सोर्स गेटवे GOWA को उसके GitHub पेज से डाउनलोड करता है (लगभग 15 MB, सिर्फ़ एक बार), जाँचता है और चालू करता है। फिर फ़ोन से QR कोड स्कैन करें। टर्मिनल की ज़रूरत नहीं।",
+   "es": "Coucou descarga GOWA, la pasarela de código abierto, desde su página de GitHub (unos 15 MB, una sola vez), la comprueba y la inicia. Luego escanea el código QR con tu teléfono. Sin Terminal.",
+   "ar": "يُنزّل Coucou بوابة GOWA مفتوحة المصدر من صفحتها على GitHub (نحو 15 ميغابايت، مرة واحدة)، ويتحقق منها ويشغّلها. ثم امسح رمز QR بهاتفك. لا حاجة إلى الطرفية.",
+   "fr": "Coucou télécharge GOWA, la passerelle open source, depuis sa page GitHub (environ 15 Mo, une seule fois), la vérifie et la lance. Ensuite, scanne le QR code avec ton téléphone. Pas besoin du Terminal.",
+   "bn": "Coucou ওপেন-সোর্স গেটওয়ে GOWA তার GitHub পেজ থেকে ডাউনলোড করে (প্রায় ১৫ MB, একবারই), যাচাই করে চালু করে। তারপর ফোন দিয়ে QR কোড স্ক্যান করুন। টার্মিনাল লাগবে না।",
+   "pt-BR": "O Coucou baixa o GOWA, o gateway de código aberto, da página dele no GitHub (cerca de 15 MB, uma única vez), verifica e inicia. Depois, escaneie o QR code com o celular. Sem Terminal.",
+   "ru": "Coucou скачивает GOWA, шлюз с открытым кодом, с его страницы на GitHub (около 15 МБ, один раз), проверяет и запускает. Затем отсканируйте QR-код телефоном. Терминал не нужен.",
+   "id": "Coucou mengunduh GOWA, gateway open source, dari halaman GitHub-nya (sekitar 15 MB, sekali saja), memeriksanya lalu menjalankannya. Lalu pindai kode QR dengan ponselmu. Tanpa Terminal.",
+   "de": "Coucou lädt GOWA, das Open-Source-Gateway, von seiner GitHub-Seite (etwa 15 MB, einmalig), prüft es und startet es. Danach den QR-Code mit dem Telefon scannen. Kein Terminal nötig.",
+   "tr": "Coucou, açık kaynaklı ağ geçidi GOWA’yı GitHub sayfasından indirir (yaklaşık 15 MB, bir kez), denetler ve başlatır. Ardından QR kodunu telefonunuzla tarayın. Terminal gerekmez."
+  },
+  "Coucou is free and open source. If it saves you time, you can buy Mochi a coffee.": {
+   "zh-Hans": "Coucou 免费且开源。如果它帮你节省了时间，可以请 Mochi 喝杯咖啡。",
+   "hi": "Coucou मुफ़्त और ओपन सोर्स है। अगर यह आपका समय बचाता है, तो Mochi को एक कॉफ़ी पिला सकते हैं।",
+   "es": "Coucou es gratis y de código abierto. Si te ahorra tiempo, puedes invitar a Mochi a un café.",
+   "ar": "Coucou مجاني ومفتوح المصدر. إن وفّر عليك الوقت، يمكنك دعوة Mochi إلى قهوة.",
+   "fr": "Coucou est gratuit et open source. S’il te fait gagner du temps, tu peux offrir un café à Mochi.",
+   "bn": "Coucou বিনামূল্যে ও ওপেন সোর্স। এটি আপনার সময় বাঁচালে Mochi-কে এক কাপ কফি খাওয়াতে পারেন।",
+   "pt-BR": "O Coucou é gratuito e de código aberto. Se ele economiza seu tempo, você pode pagar um café para o Mochi.",
+   "ru": "Coucou бесплатный и с открытым кодом. Если он экономит вам время, можно угостить Mochi кофе.",
+   "id": "Coucou gratis dan open source. Kalau ini menghemat waktumu, kamu bisa traktir Mochi kopi.",
+   "de": "Coucou ist kostenlos und Open Source. Wenn es dir Zeit spart, kannst du Mochi einen Kaffee spendieren.",
+   "tr": "Coucou ücretsiz ve açık kaynak. Sana zaman kazandırıyorsa Mochi’ye bir kahve ısmarlayabilirsin."
+  },
   "Coucou is up to date": {
    "zh-Hans": "Coucou 已是最新版本",
    "hi": "Coucou अप-टू-डेट है",
@@ -1809,6 +2407,19 @@
    "de": "Coucou schaut ein paar Mal am Tag nach seinen eigenen Releases auf GitHub. Ein Update wird erst nach deinem Klick installiert, wenn Apples Signatur und Beglaubigung stimmen.",
    "tr": "Coucou günde birkaç kez GitHub'daki kendi sürümlerine bakar. Güncelleme yalnızca sen tıkladıktan sonra, Apple imzası ve onayı doğrulandığında yüklenir."
   },
+  "Coucou only talks to the gateway on this Mac. Messages stay in memory, are never logged or saved, and are forgotten when Coucou quits. No photo or media is ever downloaded.": {
+   "zh-Hans": "Coucou 只与这台 Mac 上的网关通信。消息只保存在内存中，从不记录或保存，退出 Coucou 时即被清除。从不下载任何照片或媒体。",
+   "hi": "Coucou सिर्फ़ इस Mac पर चल रहे गेटवे से बात करता है। संदेश मेमोरी में रहते हैं, कभी लॉग या सेव नहीं होते, और Coucou बंद होने पर भुला दिए जाते हैं। कोई फ़ोटो या मीडिया डाउनलोड नहीं होता।",
+   "es": "Coucou solo habla con la pasarela de este Mac. Los mensajes se quedan en memoria, nunca se registran ni se guardan, y se olvidan al cerrar Coucou. Nunca se descarga ninguna foto ni archivo.",
+   "ar": "يتواصل Coucou فقط مع البوابة على هذا الـMac. تبقى الرسائل في الذاكرة، ولا تُسجَّل ولا تُحفَظ أبدًا، وتُنسى عند إغلاق Coucou. لا تُنزَّل أي صورة أو وسائط.",
+   "fr": "Coucou ne parle qu’à la passerelle sur ce Mac. Les messages restent en mémoire, ne sont jamais journalisés ni enregistrés, et sont oubliés quand Coucou quitte. Aucune photo ni aucun média n’est téléchargé.",
+   "bn": "Coucou শুধু এই Mac-এর গেটওয়ের সঙ্গে কথা বলে। বার্তা মেমরিতে থাকে, কখনও লগ বা সেভ হয় না, এবং Coucou বন্ধ হলে মুছে যায়। কোনো ছবি বা মিডিয়া ডাউনলোড হয় না।",
+   "pt-BR": "O Coucou só fala com o gateway neste Mac. As mensagens ficam na memória, nunca são registradas nem salvas e são esquecidas quando o Coucou fecha. Nenhuma foto ou mídia é baixada.",
+   "ru": "Coucou общается только со шлюзом на этом Mac. Сообщения хранятся в памяти, никогда не пишутся в журнал и не сохраняются, и забываются при выходе из Coucou. Фото и медиа не загружаются.",
+   "id": "Coucou hanya berbicara dengan gateway di Mac ini. Pesan tetap di memori, tidak pernah dicatat atau disimpan, dan dilupakan saat Coucou ditutup. Tidak ada foto atau media yang diunduh.",
+   "de": "Coucou spricht nur mit dem Gateway auf diesem Mac. Nachrichten bleiben im Arbeitsspeicher, werden nie protokolliert oder gespeichert und beim Beenden von Coucou vergessen. Fotos oder Medien werden nie geladen.",
+   "tr": "Coucou yalnızca bu Mac’teki ağ geçidiyle konuşur. İletiler bellekte kalır, asla günlüğe yazılmaz veya kaydedilmez ve Coucou kapandığında unutulur. Hiçbir fotoğraf veya medya indirilmez."
+  },
   "Coucou reads back results in the spoken language, using a synthesized voice. 100% on-device.": {
    "zh-Hans": "Coucou 用语音语言朗读结果。完全在设备上处理。",
    "hi": "Coucou बोली जाने वाली भाषा में परिणाम पढ़ता है। सब कुछ डिवाइस पर।",
@@ -1834,6 +2445,19 @@
    "id": "Coucou merespons dengan suara",
    "de": "Coucou antwortet laut",
    "tr": "Coucou sesli yanıt verir"
+  },
+  "Coucou runs it on this Mac only (127.0.0.1, the URL’s port), without downloading media, and stops it when Coucou quits. Its WhatsApp session stays in ~/Library/Application Support/Coucou/GOWA.": {
+   "zh-Hans": "Coucou 仅在这台 Mac 上运行它（127.0.0.1，使用地址中的端口），不下载媒体，并在 Coucou 退出时停止它。其 WhatsApp 会话保存在 ~/Library/Application Support/Coucou/GOWA。",
+   "hi": "Coucou इसे सिर्फ़ इस Mac पर चलाता है (127.0.0.1, URL का पोर्ट), मीडिया डाउनलोड किए बिना, और Coucou बंद होने पर रोक देता है। इसका WhatsApp सेशन ~/Library/Application Support/Coucou/GOWA में रहता है।",
+   "es": "Coucou lo ejecuta solo en este Mac (127.0.0.1, el puerto de la URL), sin descargar archivos, y lo detiene al cerrar Coucou. Su sesión de WhatsApp queda en ~/Library/Application Support/Coucou/GOWA.",
+   "ar": "يشغّله Coucou على هذا الـMac فقط (127.0.0.1، منفذ العنوان)، دون تنزيل الوسائط، ويوقفه عند إغلاق Coucou. تبقى جلسة واتساب في ‎~/Library/Application Support/Coucou/GOWA.",
+   "fr": "Coucou le lance sur ce Mac uniquement (127.0.0.1, le port de l’URL), sans télécharger les médias, et l’arrête quand Coucou quitte. Sa session WhatsApp reste dans ~/Library/Application Support/Coucou/GOWA.",
+   "bn": "Coucou এটি শুধু এই Mac-এ চালায় (127.0.0.1, URL-এর পোর্ট), মিডিয়া ডাউনলোড ছাড়াই, এবং Coucou বন্ধ হলে থামিয়ে দেয়। এর WhatsApp সেশন থাকে ~/Library/Application Support/Coucou/GOWA-তে।",
+   "pt-BR": "O Coucou o executa só neste Mac (127.0.0.1, a porta da URL), sem baixar mídias, e o encerra quando o Coucou fecha. A sessão do WhatsApp fica em ~/Library/Application Support/Coucou/GOWA.",
+   "ru": "Coucou запускает его только на этом Mac (127.0.0.1, порт из адреса), без загрузки медиа, и останавливает при выходе. Сессия WhatsApp хранится в ~/Library/Application Support/Coucou/GOWA.",
+   "id": "Coucou menjalankannya hanya di Mac ini (127.0.0.1, port dari URL), tanpa mengunduh media, dan menghentikannya saat Coucou ditutup. Sesi WhatsApp-nya ada di ~/Library/Application Support/Coucou/GOWA.",
+   "de": "Coucou führt es nur auf diesem Mac aus (127.0.0.1, der Port der URL), ohne Medien zu laden, und beendet es, wenn Coucou beendet wird. Die WhatsApp-Sitzung bleibt in ~/Library/Application Support/Coucou/GOWA.",
+   "tr": "Coucou onu yalnızca bu Mac’te çalıştırır (127.0.0.1, URL’nin bağlantı noktası), medya indirmez ve Coucou kapandığında durdurur. WhatsApp oturumu ~/Library/Application Support/Coucou/GOWA klasöründe kalır."
   },
   "Coucou writes your calls on your Mac with Parakeet, and tells the voices apart with a second small model. Both are downloaded once (about 650 MB), then everything works offline.": {
    "zh-Hans": "Coucou 用 Parakeet 在你的 Mac 上转写通话，并用第二个小模型区分说话人。两者只需下载一次（约 650 MB），之后一切离线运行。",
@@ -1861,6 +2485,32 @@
    "de": "Coucou {0} ist da",
    "tr": "Coucou {0} çıktı"
   },
+  "Coucou's chat folder": {
+   "zh-Hans": "Coucou 聊天文件夹",
+   "hi": "Coucou का चैट फ़ोल्डर",
+   "es": "Carpeta de chat de Coucou",
+   "ar": "مجلد الدردشة في Coucou",
+   "fr": "Dossier de discussion de Coucou",
+   "bn": "Coucou-র চ্যাট ফোল্ডার",
+   "pt-BR": "Pasta de chat do Coucou",
+   "ru": "Папка чата Coucou",
+   "id": "Folder obrolan Coucou",
+   "de": "Chat-Ordner von Coucou",
+   "tr": "Coucou’nun sohbet klasörü"
+  },
+  "Coucou’s webhook port": {
+   "zh-Hans": "Coucou 的 Webhook 端口",
+   "hi": "Coucou का वेबहुक पोर्ट",
+   "es": "Puerto del webhook de Coucou",
+   "ar": "منفذ webhook في Coucou",
+   "fr": "Port du webhook de Coucou",
+   "bn": "Coucou-র ওয়েবহুক পোর্ট",
+   "pt-BR": "Porta do webhook do Coucou",
+   "ru": "Порт вебхука Coucou",
+   "id": "Port webhook Coucou",
+   "de": "Webhook-Port von Coucou",
+   "tr": "Coucou’nun webhook bağlantı noktası"
+  },
   "Couldn’t reach GitHub": {
    "zh-Hans": "无法连接 GitHub",
    "hi": "GitHub से संपर्क नहीं हो सका",
@@ -1873,6 +2523,19 @@
    "id": "Tidak dapat menghubungi GitHub",
    "de": "GitHub nicht erreichbar",
    "tr": "GitHub'a ulaşılamadı"
+  },
+  "Count working agents only": {
+   "zh-Hans": "只计算工作中的智能体",
+   "hi": "केवल काम कर रहे एजेंट गिनें",
+   "es": "Contar solo los agentes trabajando",
+   "ar": "عدّ الوكلاء العاملين فقط",
+   "fr": "Ne compter que les agents au travail",
+   "bn": "শুধু কাজরত এজেন্ট গণনা করুন",
+   "pt-BR": "Contar só os agentes trabalhando",
+   "ru": "Считать только работающих агентов",
+   "id": "Hitung agen yang bekerja saja",
+   "de": "Nur arbeitende Agents zählen",
+   "tr": "Yalnızca çalışan ajanları say"
   },
   "Counted on your Mac, never sent anywhere.": {
    "zh-Hans": "在你的 Mac 上统计，从不发送。",
@@ -2212,6 +2875,19 @@
    "de": "Anzeige",
    "tr": "Ekran"
   },
+  "Document": {
+   "zh-Hans": "文档",
+   "hi": "दस्तावेज़",
+   "es": "Documento",
+   "ar": "مستند",
+   "fr": "Document",
+   "bn": "ডকুমেন্ট",
+   "pt-BR": "Documento",
+   "ru": "Документ",
+   "id": "Dokumen",
+   "de": "Dokument",
+   "tr": "Belge"
+  },
   "Don't keep": {
    "zh-Hans": "不保留",
    "hi": "न रखें",
@@ -2237,6 +2913,19 @@
    "id": "Selesai",
    "de": "Fertig",
    "tr": "Tamamlandı"
+  },
+  "Down": {
+   "zh-Hans": "宕机",
+   "hi": "डाउन",
+   "es": "Caído",
+   "ar": "متوقف",
+   "fr": "En panne",
+   "bn": "ডাউন",
+   "pt-BR": "Fora do ar",
+   "ru": "Недоступен",
+   "id": "Mati",
+   "de": "Ausgefallen",
+   "tr": "Çalışmıyor"
   },
   "Download": {
    "zh-Hans": "下载",
@@ -2276,6 +2965,19 @@
    "id": "Unduh dulu modelnya di Coucou Flow → Pengaturan.",
    "de": "Lade zuerst die Modelle unter Coucou Flow → Einstellungen herunter.",
    "tr": "Önce Coucou Flow → Ayarlar bölümünden modelleri indir."
+  },
+  "Downloading ({0} MB)…": {
+   "zh-Hans": "正在下载（{0} MB）…",
+   "hi": "डाउनलोड हो रहा है ({0} MB)…",
+   "es": "Descargando ({0} MB)…",
+   "ar": "جارٍ التنزيل ({0} ميغابايت)…",
+   "fr": "Téléchargement ({0} Mo)…",
+   "bn": "ডাউনলোড হচ্ছে ({0} MB)…",
+   "pt-BR": "Baixando ({0} MB)…",
+   "ru": "Загрузка ({0} МБ)…",
+   "id": "Mengunduh ({0} MB)…",
+   "de": "Wird geladen ({0} MB)…",
+   "tr": "İndiriliyor ({0} MB)…"
   },
   "Downloading from GitHub…": {
    "zh-Hans": "正在从 GitHub 下载…",
@@ -2355,6 +3057,19 @@
    "de": "Doppelt",
    "tr": "Yinelenen"
   },
+  "Each file Claude Code edits opens in the island as it happens, and the next edit replaces it. Close it to stop following until the next prompt.": {
+   "zh-Hans": "Claude Code 编辑的每个文件都会在岛中实时打开，下一次编辑会替换它。关闭它即可停止跟随，直到下一条提示。",
+   "hi": "Claude Code जो भी फ़ाइल बदलता है, वह उसी समय आइलैंड में खुलती है, और अगला बदलाव उसकी जगह ले लेता है। अगले प्रॉम्प्ट तक फ़ॉलो करना रोकने के लिए इसे बंद करें।",
+   "es": "Cada archivo que Claude Code edita se abre en la isla en el momento, y la siguiente edición lo reemplaza. Ciérralo para dejar de seguirlo hasta el próximo mensaje.",
+   "ar": "كل ملف يعدّله Claude Code يُفتح في الجزيرة لحظة تعديله، ويحل التعديل التالي محله. أغلقه لإيقاف المتابعة حتى الطلب التالي.",
+   "fr": "Chaque fichier que Claude Code modifie s'ouvre dans l'île au moment même, et la modification suivante le remplace. Ferme-le pour arrêter de suivre jusqu'au prochain message.",
+   "bn": "Claude Code যে ফাইলই সম্পাদনা করে, তা সঙ্গে সঙ্গে আইল্যান্ডে খোলে, আর পরের সম্পাদনা সেটির জায়গা নেয়। পরের প্রম্পট পর্যন্ত অনুসরণ বন্ধ রাখতে এটি বন্ধ করুন।",
+   "pt-BR": "Cada arquivo que o Claude Code edita abre na ilha na hora, e a próxima edição o substitui. Feche-o para parar de acompanhar até o próximo prompt.",
+   "ru": "Каждый файл, который правит Claude Code, сразу открывается в острове, а следующая правка его заменяет. Закройте его, чтобы не следить до следующего запроса.",
+   "id": "Setiap file yang disunting Claude Code terbuka di pulau saat itu juga, dan suntingan berikutnya menggantikannya. Tutup untuk berhenti mengikuti sampai prompt berikutnya.",
+   "de": "Jede Datei, die Claude Code bearbeitet, öffnet sich sofort in der Insel, und die nächste Bearbeitung ersetzt sie. Schließen, um bis zum nächsten Prompt nicht mehr zu folgen.",
+   "tr": "Claude Code’un düzenlediği her dosya o anda adada açılır ve sonraki düzenleme onun yerini alır. Bir sonraki prompt’a kadar izlemeyi durdurmak için kapatın."
+  },
   "Edit": {
    "zh-Hans": "编辑",
    "hi": "बदलें",
@@ -2393,6 +3108,19 @@
    "id": "Mengedit",
    "de": "Bearbeitet",
    "tr": "Düzenliyor"
+  },
+  "Effort": {
+   "zh-Hans": "思考强度",
+   "hi": "प्रयास",
+   "es": "Esfuerzo",
+   "ar": "الجهد",
+   "fr": "Effort",
+   "bn": "প্রচেষ্টা",
+   "pt-BR": "Esforço",
+   "ru": "Усилие",
+   "id": "Upaya",
+   "de": "Aufwand",
+   "tr": "Efor"
   },
   "ElevenLabs API key": {
    "zh-Hans": "ElevenLabs API 密钥",
@@ -2628,6 +3356,32 @@
    "de": "Flow-Diktat",
    "tr": "Flow dikte"
   },
+  "Follow edits live": {
+   "zh-Hans": "实时跟随编辑",
+   "hi": "बदलाव लाइव देखें",
+   "es": "Seguir los cambios en vivo",
+   "ar": "متابعة التعديلات مباشرة",
+   "fr": "Suivre les modifications en direct",
+   "bn": "সম্পাদনা লাইভ অনুসরণ করুন",
+   "pt-BR": "Acompanhar as edições ao vivo",
+   "ru": "Следить за правками вживую",
+   "id": "Ikuti suntingan secara langsung",
+   "de": "Bearbeitungen live verfolgen",
+   "tr": "Düzenlemeleri canlı izle"
+  },
+  "Follow the latest activity": {
+   "zh-Hans": "跟随最新活动",
+   "hi": "नवीनतम गतिविधि का अनुसरण करें",
+   "es": "Seguir la última actividad",
+   "ar": "متابعة آخر نشاط",
+   "fr": "Suivre la dernière activité",
+   "bn": "সর্বশেষ কার্যকলাপ অনুসরণ করুন",
+   "pt-BR": "Seguir a atividade mais recente",
+   "ru": "Следить за последней активностью",
+   "id": "Ikuti aktivitas terbaru",
+   "de": "Letzter Aktivität folgen",
+   "tr": "En son etkinliği izle"
+  },
   "For a more natural voice, download a Premium voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices. In English: Ava for a woman, Jamie for a man (British).": {
    "zh-Hans": "想要更自然的声音，请下载 Premium 语音：系统设置 → 辅助功能 → 朗读内容 → 系统语音 → 管理语音。英语：女声选 Ava，男声选 Jamie（英式）。",
    "hi": "ज़्यादा स्वाभाविक आवाज़ के लिए Premium आवाज़ डाउनलोड करें: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices। अंग्रेज़ी में: महिला के लिए Ava, पुरुष के लिए Jamie (ब्रिटिश)।",
@@ -2705,6 +3459,45 @@
    "id": "Kalimat lengkap dan paragraf, untuk email.",
    "de": "Vollständige Sätze und Absätze für E-Mails.",
    "tr": "E-postalar için tam cümleler ve paragraflar."
+  },
+  "GOWA's release has no checksum to check the download against: nothing was installed.": {
+   "zh-Hans": "GOWA 版本没有可用于校验的校验和：未安装任何内容。",
+   "hi": "GOWA रिलीज़ में डाउनलोड जाँचने के लिए चेकसम नहीं है: कुछ इंस्टॉल नहीं हुआ।",
+   "es": "La versión de GOWA no tiene suma de comprobación para verificar la descarga: no se instaló nada.",
+   "ar": "لا يحتوي إصدار GOWA على بصمة للتحقق من التنزيل: لم يُثبَّت شيء.",
+   "fr": "La version de GOWA n'a pas d'empreinte pour vérifier le téléchargement : rien n'a été installé.",
+   "bn": "GOWA রিলিজে ডাউনলোড যাচাইয়ের চেকসাম নেই: কিছু ইনস্টল হয়নি।",
+   "pt-BR": "A versão do GOWA não tem checksum para verificar o download: nada foi instalado.",
+   "ru": "У выпуска GOWA нет контрольной суммы для проверки: ничего не установлено.",
+   "id": "Rilis GOWA tidak punya checksum untuk memeriksa unduhan: tidak ada yang dipasang.",
+   "de": "Die GOWA-Version hat keine Prüfsumme, um den Download zu prüfen: Nichts wurde installiert.",
+   "tr": "GOWA sürümünde indirmeyi doğrulamak için sağlama toplamı yok: hiçbir şey yüklenmedi."
+  },
+  "Gateway": {
+   "zh-Hans": "网关",
+   "hi": "गेटवे",
+   "es": "Pasarela",
+   "ar": "البوابة",
+   "fr": "Passerelle",
+   "bn": "গেটওয়ে",
+   "pt-BR": "Gateway",
+   "ru": "Шлюз",
+   "id": "Gateway",
+   "de": "Gateway",
+   "tr": "Ağ geçidi"
+  },
+  "Gateway GOWA {0} installed, started by Coucou": {
+   "zh-Hans": "GOWA {0} 网关已安装，由 Coucou 启动",
+   "hi": "GOWA {0} गेटवे इंस्टॉल है, Coucou इसे चलाता है",
+   "es": "Pasarela GOWA {0} instalada, iniciada por Coucou",
+   "ar": "بوابة GOWA {0} مثبّتة ويشغّلها Coucou",
+   "fr": "Passerelle GOWA {0} installée, lancée par Coucou",
+   "bn": "GOWA {0} গেটওয়ে ইনস্টল, Coucou চালায়",
+   "pt-BR": "Gateway GOWA {0} instalado, iniciado pelo Coucou",
+   "ru": "Шлюз GOWA {0} установлен, запускается Coucou",
+   "id": "Gateway GOWA {0} terpasang, dijalankan oleh Coucou",
+   "de": "Gateway GOWA {0} installiert, von Coucou gestartet",
+   "tr": "GOWA {0} ağ geçidi yüklendi, Coucou tarafından başlatıldı"
   },
   "Gemini CLI hooks": {
    "zh-Hans": "Gemini CLI 钩子",
@@ -2888,6 +3681,19 @@
    "de": "Erlaubt",
    "tr": "İzin verildi"
   },
+  "Handled elsewhere.": {
+   "zh-Hans": "已在别处处理。",
+   "hi": "कहीं और संभाला गया।",
+   "es": "Resuelto en otro lugar.",
+   "ar": "تمت معالجته في مكان آخر.",
+   "fr": "Traité ailleurs.",
+   "bn": "অন্য কোথাও সামলানো হয়েছে।",
+   "pt-BR": "Resolvido em outro lugar.",
+   "ru": "Обработано в другом месте.",
+   "id": "Ditangani di tempat lain.",
+   "de": "Anderswo erledigt.",
+   "tr": "Başka yerde işlendi."
+  },
   "Hands-free": {
    "zh-Hans": "免手持",
    "hi": "हैंड्स-फ़्री",
@@ -2991,6 +3797,19 @@
    "id": "Sembunyikan setelah",
    "de": "Ausblenden nach",
    "tr": "Gizlenme süresi"
+  },
+  "Hide in full screen": {
+   "zh-Hans": "全屏时隐藏",
+   "hi": "फ़ुल स्क्रीन में छिपाएँ",
+   "es": "Ocultar en pantalla completa",
+   "ar": "إخفاء في وضع ملء الشاشة",
+   "fr": "Masquer en plein écran",
+   "bn": "পূর্ণ স্ক্রিনে লুকান",
+   "pt-BR": "Ocultar em tela cheia",
+   "ru": "Скрывать в полноэкранном режиме",
+   "id": "Sembunyikan saat layar penuh",
+   "de": "Im Vollbildmodus ausblenden",
+   "tr": "Tam ekranda gizle"
   },
   "Hide project names in shared images": {
    "zh-Hans": "在分享图片中隐藏项目名称",
@@ -3226,11 +4045,63 @@
    "de": "Die Insel öffnet sich, wenn du den Mauszeiger darüber bewegst, und klappt kurz nach dem Verlassen wieder zu. Klicke hinein, damit sie geöffnet bleibt.",
    "tr": "İşaretçiyi adanın üzerine getirdiğinde ada açılır; işaretçi ayrıldıktan kısa süre sonra tekrar kapanır. Açık tutmak için içine tıkla."
   },
+  "Ignore this chat": {
+   "zh-Hans": "忽略此聊天",
+   "hi": "इस चैट को अनदेखा करें",
+   "es": "Ignorar este chat",
+   "ar": "تجاهل هذه الدردشة",
+   "fr": "Ignorer ce chat",
+   "bn": "এই চ্যাট উপেক্ষা করো",
+   "pt-BR": "Ignorar esta conversa",
+   "ru": "Игнорировать этот чат",
+   "id": "Abaikan chat ini",
+   "de": "Diesen Chat ignorieren",
+   "tr": "Bu sohbeti yok say"
+  },
+  "Ignored chats": {
+   "zh-Hans": "已忽略的聊天",
+   "hi": "अनदेखी चैट",
+   "es": "Chats ignorados",
+   "ar": "الدردشات المتجاهَلة",
+   "fr": "Chats ignorés",
+   "bn": "উপেক্ষিত চ্যাট",
+   "pt-BR": "Conversas ignoradas",
+   "ru": "Игнорируемые чаты",
+   "id": "Chat yang diabaikan",
+   "de": "Ignorierte Chats",
+   "tr": "Yok sayılan sohbetler"
+  },
+  "In Timely, open Settings → Devs and register an app with the redirect URI urn:ietf:wg:oauth:2.0:oob. Enter its client ID and secret, connect, then paste the code Timely shows.": {
+   "zh-Hans": "在 Timely 中打开 Settings → Devs，注册一个应用，重定向 URI 填 urn:ietf:wg:oauth:2.0:oob。填入它的客户端 ID 和密钥并连接，然后粘贴 Timely 显示的代码。",
+   "hi": "Timely में Settings → Devs खोलें और रीडायरेक्ट URI urn:ietf:wg:oauth:2.0:oob के साथ एक ऐप रजिस्टर करें। उसका क्लाइंट ID और सीक्रेट डालकर कनेक्ट करें, फिर Timely का दिखाया गया कोड पेस्ट करें।",
+   "es": "En Timely, abre Settings → Devs y registra una app con la URI de redirección urn:ietf:wg:oauth:2.0:oob. Introduce su ID y secreto de cliente, conecta y pega el código que muestra Timely.",
+   "ar": "في Timely، افتح Settings ← Devs وسجّل تطبيقًا بعنوان إعادة التوجيه urn:ietf:wg:oauth:2.0:oob. أدخل معرّف العميل والسر ثم اتصل، والصق الرمز الذي يعرضه Timely.",
+   "fr": "Dans Timely, ouvrez Settings → Devs et enregistrez une app avec l'URI de redirection urn:ietf:wg:oauth:2.0:oob. Saisissez son ID client et son secret, connectez-vous, puis collez le code affiché par Timely.",
+   "bn": "Timely-তে Settings → Devs খুলে রিডাইরেক্ট URI urn:ietf:wg:oauth:2.0:oob দিয়ে একটি অ্যাপ নিবন্ধন করুন। এর ক্লায়েন্ট আইডি ও সিক্রেট দিয়ে সংযোগ করুন, তারপর Timely-র দেখানো কোড পেস্ট করুন।",
+   "pt-BR": "No Timely, abra Settings → Devs e registre um app com a URI de redirecionamento urn:ietf:wg:oauth:2.0:oob. Informe o ID e o segredo do cliente, conecte e cole o código que o Timely mostrar.",
+   "ru": "В Timely откройте Settings → Devs и зарегистрируйте приложение с URI перенаправления urn:ietf:wg:oauth:2.0:oob. Введите его ID и секрет клиента, подключитесь и вставьте код, который покажет Timely.",
+   "id": "Di Timely, buka Settings → Devs dan daftarkan aplikasi dengan URI pengalihan urn:ietf:wg:oauth:2.0:oob. Masukkan ID dan rahasia kliennya, hubungkan, lalu tempel kode yang ditampilkan Timely.",
+   "de": "In Timely Settings → Devs öffnen und eine App mit der Redirect-URI urn:ietf:wg:oauth:2.0:oob registrieren. Client-ID und Secret eingeben, verbinden und dann den Code einfügen, den Timely anzeigt.",
+   "tr": "Timely’de Settings → Devs bölümünü açın ve urn:ietf:wg:oauth:2.0:oob yönlendirme URI’siyle bir uygulama kaydedin. İstemci kimliğini ve gizli anahtarını girin, bağlanın, ardından Timely’nin gösterdiği kodu yapıştırın."
+  },
+  "In background: {count}": {
+   "zh-Hans": "后台：{count}",
+   "hi": "बैकग्राउंड में: {count}",
+   "es": "En segundo plano: {count}",
+   "ar": "في الخلفية: {count}",
+   "fr": "En arrière-plan : {count}",
+   "bn": "ব্যাকগ্রাউন্ডে: {count}",
+   "pt-BR": "Em segundo plano: {count}",
+   "ru": "В фоне: {count}",
+   "id": "Di latar belakang: {count}",
+   "de": "Im Hintergrund: {count}",
+   "tr": "Arka planda: {count}"
+  },
   "Inbox": {
    "zh-Hans": "收件箱",
    "hi": "इनबॉक्स",
    "es": "Bandeja de entrada",
-   "ar": "البريد الوارد",
+   "ar": "صندوق الوارد",
    "fr": "Boîte de réception",
    "bn": "ইনবক্স",
    "pt-BR": "Caixa de entrada",
@@ -3238,6 +4109,19 @@
    "id": "Kotak masuk",
    "de": "Posteingang",
    "tr": "Gelen kutusu"
+  },
+  "Incidents": {
+   "zh-Hans": "事件",
+   "hi": "घटनाएँ",
+   "es": "Incidentes",
+   "ar": "الحوادث",
+   "fr": "Incidents",
+   "bn": "ঘটনা",
+   "pt-BR": "Incidentes",
+   "ru": "Инциденты",
+   "id": "Insiden",
+   "de": "Vorfälle",
+   "tr": "Olaylar"
   },
   "Install": {
    "zh-Hans": "安装",
@@ -3264,6 +4148,19 @@
    "id": "Pasang hooks Coucou di ~/.claude?",
    "de": "Coucou-Hooks in ~/.claude installieren?",
    "tr": "Coucou hook'ları ~/.claude içine kurulsun mu?"
+  },
+  "Install WhatsApp": {
+   "zh-Hans": "安装 WhatsApp",
+   "hi": "WhatsApp इंस्टॉल करें",
+   "es": "Instalar WhatsApp",
+   "ar": "تثبيت واتساب",
+   "fr": "Installer WhatsApp",
+   "bn": "WhatsApp ইনস্টল করো",
+   "pt-BR": "Instalar o WhatsApp",
+   "ru": "Установить WhatsApp",
+   "id": "Pasang WhatsApp",
+   "de": "WhatsApp installieren",
+   "tr": "WhatsApp’ı yükle"
   },
   "Install hooks": {
    "zh-Hans": "安装 Hooks",
@@ -3343,6 +4240,19 @@
    "de": "Installiert: Beende Coucou und öffne es wieder, um die neue Version zu nutzen.",
    "tr": "Yüklendi: yeni sürümü kullanmak için Coucou'yu kapatıp yeniden aç."
   },
+  "Installing and starting…": {
+   "zh-Hans": "正在安装并启动…",
+   "hi": "इंस्टॉल और चालू हो रहा है…",
+   "es": "Instalando e iniciando…",
+   "ar": "جارٍ التثبيت والتشغيل…",
+   "fr": "Installation et démarrage…",
+   "bn": "ইনস্টল ও চালু হচ্ছে…",
+   "pt-BR": "Instalando e iniciando…",
+   "ru": "Установка и запуск…",
+   "id": "Memasang dan menjalankan…",
+   "de": "Wird installiert und gestartet…",
+   "tr": "Yükleniyor ve başlatılıyor…"
+  },
   "Installing…": {
    "zh-Hans": "正在安装…",
    "hi": "इंस्टॉल हो रहा है…",
@@ -3407,6 +4317,19 @@
    "id": "Integrasi",
    "de": "Integrationen",
    "tr": "Entegrasyonlar"
+  },
+  "Join": {
+   "zh-Hans": "加入",
+   "hi": "जुड़ें",
+   "es": "Unirse",
+   "ar": "انضمام",
+   "fr": "Rejoindre",
+   "bn": "যোগ দিন",
+   "pt-BR": "Entrar",
+   "ru": "Войти",
+   "id": "Gabung",
+   "de": "Beitreten",
+   "tr": "Katıl"
   },
   "Jump to terminal": {
    "zh-Hans": "跳转到终端",
@@ -3590,13 +4513,26 @@
    "de": "Beim Start des Mac öffnen",
    "tr": "Mac açılışında başlat"
   },
+  "Leave empty to use Coucou's chat folder. Pick a project folder to let Claude Code work on that project.": {
+   "zh-Hans": "留空则使用 Coucou 的聊天文件夹。选择项目文件夹，让 Claude Code 在该项目中工作。",
+   "hi": "Coucou का चैट फ़ोल्डर इस्तेमाल करने के लिए खाली छोड़ें। Claude Code को किसी प्रोजेक्ट पर काम कराने के लिए उसका फ़ोल्डर चुनें।",
+   "es": "Déjalo vacío para usar la carpeta de chat de Coucou. Elige la carpeta de un proyecto para que Claude Code trabaje en ese proyecto.",
+   "ar": "اتركه فارغًا لاستخدام مجلد الدردشة في Coucou. اختر مجلد مشروع ليعمل Claude Code على ذلك المشروع.",
+   "fr": "Laissez vide pour utiliser le dossier de discussion de Coucou. Choisissez le dossier d'un projet pour que Claude Code travaille sur ce projet.",
+   "bn": "Coucou-র চ্যাট ফোল্ডার ব্যবহার করতে খালি রাখুন। Claude Code-কে কোনো প্রকল্পে কাজ করাতে সেই প্রকল্পের ফোল্ডার বেছে নিন।",
+   "pt-BR": "Deixe vazio para usar a pasta de chat do Coucou. Escolha a pasta de um projeto para o Claude Code trabalhar nele.",
+   "ru": "Оставьте пустым, чтобы использовать папку чата Coucou. Выберите папку проекта, чтобы Claude Code работал над этим проектом.",
+   "id": "Biarkan kosong untuk memakai folder obrolan Coucou. Pilih folder proyek agar Claude Code bekerja di proyek itu.",
+   "de": "Leer lassen, um den Chat-Ordner von Coucou zu verwenden. Einen Projektordner wählen, damit Claude Code an diesem Projekt arbeitet.",
+   "tr": "Coucou’nun sohbet klasörünü kullanmak için boş bırakın. Claude Code’un o proje üzerinde çalışması için bir proje klasörü seçin."
+  },
   "Left": {
-   "zh-Hans": "左侧",
+   "zh-Hans": "左",
    "hi": "बाएँ",
    "es": "Izquierda",
    "ar": "يسار",
-   "fr": "À gauche",
-   "bn": "বাঁয়ে",
+   "fr": "Gauche",
+   "bn": "বামে",
    "pt-BR": "Esquerda",
    "ru": "Слева",
    "id": "Kiri",
@@ -3615,6 +4551,19 @@
    "id": "Biarkan iPhone saya mengirim instruksi ke Claude Code",
    "de": "Mein iPhone darf Anweisungen an Claude Code senden",
    "tr": "iPhone'umun Claude Code'a talimat göndermesine izin ver"
+  },
+  "Lines written": {
+   "zh-Hans": "写下的代码行",
+   "hi": "लिखी गई पंक्तियाँ",
+   "es": "Líneas escritas",
+   "ar": "أسطر مكتوبة",
+   "fr": "Lignes écrites",
+   "bn": "লেখা লাইন",
+   "pt-BR": "Linhas escritas",
+   "ru": "Строк написано",
+   "id": "Baris ditulis",
+   "de": "Geschriebene Zeilen",
+   "tr": "Yazılan satırlar"
   },
   "Listening…": {
    "zh-Hans": "我在听…",
@@ -3645,15 +4594,28 @@
   "Live": {
    "zh-Hans": "实时",
    "hi": "लाइव",
-   "es": "En directo",
+   "es": "En vivo",
    "ar": "مباشر",
    "fr": "En direct",
    "bn": "লাইভ",
    "pt-BR": "Ao vivo",
-   "ru": "В реальном времени",
+   "ru": "Вживую",
    "id": "Langsung",
    "de": "Live",
    "tr": "Canlı"
+  },
+  "Live: new messages arrive at once.": {
+   "zh-Hans": "实时：新消息会立即送达。",
+   "hi": "लाइव: नए संदेश तुरंत आते हैं।",
+   "es": "En directo: los mensajes nuevos llegan al instante.",
+   "ar": "مباشر: تصل الرسائل الجديدة فورًا.",
+   "fr": "En direct : les nouveaux messages arrivent tout de suite.",
+   "bn": "লাইভ: নতুন বার্তা সঙ্গে সঙ্গে আসে।",
+   "pt-BR": "Ao vivo: as novas mensagens chegam na hora.",
+   "ru": "В реальном времени: новые сообщения приходят сразу.",
+   "id": "Langsung: pesan baru datang seketika.",
+   "de": "Live: Neue Nachrichten kommen sofort an.",
+   "tr": "Canlı: yeni iletiler hemen gelir."
   },
   "Loading models…": {
    "zh-Hans": "正在加载模型…",
@@ -3746,6 +4708,19 @@
    "de": "Lokale Modelle",
    "tr": "Yerel modeller"
   },
+  "Location": {
+   "zh-Hans": "位置",
+   "hi": "लोकेशन",
+   "es": "Ubicación",
+   "ar": "موقع",
+   "fr": "Position",
+   "bn": "লোকেশন",
+   "pt-BR": "Localização",
+   "ru": "Местоположение",
+   "id": "Lokasi",
+   "de": "Standort",
+   "tr": "Konum"
+  },
   "Longest session": {
    "zh-Hans": "最长会话",
    "hi": "सबसे लंबा सेशन",
@@ -3758,6 +4733,19 @@
    "id": "Sesi terpanjang",
    "de": "Längste Sitzung",
    "tr": "En uzun oturum"
+  },
+  "Looking for the latest GOWA…": {
+   "zh-Hans": "正在查找最新版 GOWA…",
+   "hi": "GOWA का नया वर्शन ढूँढ रहा है…",
+   "es": "Buscando la última versión de GOWA…",
+   "ar": "البحث عن أحدث إصدار من GOWA…",
+   "fr": "Recherche de la dernière version de GOWA…",
+   "bn": "GOWA-র সর্বশেষ সংস্করণ খোঁজা হচ্ছে…",
+   "pt-BR": "Procurando a versão mais recente do GOWA…",
+   "ru": "Поиск последней версии GOWA…",
+   "id": "Mencari versi GOWA terbaru…",
+   "de": "Neueste GOWA-Version wird gesucht…",
+   "tr": "En son GOWA sürümü aranıyor…"
   },
   "Mac voice": {
    "zh-Hans": "Mac 语音",
@@ -3824,6 +4812,19 @@
    "de": "Hauptwerkzeug: {0}",
    "tr": "Ana: {0}"
   },
+  "Make room in Active pills to show the WhatsApp pill (4 at most).": {
+   "zh-Hans": "请在“活跃胶囊”中腾出位置以显示 WhatsApp（最多 4 个）。",
+   "hi": "WhatsApp पिल दिखाने के लिए सक्रिय पिल्स में जगह बनाएँ (अधिकतम 4)।",
+   "es": "Libera un hueco en Píldoras activas para mostrar la de WhatsApp (4 como máximo).",
+   "ar": "أفرغ مكانًا في الحبوب النشطة لعرض حبة واتساب (4 كحد أقصى).",
+   "fr": "Libère une place dans Pills actives pour afficher la pill WhatsApp (4 au maximum).",
+   "bn": "WhatsApp পিল দেখাতে সক্রিয় পিলে জায়গা খালি করুন (সর্বোচ্চ ৪টি)।",
+   "pt-BR": "Libere um espaço em Pílulas ativas para mostrar a do WhatsApp (no máximo 4).",
+   "ru": "Освободите место в активных пилюлях для WhatsApp (не больше 4).",
+   "id": "Kosongkan tempat di Pil aktif untuk menampilkan pil WhatsApp (maksimal 4).",
+   "de": "In Aktive Pills Platz schaffen, um die WhatsApp-Pill anzuzeigen (höchstens 4).",
+   "tr": "WhatsApp aracını göstermek için Etkin araçlar bölümünde yer açın (en fazla 4)."
+  },
   "Man": {
    "zh-Hans": "男声",
    "hi": "पुरुष",
@@ -3863,6 +4864,19 @@
    "de": "Als gelesen markieren",
    "tr": "Okundu olarak işaretle"
   },
+  "Mark as read when I open a conversation": {
+   "zh-Hans": "打开对话时标记为已读",
+   "hi": "बातचीत खोलने पर पढ़ा हुआ मार्क करें",
+   "es": "Marcar como leído al abrir una conversación",
+   "ar": "تعليم كمقروء عند فتح محادثة",
+   "fr": "Marquer comme lu quand j’ouvre une conversation",
+   "bn": "কথোপকথন খুললে পড়া হিসেবে চিহ্নিত করো",
+   "pt-BR": "Marcar como lida ao abrir uma conversa",
+   "ru": "Отмечать прочитанным при открытии беседы",
+   "id": "Tandai dibaca saat saya membuka percakapan",
+   "de": "Beim Öffnen einer Unterhaltung als gelesen markieren",
+   "tr": "Bir sohbeti açtığımda okundu olarak işaretle"
+  },
   "Me": {
    "zh-Hans": "我",
    "hi": "मैं",
@@ -3901,6 +4915,45 @@
    "id": "Memori menipis",
    "de": "Arbeitsspeicher knapp",
    "tr": "Bellek azalıyor"
+  },
+  "Message": {
+   "zh-Hans": "消息",
+   "hi": "संदेश",
+   "es": "Mensaje",
+   "ar": "رسالة",
+   "fr": "Message",
+   "bn": "বার্তা",
+   "pt-BR": "Mensagem",
+   "ru": "Сообщение",
+   "id": "Pesan",
+   "de": "Nachricht",
+   "tr": "İleti"
+  },
+  "Messages": {
+   "zh-Hans": "消息",
+   "hi": "संदेश",
+   "es": "Mensajes",
+   "ar": "الرسائل",
+   "fr": "Messages",
+   "bn": "বার্তা",
+   "pt-BR": "Mensagens",
+   "ru": "Сообщения",
+   "id": "Pesan",
+   "de": "Nachrichten",
+   "tr": "İletiler"
+  },
+  "Microphone on": {
+   "zh-Hans": "麦克风开启",
+   "hi": "माइक्रोफ़ोन चालू",
+   "es": "Micrófono activado",
+   "ar": "الميكروفون قيد الاستخدام",
+   "fr": "Micro allumé",
+   "bn": "মাইক্রোফোন চালু",
+   "pt-BR": "Microfone ligado",
+   "ru": "Микрофон включён",
+   "id": "Mikrofon menyala",
+   "de": "Mikrofon an",
+   "tr": "Mikrofon açık"
   },
   "Microphone unavailable": {
    "zh-Hans": "麦克风不可用",
@@ -4071,6 +5124,19 @@
    "de": "Moonshot-Schlüssel gespeichert.",
    "tr": "Moonshot anahtarı kaydedildi."
   },
+  "Most used": {
+   "zh-Hans": "最常用",
+   "hi": "सबसे ज़्यादा इस्तेमाल",
+   "es": "Más usados",
+   "ar": "الأكثر استخدامًا",
+   "fr": "Les plus utilisés",
+   "bn": "সবচেয়ে বেশি ব্যবহৃত",
+   "pt-BR": "Mais usados",
+   "ru": "Часто используемые",
+   "id": "Paling sering dipakai",
+   "de": "Meistgenutzt",
+   "tr": "En çok kullanılanlar"
+  },
   "Move Mochi to my iPhone's Dynamic Island when my Mac is locked": {
    "zh-Hans": "Mac 锁定时将 Mochi 移至我 iPhone 的灵动岛",
    "hi": "Mac लॉक होने पर Mochi को मेरे iPhone की Dynamic Island पर ले जाएं",
@@ -4109,6 +5175,19 @@
    "id": "Bisukan / aktifkan suara",
    "de": "Klänge stummschalten / einschalten",
    "tr": "Sesleri kapat / aç"
+  },
+  "Mute groups (unless I’m mentioned)": {
+   "zh-Hans": "群组静音（除非提到我）",
+   "hi": "ग्रुप म्यूट करें (जब तक मेरा ज़िक्र न हो)",
+   "es": "Silenciar grupos (salvo si me mencionan)",
+   "ar": "كتم المجموعات (إلا إذا أُشير إليّ)",
+   "fr": "Groupes muets (sauf si on me mentionne)",
+   "bn": "গ্রুপ মিউট (আমাকে উল্লেখ না করলে)",
+   "pt-BR": "Silenciar grupos (exceto quando me mencionam)",
+   "ru": "Без звука в группах (если меня не упомянули)",
+   "id": "Bisukan grup (kecuali saya disebut)",
+   "de": "Gruppen stummschalten (außer bei Erwähnung)",
+   "tr": "Grupları sessize al (bahsedilmediğim sürece)"
   },
   "My PRs": {
    "zh-Hans": "我的 PR",
@@ -4214,6 +5293,19 @@
    "de": "Eingabe erforderlich",
    "tr": "Girdi bekleniyor"
   },
+  "New chat": {
+   "zh-Hans": "新聊天",
+   "hi": "नई चैट",
+   "es": "Nuevo chat",
+   "ar": "دردشة جديدة",
+   "fr": "Nouveau chat",
+   "bn": "নতুন চ্যাট",
+   "pt-BR": "Novo chat",
+   "ru": "Новый чат",
+   "id": "Chat baru",
+   "de": "Neuer Chat",
+   "tr": "Yeni sohbet"
+  },
   "New conversation": {
    "zh-Hans": "新建对话",
    "hi": "नई बातचीत",
@@ -4226,6 +5318,19 @@
    "id": "Percakapan baru",
    "de": "Neues Gespräch",
    "tr": "Yeni sohbet"
+  },
+  "New conversation (⌘K)": {
+   "zh-Hans": "新建对话 (⌘K)",
+   "hi": "नई बातचीत (⌘K)",
+   "es": "Nueva conversación (⌘K)",
+   "ar": "محادثة جديدة (⌘K)",
+   "fr": "Nouvelle conversation (⌘K)",
+   "bn": "নতুন কথোপকথন (⌘K)",
+   "pt-BR": "Nova conversa (⌘K)",
+   "ru": "Новый разговор (⌘K)",
+   "id": "Percakapan baru (⌘K)",
+   "de": "Neue Unterhaltung (⌘K)",
+   "tr": "Yeni konuşma (⌘K)"
   },
   "New email": {
    "zh-Hans": "新邮件",
@@ -4305,6 +5410,19 @@
    "de": "Nächster Titel",
    "tr": "Sonraki parça"
   },
+  "No GOWA build for this Mac was found on GitHub. Try again later, or set your own gateway under Advanced.": {
+   "zh-Hans": "GitHub 上没有适用于此 Mac 的 GOWA 版本。请稍后重试，或在“高级”中设置你自己的网关。",
+   "hi": "GitHub पर इस Mac के लिए GOWA नहीं मिला। बाद में फिर कोशिश करें, या एडवांस्ड में अपना गेटवे सेट करें।",
+   "es": "No hay ninguna versión de GOWA para este Mac en GitHub. Inténtalo más tarde o configura tu propia pasarela en Avanzado.",
+   "ar": "لا يوجد إصدار من GOWA لهذا الـMac على GitHub. أعد المحاولة لاحقًا أو اضبط بوابتك في «متقدم».",
+   "fr": "Aucune version de GOWA pour ce Mac sur GitHub. Réessaie plus tard, ou configure ta propre passerelle dans Avancé.",
+   "bn": "GitHub-এ এই Mac-এর জন্য GOWA পাওয়া যায়নি। পরে আবার চেষ্টা করুন, বা অ্যাডভান্সডে নিজের গেটওয়ে সেট করুন।",
+   "pt-BR": "Nenhuma versão do GOWA para este Mac no GitHub. Tente mais tarde ou configure seu próprio gateway em Avançado.",
+   "ru": "На GitHub нет сборки GOWA для этого Mac. Попробуйте позже или укажите свой шлюз в разделе «Дополнительно».",
+   "id": "Tidak ada versi GOWA untuk Mac ini di GitHub. Coba lagi nanti, atau atur gateway sendiri di Lanjutan.",
+   "de": "Auf GitHub wurde kein GOWA-Build für diesen Mac gefunden. Später erneut versuchen oder unter Erweitert ein eigenes Gateway festlegen.",
+   "tr": "GitHub’da bu Mac için GOWA derlemesi bulunamadı. Daha sonra yeniden deneyin ya da Gelişmiş bölümünde kendi ağ geçidinizi ayarlayın."
+  },
   "No activity last week": {
    "zh-Hans": "上周无活动",
    "hi": "पिछले सप्ताह कोई गतिविधि नहीं",
@@ -4317,6 +5435,19 @@
    "id": "Tidak ada aktivitas minggu lalu",
    "de": "Keine Aktivität letzte Woche",
    "tr": "Geçen hafta etkinlik yok"
+  },
+  "No activity since Coucou started": {
+   "zh-Hans": "自 Coucou 启动以来没有活动",
+   "hi": "Coucou शुरू होने के बाद से कोई गतिविधि नहीं",
+   "es": "Sin actividad desde que se abrió Coucou",
+   "ar": "لا نشاط منذ تشغيل Coucou",
+   "fr": "Aucune activité depuis le lancement de Coucou",
+   "bn": "Coucou চালু হওয়ার পর থেকে কোনো কার্যকলাপ নেই",
+   "pt-BR": "Nenhuma atividade desde que o Coucou abriu",
+   "ru": "Нет активности с запуска Coucou",
+   "id": "Tidak ada aktivitas sejak Coucou dibuka",
+   "de": "Keine Aktivität seit dem Start von Coucou",
+   "tr": "Coucou başladığından beri etkinlik yok"
   },
   "No calls scheduled": {
    "zh-Hans": "没有计划的通话",
@@ -4409,6 +5540,19 @@
    "de": "Keine Nachrichten",
    "tr": "İleti yok"
   },
+  "No model matches.": {
+   "zh-Hans": "没有匹配的模型。",
+   "hi": "कोई मॉडल मेल नहीं खाता।",
+   "es": "Ningún modelo coincide.",
+   "ar": "لا يوجد نموذج مطابق.",
+   "fr": "Aucun modèle ne correspond.",
+   "bn": "কোনো মডেল মেলেনি।",
+   "pt-BR": "Nenhum modelo corresponde.",
+   "ru": "Нет подходящих моделей.",
+   "id": "Tidak ada model yang cocok.",
+   "de": "Kein passendes Modell.",
+   "tr": "Eşleşen model yok."
+  },
   "No models yet — download one in {name} first.": {
    "zh-Hans": "暂无模型 — 请先在 {name} 中下载一个。",
    "hi": "अभी कोई मॉडल नहीं — पहले {name} में एक डाउनलोड करें।",
@@ -4421,6 +5565,19 @@
    "id": "Belum ada model — unduh satu di {name} terlebih dahulu.",
    "de": "Noch keine Modelle — lade zuerst eines in {name} herunter.",
    "tr": "Henüz model yok — önce {name} içinde bir model indir."
+  },
+  "No more meetings today": {
+   "zh-Hans": "今天没有更多会议",
+   "hi": "आज और कोई मीटिंग नहीं",
+   "es": "No hay más reuniones hoy",
+   "ar": "لا مزيد من الاجتماعات اليوم",
+   "fr": "Plus de réunion aujourd'hui",
+   "bn": "আজ আর কোনো মিটিং নেই",
+   "pt-BR": "Sem mais reuniões hoje",
+   "ru": "Сегодня встреч больше нет",
+   "id": "Tidak ada rapat lagi hari ini",
+   "de": "Heute keine Meetings mehr",
+   "tr": "Bugün başka toplantı yok"
   },
   "No music app running": {
    "zh-Hans": "没有音乐应用",
@@ -4435,6 +5592,19 @@
    "de": "Keine Musik-App geöffnet",
    "tr": "Çalışan müzik uygulaması yok"
   },
+  "No new messages": {
+   "zh-Hans": "没有新消息",
+   "hi": "कोई नया संदेश नहीं",
+   "es": "Sin mensajes nuevos",
+   "ar": "لا رسائل جديدة",
+   "fr": "Aucun nouveau message",
+   "bn": "কোনো নতুন বার্তা নেই",
+   "pt-BR": "Nenhuma mensagem nova",
+   "ru": "Нет новых сообщений",
+   "id": "Tidak ada pesan baru",
+   "de": "Keine neuen Nachrichten",
+   "tr": "Yeni ileti yok"
+  },
   "No other open app": {
    "zh-Hans": "没有其他打开的 App",
    "hi": "कोई और ऐप खुला नहीं",
@@ -4447,6 +5617,19 @@
    "id": "Tidak ada aplikasi lain yang terbuka",
    "de": "Keine andere App geöffnet",
    "tr": "Başka açık uygulama yok"
+  },
+  "No response text.": {
+   "zh-Hans": "没有回复内容。",
+   "hi": "जवाब में कोई टेक्स्ट नहीं।",
+   "es": "La respuesta no tiene texto.",
+   "ar": "لا يوجد نص في الرد.",
+   "fr": "La réponse ne contient pas de texte.",
+   "bn": "উত্তরে কোনো লেখা নেই।",
+   "pt-BR": "A resposta não tem texto.",
+   "ru": "В ответе нет текста.",
+   "id": "Tidak ada teks balasan.",
+   "de": "Kein Antworttext.",
+   "tr": "Yanıt metni yok."
   },
   "No snippet yet. Your booking link, your signature, your address: say a few words, get the whole text.": {
    "zh-Hans": "还没有片段。你的预约链接、签名、地址：说几个字，就能得到整段文字。",
@@ -4526,6 +5709,19 @@
    "de": "Nein danke",
    "tr": "Hayır, teşekkürler"
   },
+  "No timer running": {
+   "zh-Hans": "没有正在计时的条目",
+   "hi": "कोई टाइमर नहीं चल रहा",
+   "es": "Ningún temporizador en marcha",
+   "ar": "لا يوجد مؤقت قيد التشغيل",
+   "fr": "Aucun minuteur en cours",
+   "bn": "কোনো টাইমার চলছে না",
+   "pt-BR": "Nenhum cronômetro rodando",
+   "ru": "Таймер не запущен",
+   "id": "Tidak ada timer berjalan",
+   "de": "Kein Timer aktiv",
+   "tr": "Çalışan zamanlayıcı yok"
+  },
   "No word yet. Add the names, brands and jargon Coucou gets wrong.": {
    "zh-Hans": "还没有词语。添加 Coucou 写错的名字、品牌和术语。",
    "hi": "अभी कोई शब्द नहीं। वे नाम, ब्रांड और तकनीकी शब्द जोड़ें जिन्हें Coucou गलत लिखता है।",
@@ -4564,6 +5760,19 @@
    "id": "Tidak ada",
    "de": "Keine",
    "tr": "Yok"
+  },
+  "Not a host name": {
+   "zh-Hans": "不是有效的主机名",
+   "hi": "यह होस्ट नाम नहीं है",
+   "es": "No es un nombre de host",
+   "ar": "ليس اسم جهاز صالحًا",
+   "fr": "Ce n'est pas un nom d'hôte",
+   "bn": "এটি হোস্টের নাম নয়",
+   "pt-BR": "Não é um nome de host",
+   "ru": "Это не имя хоста",
+   "id": "Bukan nama host",
+   "de": "Kein Hostname",
+   "tr": "Ana bilgisayar adı değil"
   },
   "Not active": {
    "zh-Hans": "未激活",
@@ -4773,6 +5982,19 @@
    "de": "Derzeit läuft nichts.",
    "tr": "Şu anda çalışan bir şey yok."
   },
+  "Now": {
+   "zh-Hans": "现在",
+   "hi": "अभी",
+   "es": "Ahora",
+   "ar": "الآن",
+   "fr": "Maintenant",
+   "bn": "এখন",
+   "pt-BR": "Agora",
+   "ru": "Сейчас",
+   "id": "Sekarang",
+   "de": "Jetzt",
+   "tr": "Şimdi"
+  },
   "OK": {
    "zh-Hans": "确定",
    "hi": "ठीक है",
@@ -4799,6 +6021,19 @@
    "de": "OK, bleibt unverändert",
    "tr": "Tamam, olduğu gibi bırakıyorum"
   },
+  "Off: marked read only when you reply. Never when a message just arrives.": {
+   "zh-Hans": "关闭时：仅在你回复时标记为已读。收到消息时从不标记。",
+   "hi": "बंद: सिर्फ़ जवाब देने पर पढ़ा हुआ। संदेश आने भर से कभी नहीं।",
+   "es": "Desactivado: se marca como leído solo al responder. Nunca solo por recibirlo.",
+   "ar": "عند الإيقاف: تُعلَّم كمقروءة فقط عند الرد. لا تُعلَّم أبدًا لمجرد الوصول.",
+   "fr": "Désactivé : marqué comme lu seulement quand tu réponds. Jamais à la simple réception.",
+   "bn": "বন্ধ: শুধু উত্তর দিলে পড়া হিসেবে চিহ্নিত। বার্তা এলেই কখনও নয়।",
+   "pt-BR": "Desativado: marcada como lida só quando você responde. Nunca só por chegar.",
+   "ru": "Выключено: прочитанным отмечается только при ответе. Никогда при простом получении.",
+   "id": "Mati: ditandai dibaca hanya saat kamu membalas. Tidak pernah hanya karena pesan masuk.",
+   "de": "Aus: nur beim Antworten als gelesen markiert. Nie schon beim Eingang einer Nachricht.",
+   "tr": "Kapalı: yalnızca yanıt verdiğinizde okundu olarak işaretlenir. Bir ileti yalnızca geldiğinde asla işaretlenmez."
+  },
   "Ollama disconnected.": {
    "zh-Hans": "Ollama 已断开连接。",
    "hi": "Ollama डिस्कनेक्ट हो गया।",
@@ -4811,6 +6046,19 @@
    "id": "Ollama terputus.",
    "de": "Verbindung zu Ollama getrennt.",
    "tr": "Ollama bağlantısı kesildi."
+  },
+  "On your phone: WhatsApp › Settings › Linked devices › Link a device, then scan this code.": {
+   "zh-Hans": "在手机上：WhatsApp › 设置 › 已关联的设备 › 关联新设备，然后扫描此二维码。",
+   "hi": "फ़ोन पर: WhatsApp › सेटिंग्स › लिंक किए गए डिवाइस › डिवाइस लिंक करें, फिर यह कोड स्कैन करें।",
+   "es": "En tu teléfono: WhatsApp › Ajustes › Dispositivos vinculados › Vincular un dispositivo, y escanea este código.",
+   "ar": "على هاتفك: واتساب › الإعدادات › الأجهزة المرتبطة › ربط جهاز، ثم امسح هذا الرمز.",
+   "fr": "Sur ton téléphone : WhatsApp › Réglages › Appareils connectés › Connecter un appareil, puis scanne ce code.",
+   "bn": "ফোনে: WhatsApp › সেটিংস › লিঙ্ক করা ডিভাইস › ডিভাইস লিঙ্ক করুন, তারপর এই কোডটি স্ক্যান করুন।",
+   "pt-BR": "No celular: WhatsApp › Configurações › Dispositivos conectados › Conectar dispositivo, e escaneie este código.",
+   "ru": "На телефоне: WhatsApp › Настройки › Связанные устройства › Привязка устройства, затем отсканируйте этот код.",
+   "id": "Di ponsel: WhatsApp › Setelan › Perangkat tertaut › Tautkan perangkat, lalu pindai kode ini.",
+   "de": "Auf dem Telefon: WhatsApp › Einstellungen › Verknüpfte Geräte › Gerät verknüpfen, dann diesen Code scannen.",
+   "tr": "Telefonunuzda: WhatsApp › Ayarlar › Bağlı cihazlar › Cihaz bağla, ardından bu kodu tarayın."
   },
   "On-device when your Mac supports it, nothing to download.": {
    "zh-Hans": "Mac 支持时在设备上完成，无需下载。",
@@ -5111,6 +6359,32 @@
    "de": "Visual Studio Code öffnen",
    "tr": "Visual Studio Code'u aç"
   },
+  "Open WebUI has no models for this account.": {
+   "zh-Hans": "Open WebUI 没有可供此账户使用的模型。",
+   "hi": "Open WebUI में इस खाते के लिए कोई मॉडल नहीं है।",
+   "es": "Open WebUI no tiene modelos para esta cuenta.",
+   "ar": "لا توجد في Open WebUI نماذج لهذا الحساب.",
+   "fr": "Open WebUI n'a aucun modèle pour ce compte.",
+   "bn": "Open WebUI-তে এই অ্যাকাউন্টের জন্য কোনো মডেল নেই।",
+   "pt-BR": "O Open WebUI não tem modelos para esta conta.",
+   "ru": "В Open WebUI нет моделей для этой учётной записи.",
+   "id": "Open WebUI tidak punya model untuk akun ini.",
+   "de": "Open WebUI hat keine Modelle für dieses Konto.",
+   "tr": "Open WebUI’da bu hesap için model yok."
+  },
+  "Open WebUI searches the web before answering, where its admin has turned web search on.": {
+   "zh-Hans": "在管理员已开启网页搜索的情况下，Open WebUI 会先搜索网页再回答。",
+   "hi": "जहाँ एडमिन ने वेब खोज चालू की है, वहाँ Open WebUI जवाब देने से पहले वेब खोजता है।",
+   "es": "Open WebUI busca en la web antes de responder, donde su administrador haya activado la búsqueda web.",
+   "ar": "يبحث Open WebUI في الويب قبل الإجابة حيث فعّل المسؤول البحث في الويب.",
+   "fr": "Open WebUI cherche sur le web avant de répondre, là où son administrateur a activé la recherche web.",
+   "bn": "অ্যাডমিন ওয়েব অনুসন্ধান চালু করে থাকলে Open WebUI উত্তর দেওয়ার আগে ওয়েবে খোঁজে।",
+   "pt-BR": "O Open WebUI pesquisa na web antes de responder, onde o administrador ativou a busca na web.",
+   "ru": "Open WebUI ищет в интернете перед ответом там, где администратор включил поиск.",
+   "id": "Open WebUI mencari di web sebelum menjawab, jika admin telah mengaktifkan pencarian web.",
+   "de": "Open WebUI sucht vor dem Antworten im Web, sofern der Admin die Websuche aktiviert hat.",
+   "tr": "Open WebUI, yöneticisi web aramasını açtıysa yanıt vermeden önce web’de arama yapar."
+  },
   "Open chat": {
    "zh-Hans": "打开聊天",
    "hi": "चैट खोलें",
@@ -5240,6 +6514,19 @@
    "id": "Buka Notetaker →",
    "de": "Notizfunktion öffnen →",
    "tr": "Not alıcıyı aç →"
+  },
+  "Open the island on new activity": {
+   "zh-Hans": "有新活动时打开岛",
+   "hi": "नई गतिविधि पर आइलैंड खोलें",
+   "es": "Abrir la isla con nueva actividad",
+   "ar": "افتح الشريط عند وجود نشاط جديد",
+   "fr": "Ouvrir l'île à chaque nouvelle activité",
+   "bn": "নতুন কার্যকলাপে আইল্যান্ড খুলুন",
+   "pt-BR": "Abrir a ilha com nova atividade",
+   "ru": "Открывать остров при новой активности",
+   "id": "Buka pulau saat ada aktivitas baru",
+   "de": "Insel bei neuer Aktivität öffnen",
+   "tr": "Yeni etkinlikte adayı aç"
   },
   "Open this window when you open Coucou": {
    "zh-Hans": "打开 Coucou 时打开此窗口",
@@ -5371,6 +6658,19 @@
    "de": "Übersicht",
    "tr": "Genel bakış"
   },
+  "Padding": {
+   "zh-Hans": "边距",
+   "hi": "पैडिंग",
+   "es": "Margen",
+   "ar": "الهامش",
+   "fr": "Marges",
+   "bn": "প্যাডিং",
+   "pt-BR": "Margem",
+   "ru": "Отступы",
+   "id": "Jarak",
+   "de": "Innenabstand",
+   "tr": "Dolgu"
+  },
   "Parakeet, on your Mac": {
    "zh-Hans": "Parakeet，在你的 Mac 上",
    "hi": "Parakeet, आपके Mac पर",
@@ -5448,6 +6748,19 @@
    "id": "Tempel · atau tekan {0}",
    "de": "Einfügen · oder {0} drücken",
    "tr": "Yapıştır · veya {0} tuşuna bas"
+  },
+  "Path to the GOWA binary (whatsapp)": {
+   "zh-Hans": "GOWA 程序路径（whatsapp）",
+   "hi": "GOWA बाइनरी का पाथ (whatsapp)",
+   "es": "Ruta del binario de GOWA (whatsapp)",
+   "ar": "مسار ملف GOWA التنفيذي (whatsapp)",
+   "fr": "Chemin du binaire GOWA (whatsapp)",
+   "bn": "GOWA বাইনারির পাথ (whatsapp)",
+   "pt-BR": "Caminho do binário do GOWA (whatsapp)",
+   "ru": "Путь к бинарнику GOWA (whatsapp)",
+   "id": "Jalur biner GOWA (whatsapp)",
+   "de": "Pfad zur GOWA-Binärdatei (whatsapp)",
+   "tr": "GOWA ikili dosyasının yolu (whatsapp)"
   },
   "Pause": {
    "zh-Hans": "暂停",
@@ -5527,6 +6840,32 @@
    "de": "Person {0}",
    "tr": "Kişi {0}"
   },
+  "Personal API key": {
+   "zh-Hans": "个人 API 密钥",
+   "hi": "व्यक्तिगत API कुंजी",
+   "es": "Clave de API personal",
+   "ar": "مفتاح API شخصي",
+   "fr": "Clé d'API personnelle",
+   "bn": "ব্যক্তিগত API কী",
+   "pt-BR": "Chave de API pessoal",
+   "ru": "Личный API-ключ",
+   "id": "Kunci API pribadi",
+   "de": "Persönlicher API-Schlüssel",
+   "tr": "Kişisel API anahtarı"
+  },
+  "Personal API key from Linear: Settings → Account → Security & access.": {
+   "zh-Hans": "Linear 个人 API 密钥：Settings → Account → Security & access。",
+   "hi": "Linear की निजी API कुंजी: Settings → Account → Security & access.",
+   "es": "Clave API personal de Linear: Settings → Account → Security & access.",
+   "ar": "مفتاح API شخصي من Linear: Settings → Account → Security & access.",
+   "fr": "Clé API personnelle de Linear : Settings → Account → Security & access.",
+   "bn": "Linear-এর ব্যক্তিগত API কী: Settings → Account → Security & access.",
+   "pt-BR": "Chave de API pessoal do Linear: Settings → Account → Security & access.",
+   "ru": "Личный API-ключ Linear: Settings → Account → Security & access.",
+   "id": "Kunci API pribadi dari Linear: Settings → Account → Security & access.",
+   "de": "Persönlicher API-Schlüssel von Linear: Settings → Account → Security & access.",
+   "tr": "Linear’dan kişisel API anahtarı: Settings → Account → Security & access."
+  },
   "Personal Access Token": {
    "zh-Hans": "个人访问令牌",
    "hi": "पर्सनल एक्सेस टोकन",
@@ -5539,6 +6878,45 @@
    "id": "Token akses pribadi",
    "de": "Persönliches Zugriffstoken",
    "tr": "Kişisel erişim token'ı"
+  },
+  "Phone number or chat id to ignore": {
+   "zh-Hans": "要忽略的号码或聊天 ID",
+   "hi": "अनदेखा करने के लिए नंबर या चैट id",
+   "es": "Número o id de chat que ignorar",
+   "ar": "رقم أو معرّف دردشة لتجاهله",
+   "fr": "Numéro ou identifiant de chat à ignorer",
+   "bn": "উপেক্ষা করার নম্বর বা চ্যাট id",
+   "pt-BR": "Número ou id da conversa a ignorar",
+   "ru": "Номер или id чата для игнорирования",
+   "id": "Nomor atau id chat yang diabaikan",
+   "de": "Telefonnummer oder Chat-ID zum Ignorieren",
+   "tr": "Yok sayılacak telefon numarası veya sohbet kimliği"
+  },
+  "Photo": {
+   "zh-Hans": "照片",
+   "hi": "फ़ोटो",
+   "es": "Foto",
+   "ar": "صورة",
+   "fr": "Photo",
+   "bn": "ছবি",
+   "pt-BR": "Foto",
+   "ru": "Фото",
+   "id": "Foto",
+   "de": "Foto",
+   "tr": "Fotoğraf"
+  },
+  "Pick a model above the chat box first.": {
+   "zh-Hans": "请先在聊天框上方选择一个模型。",
+   "hi": "पहले चैट बॉक्स के ऊपर एक मॉडल चुनें।",
+   "es": "Elige primero un modelo encima del cuadro de chat.",
+   "ar": "اختر نموذجًا فوق مربع الدردشة أولًا.",
+   "fr": "Choisis d'abord un modèle au-dessus de la zone de chat.",
+   "bn": "আগে চ্যাট বক্সের উপরে একটি মডেল বেছে নিন।",
+   "pt-BR": "Escolha primeiro um modelo acima da caixa de chat.",
+   "ru": "Сначала выберите модель над полем чата.",
+   "id": "Pilih model di atas kotak obrolan terlebih dahulu.",
+   "de": "Zuerst ein Modell über dem Chatfeld auswählen.",
+   "tr": "Önce sohbet kutusunun üstünden bir model seçin."
   },
   "Pin / unpin notch": {
    "zh-Hans": "固定/取消固定岛",
@@ -5669,6 +7047,19 @@
    "id": "Rapi",
    "de": "Ausformuliert",
    "tr": "Özenli"
+  },
+  "Port {0} is taken: pick another one. Checking every 20 s meanwhile.": {
+   "zh-Hans": "端口 {0} 已被占用：请换一个。在此期间每 20 秒检查一次。",
+   "hi": "पोर्ट {0} पहले से इस्तेमाल में है: कोई और चुनें। तब तक हर 20 सेकंड में जाँच।",
+   "es": "El puerto {0} está ocupado: elige otro. Mientras tanto, se comprueba cada 20 s.",
+   "ar": "المنفذ {0} مستخدم: اختر منفذًا آخر. في الأثناء يتم التحقق كل 20 ث.",
+   "fr": "Le port {0} est déjà pris : choisis-en un autre. Vérification toutes les 20 s en attendant.",
+   "bn": "পোর্ট {0} ব্যস্ত: অন্যটি বেছে নিন। ততক্ষণ প্রতি ২০ সেকেন্ডে দেখা হচ্ছে।",
+   "pt-BR": "A porta {0} está ocupada: escolha outra. Enquanto isso, verificando a cada 20 s.",
+   "ru": "Порт {0} занят: выберите другой. Пока проверка каждые 20 с.",
+   "id": "Port {0} sudah dipakai: pilih yang lain. Sementara itu diperiksa setiap 20 dtk.",
+   "de": "Port {0} ist belegt: einen anderen wählen. Bis dahin wird alle 20 s abgerufen.",
+   "tr": "{0} bağlantı noktası kullanımda: başka birini seçin. Bu arada 20 sn’de bir denetleniyor."
   },
   "Previous": {
    "zh-Hans": "上一首",
@@ -5826,6 +7217,19 @@
    "de": "Liest",
    "tr": "Okuyor"
   },
+  "Reads the calendars of the Calendar app, Google accounts included.": {
+   "zh-Hans": "读取“日历”App 中的日历，包括 Google 账户。",
+   "hi": "कैलेंडर ऐप के कैलेंडर पढ़ता है, Google खाते भी।",
+   "es": "Lee los calendarios de la app Calendario, incluidas las cuentas de Google.",
+   "ar": "يقرأ تقويمات تطبيق التقويم، بما فيها حسابات Google.",
+   "fr": "Lit les calendriers de l'app Calendrier, comptes Google compris.",
+   "bn": "ক্যালেন্ডার অ্যাপের ক্যালেন্ডারগুলো পড়ে, Google অ্যাকাউন্টসহ।",
+   "pt-BR": "Lê os calendários do app Calendário, incluindo contas Google.",
+   "ru": "Читает календари приложения «Календарь», включая аккаунты Google.",
+   "id": "Membaca kalender di app Kalender, termasuk akun Google.",
+   "de": "Liest die Kalender der Kalender-App, inklusive Google-Konten.",
+   "tr": "Takvim uygulamasının takvimlerini okur, Google hesapları dahil."
+  },
   "Ready · hold {0}": {
    "zh-Hans": "就绪 · 按住 {0}",
    "hi": "तैयार · {0} दबाए रखें",
@@ -5968,6 +7372,19 @@
    "id": "Muat ulang suara",
    "de": "Klänge neu laden",
    "tr": "Sesleri yeniden yükle"
+  },
+  "Remote hosts": {
+   "zh-Hans": "远程主机",
+   "hi": "रिमोट होस्ट",
+   "es": "Hosts remotos",
+   "ar": "الأجهزة البعيدة",
+   "fr": "Hôtes distants",
+   "bn": "রিমোট হোস্ট",
+   "pt-BR": "Hosts remotos",
+   "ru": "Удалённые хосты",
+   "id": "Host jarak jauh",
+   "de": "Entfernte Hosts",
+   "tr": "Uzak ana bilgisayarlar"
   },
   "Remove": {
    "zh-Hans": "移除",
@@ -6125,6 +7542,19 @@
    "de": "Antwort bereit",
    "tr": "Yanıt hazır"
   },
+  "Reply…  (⇧↩ new line)": {
+   "zh-Hans": "回复…（⇧↩ 换行）",
+   "hi": "जवाब दें…  (⇧↩ नई लाइन)",
+   "es": "Responder…  (⇧↩ nueva línea)",
+   "ar": "رد…  (⇧↩ سطر جديد)",
+   "fr": "Répondre…  (⇧↩ nouvelle ligne)",
+   "bn": "উত্তর দিন…  (⇧↩ নতুন লাইন)",
+   "pt-BR": "Responder…  (⇧↩ nova linha)",
+   "ru": "Ответить…  (⇧↩ новая строка)",
+   "id": "Balas…  (⇧↩ baris baru)",
+   "de": "Antworten…  (⇧↩ neue Zeile)",
+   "tr": "Yanıtla…  (⇧↩ yeni satır)"
+  },
   "Request permissions": {
    "zh-Hans": "请求权限",
    "hi": "अनुमतियाँ अनुरोध करें",
@@ -6164,6 +7594,19 @@
    "de": "Alles auf Standard zurücksetzen",
    "tr": "Tümünü varsayılana sıfırla"
   },
+  "Resets": {
+   "zh-Hans": "重置",
+   "hi": "रीसेट",
+   "es": "Reinicios",
+   "ar": "إعادات التعيين",
+   "fr": "Réinitialisations",
+   "bn": "রিসেট",
+   "pt-BR": "Redefinições",
+   "ru": "Сбросы",
+   "id": "Reset",
+   "de": "Zurücksetzungen",
+   "tr": "Sıfırlama hakları"
+  },
   "Resetting…": {
    "zh-Hans": "重置中…",
    "hi": "रीसेट हो रहा है…",
@@ -6176,6 +7619,19 @@
    "id": "Mereset…",
    "de": "Wird zurückgesetzt…",
    "tr": "Sıfırlanıyor…"
+  },
+  "Resolved": {
+   "zh-Hans": "已解决",
+   "hi": "हल हो गया",
+   "es": "Resuelto",
+   "ar": "تم الحل",
+   "fr": "Résolu",
+   "bn": "সমাধান হয়েছে",
+   "pt-BR": "Resolvido",
+   "ru": "Решён",
+   "id": "Teratasi",
+   "de": "Behoben",
+   "tr": "Çözüldü"
   },
   "Restart Coucou": {
    "zh-Hans": "重启 Coucou",
@@ -6243,11 +7699,11 @@
    "tr": "Onaylamadan önce aşağıdaki içeriği incele."
   },
   "Right": {
-   "zh-Hans": "右侧",
+   "zh-Hans": "右",
    "hi": "दाएँ",
    "es": "Derecha",
    "ar": "يمين",
-   "fr": "À droite",
+   "fr": "Droite",
    "bn": "ডানে",
    "pt-BR": "Direita",
    "ru": "Справа",
@@ -6346,6 +7802,19 @@
    "de": "Speichern",
    "tr": "Kaydet"
   },
+  "Save WhatsApp": {
+   "zh-Hans": "保存 WhatsApp",
+   "hi": "WhatsApp सेव करें",
+   "es": "Guardar WhatsApp",
+   "ar": "حفظ واتساب",
+   "fr": "Enregistrer WhatsApp",
+   "bn": "WhatsApp সেভ করো",
+   "pt-BR": "Salvar WhatsApp",
+   "ru": "Сохранить WhatsApp",
+   "id": "Simpan WhatsApp",
+   "de": "WhatsApp speichern",
+   "tr": "WhatsApp’ı kaydet"
+  },
   "Save integrations": {
    "zh-Hans": "保存集成",
    "hi": "इंटीग्रेशन सहेजें",
@@ -6358,6 +7827,19 @@
    "id": "Simpan integrasi",
    "de": "Integrationen speichern",
    "tr": "Entegrasyonları kaydet"
+  },
+  "Saved with Flow": {
+   "zh-Hans": "Flow 帮你节省",
+   "hi": "Flow से बचा समय",
+   "es": "Ahorrado con Flow",
+   "ar": "وفّرته مع Flow",
+   "fr": "Gagnés avec Flow",
+   "bn": "Flow দিয়ে বাঁচানো",
+   "pt-BR": "Economizado com o Flow",
+   "ru": "Сэкономлено с Flow",
+   "id": "Dihemat dengan Flow",
+   "de": "Mit Flow gespart",
+   "tr": "Flow ile kazanılan"
   },
   "Save…": {
    "zh-Hans": "存储…",
@@ -6411,6 +7893,19 @@
    "de": "Sprich deine Idee einfach aus: Sie wird als klarer Prompt eingefügt (Ziel, Kontext, Schritte, Einschränkungen und Abschlusskriterien), bereit für Claude Code, Cursor oder ChatGPT.",
    "tr": "Fikrini aklına geldiği gibi anlat: Claude Code, Cursor veya ChatGPT için hazır, açık bir istem olarak yapıştırılır (hedef, bağlam, adımlar, kısıtlar ve tamamlanma ölçütleri)."
   },
+  "Scan the QR code in Settings": {
+   "zh-Hans": "请在设置中扫描二维码",
+   "hi": "सेटिंग्स में QR कोड स्कैन करें",
+   "es": "Escanea el código QR en Ajustes",
+   "ar": "امسح رمز QR في الإعدادات",
+   "fr": "Scanne le QR code dans les réglages",
+   "bn": "সেটিংসে QR কোড স্ক্যান করুন",
+   "pt-BR": "Escaneie o QR code nos Ajustes",
+   "ru": "Отсканируйте QR-код в настройках",
+   "id": "Pindai kode QR di Pengaturan",
+   "de": "QR-Code in den Einstellungen scannen",
+   "tr": "Ayarlar’daki QR kodunu tarayın"
+  },
   "Scarf": {
    "zh-Hans": "围巾",
    "hi": "मफ़लर",
@@ -6437,6 +7932,19 @@
    "de": "Zeitplan",
    "tr": "Takvim"
   },
+  "Screen sharing": {
+   "zh-Hans": "屏幕共享",
+   "hi": "स्क्रीन साझा करना",
+   "es": "Compartir pantalla",
+   "ar": "مشاركة الشاشة",
+   "fr": "Partage d'écran",
+   "bn": "স্ক্রিন শেয়ারিং",
+   "pt-BR": "Compartilhamento de tela",
+   "ru": "Демонстрация экрана",
+   "id": "Berbagi layar",
+   "de": "Bildschirmfreigabe",
+   "tr": "Ekran paylaşımı"
+  },
   "Screenshot": {
    "zh-Hans": "截图",
    "hi": "स्क्रीनशॉट",
@@ -6462,6 +7970,19 @@
    "id": "Cari dikte",
    "de": "Diktate suchen",
    "tr": "Diktelerde ara"
+  },
+  "Search models": {
+   "zh-Hans": "搜索模型",
+   "hi": "मॉडल खोजें",
+   "es": "Buscar modelos",
+   "ar": "ابحث عن النماذج",
+   "fr": "Rechercher un modèle",
+   "bn": "মডেল খুঁজুন",
+   "pt-BR": "Buscar modelos",
+   "ru": "Поиск моделей",
+   "id": "Cari model",
+   "de": "Modelle suchen",
+   "tr": "Model ara"
   },
   "Searches": {
    "zh-Hans": "搜索",
@@ -6788,6 +8309,19 @@
    "de": "Insel per Tastenkombination anzeigen",
    "tr": "Adayı kısayolla göster"
   },
+  "Show my WhatsApp messages": {
+   "zh-Hans": "显示我的 WhatsApp 消息",
+   "hi": "मेरे WhatsApp संदेश दिखाएँ",
+   "es": "Mostrar mis mensajes de WhatsApp",
+   "ar": "عرض رسائل واتساب",
+   "fr": "Afficher mes messages WhatsApp",
+   "bn": "আমার WhatsApp বার্তা দেখাও",
+   "pt-BR": "Mostrar minhas mensagens do WhatsApp",
+   "ru": "Показывать мои сообщения WhatsApp",
+   "id": "Tampilkan pesan WhatsApp saya",
+   "de": "Meine WhatsApp-Nachrichten anzeigen",
+   "tr": "WhatsApp iletilerimi göster"
+  },
   "Show my agent sessions on my iPhone": {
    "zh-Hans": "在我的 iPhone 上显示我的 Agent 会话",
    "hi": "मेरे iPhone पर मेरे एजेंट सेशन दिखाएं",
@@ -6800,6 +8334,45 @@
    "id": "Tampilkan sesi agen saya di iPhone saya",
    "de": "Meine Agentensitzungen auf meinem iPhone anzeigen",
    "tr": "Ajan oturumlarımı iPhone'umda göster"
+  },
+  "Show plan usage in the folded island": {
+   "zh-Hans": "在收起的岛中显示套餐用量",
+   "hi": "मुड़े हुए आइलैंड में प्लान का उपयोग दिखाएं",
+   "es": "Mostrar el uso del plan en la isla plegada",
+   "ar": "إظهار استخدام الخطة في الشريط المطوي",
+   "fr": "Afficher l'utilisation du forfait dans l'île repliée",
+   "bn": "ভাঁজ করা আইল্যান্ডে প্ল্যানের ব্যবহার দেখান",
+   "pt-BR": "Mostrar o uso do plano na ilha recolhida",
+   "ru": "Показывать расход тарифа в свёрнутом острове",
+   "id": "Tampilkan penggunaan paket di pulau yang terlipat",
+   "de": "Tarifnutzung in der eingeklappten Insel anzeigen",
+   "tr": "Katlanmış adada plan kullanımını göster"
+  },
+  "Show the number of agents in the folded island": {
+   "zh-Hans": "在收起的岛中显示代理数量",
+   "hi": "मुड़े हुए आइलैंड में एजेंटों की संख्या दिखाएं",
+   "es": "Mostrar el número de agentes en la isla plegada",
+   "ar": "إظهار عدد الوكلاء في الشريط المطوي",
+   "fr": "Afficher le nombre d'agents dans l'île repliée",
+   "bn": "ভাঁজ করা আইল্যান্ডে এজেন্টের সংখ্যা দেখান",
+   "pt-BR": "Mostrar o número de agentes na ilha recolhida",
+   "ru": "Показывать число агентов в свёрнутом острове",
+   "id": "Tampilkan jumlah agen di pulau yang terlipat",
+   "de": "Anzahl der Agents in der eingeklappten Insel anzeigen",
+   "tr": "Katlanmış adada ajan sayısını göster"
+  },
+  "Show the number only": {
+   "zh-Hans": "仅显示数字",
+   "hi": "केवल संख्या दिखाएं",
+   "es": "Mostrar solo el número",
+   "ar": "إظهار الرقم فقط",
+   "fr": "Afficher seulement le nombre",
+   "bn": "শুধু সংখ্যাটি দেখান",
+   "pt-BR": "Mostrar só o número",
+   "ru": "Показывать только число",
+   "id": "Tampilkan angkanya saja",
+   "de": "Nur die Anzahl anzeigen",
+   "tr": "Yalnızca sayıyı göster"
   },
   "Shows your Claude plan usage (5-hour and weekly limits) in the notch header. Coucou adds a status line relay in ~/.claude/settings.json. If you already have a status line, it keeps working as before. Pro and Max plans only.": {
    "zh-Hans": "在刘海标头中显示你的 Claude 计划用量（5 小时及每周限额）。Coucou 会在 ~/.claude/settings.json 中添加一条状态栏中继。如果你已有状态栏，它将照常运行。仅限 Pro 和 Max 计划。",
@@ -6931,6 +8504,19 @@
    "de": "Spotify nicht installiert",
    "tr": "Spotify kurulu değil"
   },
+  "Start GOWA automatically": {
+   "zh-Hans": "自动启动 GOWA",
+   "hi": "GOWA अपने-आप शुरू करें",
+   "es": "Iniciar GOWA automáticamente",
+   "ar": "تشغيل GOWA تلقائيًا",
+   "fr": "Lancer GOWA automatiquement",
+   "bn": "GOWA স্বয়ংক্রিয়ভাবে চালু করো",
+   "pt-BR": "Iniciar o GOWA automaticamente",
+   "ru": "Запускать GOWA автоматически",
+   "id": "Jalankan GOWA otomatis",
+   "de": "GOWA automatisch starten",
+   "tr": "GOWA’yı otomatik olarak başlat"
+  },
   "Startup": {
    "zh-Hans": "启动",
    "hi": "स्टार्टअप",
@@ -6956,6 +8542,32 @@
    "id": "Statistik",
    "de": "Statistik",
    "tr": "İstatistikler"
+  },
+  "Stay quiet during a Focus": {
+   "zh-Hans": "专注模式期间保持安静",
+   "hi": "फ़ोकस के दौरान शांत रहें",
+   "es": "No molestar durante un modo Concentración",
+   "ar": "التزام الهدوء أثناء التركيز",
+   "fr": "Rester discret pendant une Concentration",
+   "bn": "ফোকাসের সময় চুপ থাকো",
+   "pt-BR": "Ficar quieto durante um Foco",
+   "ru": "Не беспокоить в режиме фокусирования",
+   "id": "Tetap tenang saat mode Fokus",
+   "de": "Während eines Fokus still bleiben",
+   "tr": "Odak sırasında sessiz kal"
+  },
+  "Sticker": {
+   "zh-Hans": "贴纸",
+   "hi": "स्टिकर",
+   "es": "Sticker",
+   "ar": "ملصق",
+   "fr": "Sticker",
+   "bn": "স্টিকার",
+   "pt-BR": "Figurinha",
+   "ru": "Стикер",
+   "id": "Stiker",
+   "de": "Sticker",
+   "tr": "Çıkartma"
   },
   "Stop": {
    "zh-Hans": "停止",
@@ -7204,6 +8816,19 @@
    "de": "Aufgaben",
    "tr": "Görevler"
   },
+  "Team ID (optional)": {
+   "zh-Hans": "团队 ID（可选）",
+   "hi": "टीम आईडी (वैकल्पिक)",
+   "es": "ID del equipo (opcional)",
+   "ar": "معرّف الفريق (اختياري)",
+   "fr": "ID de l'équipe (facultatif)",
+   "bn": "টিম আইডি (ঐচ্ছিক)",
+   "pt-BR": "ID da equipe (opcional)",
+   "ru": "ID команды (необязательно)",
+   "id": "ID tim (opsional)",
+   "de": "Team-ID (optional)",
+   "tr": "Ekip kimliği (isteğe bağlı)"
+  },
   "Tell me when a new version is out": {
    "zh-Hans": "有新版本时提醒我",
    "hi": "नया वर्ज़न आने पर बताएँ",
@@ -7216,6 +8841,32 @@
    "id": "Beri tahu saya saat ada versi baru",
    "de": "Sag mir, wenn eine neue Version da ist",
    "tr": "Yeni sürüm çıkınca bana haber ver"
+  },
+  "Terminal": {
+   "zh-Hans": "终端",
+   "hi": "टर्मिनल",
+   "es": "Terminal",
+   "ar": "الطرفية",
+   "fr": "Terminal",
+   "bn": "টার্মিনাল",
+   "pt-BR": "Terminal",
+   "ru": "Терминал",
+   "id": "Terminal",
+   "de": "Terminal",
+   "tr": "Terminal"
+  },
+  "Test connection": {
+   "zh-Hans": "测试连接",
+   "hi": "कनेक्शन जाँचें",
+   "es": "Probar la conexión",
+   "ar": "اختبار الاتصال",
+   "fr": "Tester la connexion",
+   "bn": "সংযোগ পরীক্ষা",
+   "pt-BR": "Testar a conexão",
+   "ru": "Проверить подключение",
+   "id": "Uji koneksi",
+   "de": "Verbindung testen",
+   "tr": "Bağlantıyı sına"
   },
   "Test the voice": {
    "zh-Hans": "试听声音",
@@ -7295,6 +8946,32 @@
    "de": "Der Screenshot ist in der Zwischenablage: Drücke ⌘V an der gewünschten Stelle.",
    "tr": "Ekran görüntüsü panoda: istediğin yerde ⌘V tuşlarına bas."
   },
+  "The card shows the agent that did something last": {
+   "zh-Hans": "卡片显示最近有动作的代理",
+   "hi": "कार्ड वह एजेंट दिखाता है जिसने आखिरी बार कुछ किया",
+   "es": "La tarjeta muestra el último agente que hizo algo",
+   "ar": "تعرض البطاقة آخر وكيل قام بشيء",
+   "fr": "La carte montre le dernier agent qui a fait quelque chose",
+   "bn": "কার্ডে সেই এজেন্ট দেখায় যে শেষবার কিছু করেছে",
+   "pt-BR": "O cartão mostra o último agente que fez algo",
+   "ru": "Карточка показывает агента, который последним что-то сделал",
+   "id": "Kartu menampilkan agen yang terakhir melakukan sesuatu",
+   "de": "Die Karte zeigt den Agent, der zuletzt aktiv war",
+   "tr": "Kart, en son bir şey yapan ajanı gösterir"
+  },
+  "The changes to settings.json on {host}. Coucou also copies its relay to ~/.local/share/coucou/bin there.": {
+   "zh-Hans": "{host} 上 settings.json 的更改。Coucou 还会把它的中继复制到该主机的 ~/.local/share/coucou/bin。",
+   "hi": "{host} पर settings.json में बदलाव। Coucou वहाँ अपना रिले ~/.local/share/coucou/bin में भी कॉपी करता है।",
+   "es": "Los cambios en settings.json en {host}. Coucou también copia allí su relé a ~/.local/share/coucou/bin.",
+   "ar": "التغييرات على settings.json في {host}. ينسخ Coucou أيضًا المرحِّل الخاص به إلى ‎~/.local/share/coucou/bin هناك.",
+   "fr": "Les modifications de settings.json sur {host}. Coucou y copie aussi son relais dans ~/.local/share/coucou/bin.",
+   "bn": "{host}-এ settings.json-এর পরিবর্তনগুলো। Coucou সেখানে তার রিলে ~/.local/share/coucou/bin-এও কপি করে।",
+   "pt-BR": "As mudanças no settings.json em {host}. O Coucou também copia o relay dele para ~/.local/share/coucou/bin lá.",
+   "ru": "Изменения в settings.json на {host}. Coucou также копирует туда свой ретранслятор в ~/.local/share/coucou/bin.",
+   "id": "Perubahan pada settings.json di {host}. Coucou juga menyalin relay-nya ke ~/.local/share/coucou/bin di sana.",
+   "de": "Die Änderungen an settings.json auf {host}. Coucou kopiert dort außerdem sein Relay nach ~/.local/share/coucou/bin.",
+   "tr": "{host} üzerindeki settings.json değişiklikleri. Coucou ayrıca aktarıcısını oraya, ~/.local/share/coucou/bin klasörüne kopyalar."
+  },
   "The clean-up uses your Claude key. Add it in Settings → Chat.": {
    "zh-Hans": "整理会使用你的 Claude 密钥。请在“设置”→“聊天”中添加。",
    "hi": "सफ़ाई आपकी Claude कुंजी से होती है। इसे सेटिंग्स → चैट में जोड़ें।",
@@ -7308,6 +8985,19 @@
    "de": "Die Überarbeitung nutzt deinen Claude-Schlüssel. Füge ihn unter Einstellungen → Chat hinzu.",
    "tr": "Düzenleme, Claude anahtarını kullanır. Ayarlar → Sohbet bölümünden ekle."
   },
+  "The download couldn't be unzipped. Try again.": {
+   "zh-Hans": "无法解压下载内容。请重试。",
+   "hi": "डाउनलोड अनज़िप नहीं हो सका। फिर कोशिश करें।",
+   "es": "No se pudo descomprimir la descarga. Inténtalo de nuevo.",
+   "ar": "تعذّر فك ضغط التنزيل. أعد المحاولة.",
+   "fr": "Le téléchargement n'a pas pu être décompressé. Réessaie.",
+   "bn": "ডাউনলোড আনজিপ করা যায়নি। আবার চেষ্টা করুন।",
+   "pt-BR": "Não foi possível descompactar o download. Tente de novo.",
+   "ru": "Не удалось распаковать загрузку. Попробуйте снова.",
+   "id": "Unduhan tidak bisa diekstrak. Coba lagi.",
+   "de": "Der Download konnte nicht entpackt werden. Erneut versuchen.",
+   "tr": "İndirilen dosya açılamadı. Yeniden deneyin."
+  },
   "The download couldn’t be opened. Nothing was changed.": {
    "zh-Hans": "无法打开下载的文件。未做任何更改。",
    "hi": "डाउनलोड खुल नहीं सका। कुछ नहीं बदला गया।",
@@ -7320,6 +9010,32 @@
    "id": "Unduhan tidak bisa dibuka. Tidak ada yang diubah.",
    "de": "Der Download ließ sich nicht öffnen. Nichts wurde geändert.",
    "tr": "İndirilen dosya açılamadı. Hiçbir şey değiştirilmedi."
+  },
+  "The download didn't go through. Check your connection and try again.": {
+   "zh-Hans": "下载未完成。请检查网络后重试。",
+   "hi": "डाउनलोड पूरा नहीं हुआ। कनेक्शन जाँचकर फिर कोशिश करें।",
+   "es": "La descarga no se completó. Revisa tu conexión e inténtalo de nuevo.",
+   "ar": "لم يكتمل التنزيل. تحقق من اتصالك وأعد المحاولة.",
+   "fr": "Le téléchargement n'a pas abouti. Vérifie ta connexion et réessaie.",
+   "bn": "ডাউনলোড সম্পূর্ণ হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।",
+   "pt-BR": "O download não foi concluído. Verifique sua conexão e tente de novo.",
+   "ru": "Загрузка не удалась. Проверьте подключение и попробуйте снова.",
+   "id": "Unduhan gagal. Periksa koneksimu lalu coba lagi.",
+   "de": "Der Download ist fehlgeschlagen. Verbindung prüfen und erneut versuchen.",
+   "tr": "İndirme tamamlanamadı. Bağlantınızı denetleyip yeniden deneyin."
+  },
+  "The download doesn't match the file GOWA published: it was deleted, nothing was installed.": {
+   "zh-Hans": "下载内容与 GOWA 发布的文件不符：已删除，未安装任何内容。",
+   "hi": "डाउनलोड GOWA की फ़ाइल से मेल नहीं खाता: हटा दिया गया, कुछ इंस्टॉल नहीं हुआ।",
+   "es": "La descarga no coincide con el archivo publicado por GOWA: se eliminó y no se instaló nada.",
+   "ar": "التنزيل لا يطابق الملف الذي نشره GOWA: حُذف ولم يُثبَّت شيء.",
+   "fr": "Le téléchargement ne correspond pas au fichier publié par GOWA : il a été supprimé, rien n'a été installé.",
+   "bn": "ডাউনলোড GOWA-র প্রকাশিত ফাইলের সঙ্গে মেলে না: মুছে ফেলা হয়েছে, কিছু ইনস্টল হয়নি।",
+   "pt-BR": "O download não corresponde ao arquivo publicado pelo GOWA: foi apagado, nada foi instalado.",
+   "ru": "Загрузка не совпадает с файлом, опубликованным GOWA: она удалена, ничего не установлено.",
+   "id": "Unduhan tidak cocok dengan file dari GOWA: sudah dihapus, tidak ada yang dipasang.",
+   "de": "Der Download stimmt nicht mit der von GOWA veröffentlichten Datei überein: Er wurde gelöscht, nichts wurde installiert.",
+   "tr": "İndirilen dosya GOWA’nın yayımladığı dosyayla eşleşmiyor: silindi, hiçbir şey yüklenmedi."
   },
   "The download failed. Try again, or get it on GitHub.": {
    "zh-Hans": "下载失败。请重试，或前往 GitHub 获取。",
@@ -7360,6 +9076,84 @@
    "de": "Der Download ist nicht die angekündigte Coucou-Version. Nichts wurde geändert.",
    "tr": "İndirilen dosya duyurulan Coucou sürümü değil. Hiçbir şey değiştirilmedi."
   },
+  "The gateway URL isn’t valid (http://…)": {
+   "zh-Hans": "网关地址无效（http://…）",
+   "hi": "गेटवे URL मान्य नहीं है (http://…)",
+   "es": "La URL de la pasarela no es válida (http://…)",
+   "ar": "عنوان البوابة غير صالح (http://…)",
+   "fr": "L’URL de la passerelle n’est pas valide (http://…)",
+   "bn": "গেটওয়ের URL সঠিক নয় (http://…)",
+   "pt-BR": "A URL do gateway não é válida (http://…)",
+   "ru": "Неверный адрес шлюза (http://…)",
+   "id": "URL gateway tidak valid (http://…)",
+   "de": "Die Gateway-URL ist ungültig (http://…)",
+   "tr": "Ağ geçidi URL’si geçerli değil (http://…)"
+  },
+  "The gateway answers and is connecting to WhatsApp…": {
+   "zh-Hans": "网关有响应，正在连接 WhatsApp…",
+   "hi": "गेटवे जवाब दे रहा है और WhatsApp से जुड़ रहा है…",
+   "es": "La pasarela responde y se está conectando a WhatsApp…",
+   "ar": "البوابة تستجيب وتتصل بواتساب…",
+   "fr": "La passerelle répond et se connecte à WhatsApp…",
+   "bn": "গেটওয়ে সাড়া দিচ্ছে এবং WhatsApp-এ সংযুক্ত হচ্ছে…",
+   "pt-BR": "O gateway responde e está se conectando ao WhatsApp…",
+   "ru": "Шлюз отвечает и подключается к WhatsApp…",
+   "id": "Gateway merespons dan sedang terhubung ke WhatsApp…",
+   "de": "Das Gateway antwortet und verbindet sich mit WhatsApp…",
+   "tr": "Ağ geçidi yanıt veriyor ve WhatsApp’a bağlanıyor…"
+  },
+  "The gateway answers. Scan the QR code below with your phone.": {
+   "zh-Hans": "网关有响应。请用手机扫描下面的二维码。",
+   "hi": "गेटवे जवाब दे रहा है। नीचे दिया QR कोड फ़ोन से स्कैन करें।",
+   "es": "La pasarela responde. Escanea el código QR de abajo con tu teléfono.",
+   "ar": "البوابة تستجيب. امسح رمز QR أدناه بهاتفك.",
+   "fr": "La passerelle répond. Scanne le QR code ci-dessous avec ton téléphone.",
+   "bn": "গেটওয়ে সাড়া দিচ্ছে। নিচের QR কোডটি ফোনে স্ক্যান করুন।",
+   "pt-BR": "O gateway responde. Escaneie o QR code abaixo com o celular.",
+   "ru": "Шлюз отвечает. Отсканируйте QR-код ниже телефоном.",
+   "id": "Gateway merespons. Pindai kode QR di bawah dengan ponselmu.",
+   "de": "Das Gateway antwortet. Den QR-Code unten mit dem Telefon scannen.",
+   "tr": "Ağ geçidi yanıt veriyor. Aşağıdaki QR kodunu telefonunuzla tarayın."
+  },
+  "The gateway doesn’t answer: is it running?": {
+   "zh-Hans": "网关没有响应：它在运行吗？",
+   "hi": "गेटवे जवाब नहीं दे रहा: क्या वह चल रहा है?",
+   "es": "La pasarela no responde: ¿está en marcha?",
+   "ar": "البوابة لا تستجيب: هل هي قيد التشغيل؟",
+   "fr": "La passerelle ne répond pas : est-elle lancée ?",
+   "bn": "গেটওয়ে সাড়া দিচ্ছে না: এটি চালু আছে?",
+   "pt-BR": "O gateway não responde: ele está rodando?",
+   "ru": "Шлюз не отвечает: он запущен?",
+   "id": "Gateway tidak merespons: apakah sedang berjalan?",
+   "de": "Das Gateway antwortet nicht: Läuft es?",
+   "tr": "Ağ geçidi yanıt vermiyor: çalışıyor mu?"
+  },
+  "The gateway refused Coucou’s address ({0}). Checking every 20 s instead.": {
+   "zh-Hans": "网关拒绝了 Coucou 的地址（{0}）。改为每 20 秒检查一次。",
+   "hi": "गेटवे ने Coucou का पता अस्वीकार किया ({0})। इसके बजाय हर 20 सेकंड में जाँच।",
+   "es": "La pasarela rechazó la dirección de Coucou ({0}). Se comprueba cada 20 s en su lugar.",
+   "ar": "رفضت البوابة عنوان Coucou ‏({0}). يتم التحقق كل 20 ث بدلًا من ذلك.",
+   "fr": "La passerelle a refusé l’adresse de Coucou ({0}). Vérification toutes les 20 s à la place.",
+   "bn": "গেটওয়ে Coucou-র ঠিকানা প্রত্যাখ্যান করেছে ({0})। এর বদলে প্রতি ২০ সেকেন্ডে দেখা হচ্ছে।",
+   "pt-BR": "O gateway recusou o endereço do Coucou ({0}). Verificando a cada 20 s no lugar.",
+   "ru": "Шлюз отклонил адрес Coucou ({0}). Вместо этого проверка каждые 20 с.",
+   "id": "Gateway menolak alamat Coucou ({0}). Sebagai gantinya diperiksa setiap 20 dtk.",
+   "de": "Das Gateway hat die Adresse von Coucou abgelehnt ({0}). Stattdessen wird alle 20 s abgerufen.",
+   "tr": "Ağ geçidi Coucou’nun adresini reddetti ({0}). Bunun yerine 20 sn’de bir denetleniyor."
+  },
+  "The gateway refuses the credentials": {
+   "zh-Hans": "网关拒绝了凭据",
+   "hi": "गेटवे ने क्रेडेंशियल अस्वीकार किए",
+   "es": "La pasarela rechaza las credenciales",
+   "ar": "البوابة ترفض بيانات الاعتماد",
+   "fr": "La passerelle refuse les identifiants",
+   "bn": "গেটওয়ে পরিচয়পত্র প্রত্যাখ্যান করছে",
+   "pt-BR": "O gateway recusa as credenciais",
+   "ru": "Шлюз отклоняет учётные данные",
+   "id": "Gateway menolak kredensial",
+   "de": "Das Gateway lehnt die Anmeldedaten ab",
+   "tr": "Ağ geçidi kimlik bilgilerini reddediyor"
+  },
   "The history is off. Turn it on in Settings → Privacy.": {
    "zh-Hans": "历史记录已关闭。请在“设置”→“隐私”中打开。",
    "hi": "इतिहास बंद है। इसे सेटिंग्स → गोपनीयता में चालू करें।",
@@ -7385,6 +9179,32 @@
    "id": "Riwayat, statistik, dan catatanmu tetap di Mac ini, di folder Coucou. Dikte tidak pernah disimpan sebagai audio; audio panggilan dihapus begitu transkripnya selesai ditulis.",
    "de": "Verlauf, Statistik und Notizen bleiben auf diesem Mac im Coucou-Ordner. Diktate werden nie als Audio gespeichert; die Gesprächsaufnahme wird gelöscht, sobald das Transkript geschrieben ist.",
    "tr": "Geçmiş, istatistikler ve notların bu Mac'te, Coucou klasöründe kalır. Dikteler asla ses olarak kaydedilmez; görüşmenin sesi, dökümü yazılır yazılmaz silinir."
+  },
+  "The island hides and goes silent while one of these is in use. Read from the menu bar's camera, microphone and screen indicators.": {
+   "zh-Hans": "其中任何一项使用时，岛会隐藏并保持静音。数据来自菜单栏的摄像头、麦克风和屏幕指示器。",
+   "hi": "इनमें से कोई भी उपयोग में होने पर आइलैंड छिप जाता है और शांत रहता है। मेनू बार के कैमरा, माइक्रोफ़ोन और स्क्रीन संकेतकों से पढ़ा जाता है।",
+   "es": "La isla se oculta y queda en silencio mientras uno de estos está en uso. Se lee de los indicadores de cámara, micrófono y pantalla de la barra de menús.",
+   "ar": "تختفي الجزيرة وتصمت أثناء استخدام أي من هذه. تُقرأ من مؤشرات الكاميرا والميكروفون والشاشة في شريط القوائم.",
+   "fr": "L'île se cache et se tait tant que l'un de ces éléments est utilisé. Lu dans les indicateurs caméra, micro et écran de la barre des menus.",
+   "bn": "এগুলোর কোনোটি ব্যবহৃত হলে আইল্যান্ড লুকিয়ে থাকে এবং নীরব থাকে। মেনু বারের ক্যামেরা, মাইক্রোফোন ও স্ক্রিন সূচক থেকে পড়া হয়।",
+   "pt-BR": "A ilha se esconde e fica em silêncio enquanto um destes está em uso. Lido dos indicadores de câmera, microfone e tela da barra de menus.",
+   "ru": "Остров скрывается и молчит, пока что-то из этого используется. Читается из индикаторов камеры, микрофона и экрана в строке меню.",
+   "id": "Pulau bersembunyi dan diam selama salah satunya digunakan. Dibaca dari indikator kamera, mikrofon, dan layar di bilah menu.",
+   "de": "Die Insel blendet sich aus und verstummt, solange eines davon verwendet wird. Ausgelesen aus den Kamera-, Mikrofon- und Bildschirmanzeigen der Menüleiste.",
+   "tr": "Bunlardan biri kullanılırken ada gizlenir ve sessiz kalır. Menü çubuğunun kamera, mikrofon ve ekran göstergelerinden okunur."
+  },
+  "The island steps aside while a full-screen app, a game or a video, fills its display.": {
+   "zh-Hans": "当全屏应用（游戏或视频）占满其所在屏幕时，岛会让开。",
+   "hi": "जब कोई फ़ुल-स्क्रीन ऐप, गेम या वीडियो उसकी स्क्रीन भर देता है, तब आइलैंड हट जाता है।",
+   "es": "La isla se aparta mientras una app a pantalla completa, un juego o un vídeo, ocupa su pantalla.",
+   "ar": "تتنحى الجزيرة جانبًا بينما يملأ تطبيق بملء الشاشة، كلعبة أو فيديو، شاشتها.",
+   "fr": "L'île s'efface tant qu'une app en plein écran, un jeu ou une vidéo, occupe son écran.",
+   "bn": "পূর্ণ স্ক্রিনের কোনো অ্যাপ, গেম বা ভিডিও ডিসপ্লে ভরে রাখলে আইল্যান্ড সরে যায়।",
+   "pt-BR": "A ilha sai do caminho enquanto um app em tela cheia, um jogo ou um vídeo, ocupa a tela.",
+   "ru": "Остров убирается, пока полноэкранное приложение, игра или видео, занимает его экран.",
+   "id": "Pulau menyingkir selama aplikasi layar penuh, game atau video, memenuhi layarnya.",
+   "de": "Die Insel tritt zur Seite, solange eine Vollbild-App, ein Spiel oder ein Video ihren Bildschirm füllt.",
+   "tr": "Tam ekran bir uygulama, oyun veya video ekranını kapladığı sürece ada kenara çekilir."
   },
   "The keys that open the notch and its actions.": {
    "zh-Hans": "打开刘海及其操作的按键。",
@@ -7437,6 +9257,32 @@
    "id": "Rekaman panggilan ini sudah tidak ada.",
    "de": "Die Aufnahme dieses Gesprächs ist nicht mehr vorhanden.",
    "tr": "Bu görüşmenin kaydı artık yok."
+  },
+  "The server refused the key. Check it, then connect again.": {
+   "zh-Hans": "服务器拒绝了该密钥。请检查后重新连接。",
+   "hi": "सर्वर ने कुंजी अस्वीकार कर दी। उसे जाँचें, फिर दोबारा कनेक्ट करें।",
+   "es": "El servidor rechazó la clave. Revísala y vuelve a conectar.",
+   "ar": "رفض الخادم المفتاح. تحقّق منه ثم اتصل مجددًا.",
+   "fr": "Le serveur a refusé la clé. Vérifie-la, puis reconnecte-toi.",
+   "bn": "সার্ভার কী প্রত্যাখ্যান করেছে। যাচাই করে আবার সংযুক্ত করুন।",
+   "pt-BR": "O servidor recusou a chave. Verifique-a e conecte de novo.",
+   "ru": "Сервер отклонил ключ. Проверьте его и подключитесь снова.",
+   "id": "Server menolak kunci. Periksa, lalu hubungkan lagi.",
+   "de": "Der Server hat den Schlüssel abgelehnt. Schlüssel prüfen und erneut verbinden.",
+   "tr": "Sunucu anahtarı reddetti. Anahtarı denetleyip yeniden bağlanın."
+  },
+  "The small island hides a minute after the last activity. Off: it stays at the top of the screen.": {
+   "zh-Hans": "最后一次活动一分钟后，小岛会隐藏。关闭后，它会留在屏幕顶部。",
+   "hi": "आख़िरी गतिविधि के एक मिनट बाद छोटा आइलैंड छिप जाता है। बंद होने पर यह स्क्रीन के ऊपर बना रहता है।",
+   "es": "La isla pequeña se oculta un minuto después de la última actividad. Desactivado: se queda en la parte superior de la pantalla.",
+   "ar": "يختفي الشريط الصغير بعد دقيقة من آخر نشاط. عند الإيقاف: يبقى أعلى الشاشة.",
+   "fr": "La petite île se cache une minute après la dernière activité. Désactivé : elle reste en haut de l'écran.",
+   "bn": "শেষ কাজের এক মিনিট পরে ছোট আইল্যান্ড লুকিয়ে যায়। বন্ধ থাকলে এটি স্ক্রিনের উপরে থাকে।",
+   "pt-BR": "A ilha pequena se esconde um minuto após a última atividade. Desligado: ela fica no topo da tela.",
+   "ru": "Маленький остров прячется через минуту после последней активности. Выключено: он остаётся вверху экрана.",
+   "id": "Pulau kecil bersembunyi satu menit setelah aktivitas terakhir. Mati: tetap di bagian atas layar.",
+   "de": "Die kleine Insel blendet sich eine Minute nach der letzten Aktivität aus. Aus: Sie bleibt oben auf dem Bildschirm.",
+   "tr": "Küçük ada son etkinlikten bir dakika sonra gizlenir. Kapalı: ekranın üstünde kalır."
   },
   "The text Coucou pastes": {
    "zh-Hans": "Coucou 要粘贴的文字",
@@ -7502,6 +9348,19 @@
    "id": "Kata yang kamu perbaiki diingat untuk panggilan berikutnya.",
    "de": "Wörter, die du korrigierst, werden für deine nächsten Gespräche gespeichert.",
    "tr": "Düzelttiğin sözcükler sonraki görüşmelerin için hatırlanır."
+  },
+  "This chat was deleted in Open WebUI. Send again to start a new one.": {
+   "zh-Hans": "此对话已在 Open WebUI 中删除。再次发送即可开始新对话。",
+   "hi": "यह चैट Open WebUI में हटा दी गई है। नई शुरू करने के लिए फिर से भेजें।",
+   "es": "Este chat se eliminó en Open WebUI. Envía de nuevo para empezar uno nuevo.",
+   "ar": "حُذفت هذه الدردشة في Open WebUI. أرسل مجددًا لبدء دردشة جديدة.",
+   "fr": "Ce chat a été supprimé dans Open WebUI. Renvoie pour en commencer un nouveau.",
+   "bn": "এই চ্যাটটি Open WebUI-তে মুছে ফেলা হয়েছে। নতুন শুরু করতে আবার পাঠান।",
+   "pt-BR": "Este chat foi excluído no Open WebUI. Envie de novo para começar outro.",
+   "ru": "Этот чат удалён в Open WebUI. Отправьте снова, чтобы начать новый.",
+   "id": "Obrolan ini dihapus di Open WebUI. Kirim lagi untuk memulai yang baru.",
+   "de": "Dieser Chat wurde in Open WebUI gelöscht. Erneut senden, um einen neuen zu beginnen.",
+   "tr": "Bu sohbet Open WebUI’da silindi. Yeni bir sohbet başlatmak için yeniden gönderin."
   },
   "This model is not available.": {
    "zh-Hans": "此模型不可用。",
@@ -7620,6 +9479,32 @@
    "de": "Token",
    "tr": "Token"
   },
+  "Tomorrow": {
+   "zh-Hans": "明天",
+   "hi": "कल",
+   "es": "Mañana",
+   "ar": "غدًا",
+   "fr": "Demain",
+   "bn": "আগামীকাল",
+   "pt-BR": "Amanhã",
+   "ru": "Завтра",
+   "id": "Besok",
+   "de": "Morgen",
+   "tr": "Yarın"
+  },
+  "Too long for one message (4,096 characters at most).": {
+   "zh-Hans": "单条消息过长（最多 4096 个字符）。",
+   "hi": "एक संदेश के लिए बहुत लंबा (अधिकतम 4,096 अक्षर)।",
+   "es": "Demasiado largo para un mensaje (4096 caracteres como máximo).",
+   "ar": "طويل جدًا لرسالة واحدة (4096 حرفًا كحد أقصى).",
+   "fr": "Trop long pour un seul message (4 096 caractères au maximum).",
+   "bn": "একটি বার্তার জন্য খুব লম্বা (সর্বোচ্চ ৪০৯৬ অক্ষর)।",
+   "pt-BR": "Longo demais para uma mensagem (no máximo 4.096 caracteres).",
+   "ru": "Слишком длинно для одного сообщения (не больше 4096 символов).",
+   "id": "Terlalu panjang untuk satu pesan (maksimal 4.096 karakter).",
+   "de": "Zu lang für eine Nachricht (höchstens 4.096 Zeichen).",
+   "tr": "Tek bir ileti için çok uzun (en fazla 4.096 karakter)."
+  },
   "Too many hits at once.": {
    "zh-Hans": "一次点击太多次了。",
    "hi": "एक बार में बहुत ज़्यादा टैप।",
@@ -7632,6 +9517,19 @@
    "id": "Terlalu banyak ketukan sekaligus.",
    "de": "Zu viele Anfragen auf einmal.",
    "tr": "Aynı anda çok fazla istek."
+  },
+  "Top": {
+   "zh-Hans": "上",
+   "hi": "ऊपर",
+   "es": "Arriba",
+   "ar": "أعلى",
+   "fr": "Haut",
+   "bn": "উপরে",
+   "pt-BR": "Topo",
+   "ru": "Сверху",
+   "id": "Atas",
+   "de": "Oben",
+   "tr": "Üst"
   },
   "Top agent": {
    "zh-Hans": "最活跃 Agent",
@@ -7711,6 +9609,19 @@
    "de": "Diktieren aktivieren",
    "tr": "Dikteyi aç"
   },
+  "Turned off in Settings": {
+   "zh-Hans": "已在设置中关闭",
+   "hi": "सेटिंग्स में बंद है",
+   "es": "Desactivado en Ajustes",
+   "ar": "متوقف في الإعدادات",
+   "fr": "Désactivé dans les réglages",
+   "bn": "সেটিংসে বন্ধ",
+   "pt-BR": "Desativado nos Ajustes",
+   "ru": "Выключено в настройках",
+   "id": "Dimatikan di Pengaturan",
+   "de": "In den Einstellungen deaktiviert",
+   "tr": "Ayarlar’da kapatıldı"
+  },
   "Uninstall": {
    "zh-Hans": "卸载",
    "hi": "अनइंस्टॉल करें",
@@ -7763,6 +9674,19 @@
    "de": "Unbegrenzt und kostenlos",
    "tr": "Sınırsız ve ücretsiz"
   },
+  "Unofficial integration: it goes through a gateway you run on this Mac. Use it on your own account only. WhatsApp may restrict accounts that abuse it.": {
+   "zh-Hans": "非官方集成：通过你在这台 Mac 上运行的网关工作。仅限用于你自己的账号。滥用时 WhatsApp 可能会限制账号。",
+   "hi": "अनौपचारिक इंटीग्रेशन: यह इस Mac पर चल रहे गेटवे से होकर काम करता है। सिर्फ़ अपने अकाउंट पर इस्तेमाल करें। दुरुपयोग पर WhatsApp अकाउंट सीमित कर सकता है।",
+   "es": "Integración no oficial: pasa por una pasarela que ejecutas en este Mac. Úsala solo con tu propia cuenta. WhatsApp puede restringir las cuentas que abusen.",
+   "ar": "تكامل غير رسمي: يمرّ عبر بوابة تشغّلها على هذا الـMac. استخدمه على حسابك فقط. قد يقيّد واتساب الحسابات عند إساءة الاستخدام.",
+   "fr": "Intégration non officielle : elle passe par une passerelle que tu lances sur ce Mac. À utiliser sur ton propre compte uniquement. WhatsApp peut restreindre un compte en cas d’abus.",
+   "bn": "অনানুষ্ঠানিক ইন্টিগ্রেশন: এটি এই Mac-এ চালানো একটি গেটওয়ে দিয়ে কাজ করে। শুধু নিজের অ্যাকাউন্টে ব্যবহার করুন। অপব্যবহারে WhatsApp অ্যাকাউন্ট সীমিত করতে পারে।",
+   "pt-BR": "Integração não oficial: passa por um gateway que você executa neste Mac. Use só na sua própria conta. O WhatsApp pode restringir contas em caso de abuso.",
+   "ru": "Неофициальная интеграция: работает через шлюз, запущенный на этом Mac. Используйте только со своим аккаунтом. WhatsApp может ограничить аккаунт при злоупотреблении.",
+   "id": "Integrasi tidak resmi: berjalan lewat gateway yang kamu jalankan di Mac ini. Gunakan hanya di akunmu sendiri. WhatsApp bisa membatasi akun yang menyalahgunakannya.",
+   "de": "Inoffizielle Integration: Sie läuft über ein Gateway, das auf diesem Mac läuft. Nur mit dem eigenen Konto verwenden. WhatsApp kann Konten einschränken, die sie missbrauchen.",
+   "tr": "Resmi olmayan entegrasyon: bu Mac’te çalıştırdığınız bir ağ geçidi üzerinden çalışır. Yalnızca kendi hesabınızda kullanın. WhatsApp, kötüye kullanan hesapları kısıtlayabilir."
+  },
   "Until Parakeet is downloaded, Coucou uses your Mac's speech recognition.": {
    "zh-Hans": "在下载 Parakeet 之前，Coucou 使用 Mac 的语音识别。",
    "hi": "जब तक Parakeet डाउनलोड नहीं होता, Coucou Mac की वाक् पहचान इस्तेमाल करता है।",
@@ -7775,6 +9699,19 @@
    "id": "Sampai Parakeet diunduh, Coucou memakai pengenalan suara Mac.",
    "de": "Bis Parakeet heruntergeladen ist, nutzt Coucou die Spracherkennung deines Mac.",
    "tr": "Parakeet indirilene kadar Coucou, Mac'inin konuşma tanıma özelliğini kullanır."
+  },
+  "Update": {
+   "zh-Hans": "更新",
+   "hi": "अपडेट करें",
+   "es": "Actualizar",
+   "ar": "تحديث",
+   "fr": "Mettre à jour",
+   "bn": "আপডেট করো",
+   "pt-BR": "Atualizar",
+   "ru": "Обновить",
+   "id": "Perbarui",
+   "de": "Aktualisieren",
+   "tr": "Güncelle"
   },
   "Update Coucou to {0}…": {
    "zh-Hans": "将 Coucou 更新到 {0}…",
@@ -7841,6 +9778,19 @@
    "de": "{name} wird hochgeladen",
    "tr": "{name} yükleniyor"
   },
+  "Uptime API token": {
+   "zh-Hans": "Uptime API 令牌",
+   "hi": "Uptime API टोकन",
+   "es": "Token de la API de Uptime",
+   "ar": "رمز Uptime API",
+   "fr": "Jeton d'API Uptime",
+   "bn": "Uptime API টোকেন",
+   "pt-BR": "Token da API do Uptime",
+   "ru": "Токен Uptime API",
+   "id": "Token API Uptime",
+   "de": "Uptime-API-Token",
+   "tr": "Uptime API belirteci"
+  },
   "Used by the chat. The list comes from your Anthropic account.": {
    "zh-Hans": "由聊天使用。列表来自你的 Anthropic 账户。",
    "hi": "चैट द्वारा उपयोग किया जाता है। सूची आपके Anthropic खाते से आती है।",
@@ -7853,6 +9803,45 @@
    "id": "Digunakan oleh chat. Daftar berasal dari akun Anthropic Anda.",
    "de": "Wird im Chat verwendet. Die Liste stammt aus deinem Anthropic-Konto.",
    "tr": "Sohbette kullanılır. Liste Anthropic hesabından alınır."
+  },
+  "User token  (xoxp-…)": {
+   "zh-Hans": "用户令牌  (xoxp-…)",
+   "hi": "यूज़र टोकन  (xoxp-…)",
+   "es": "Token de usuario  (xoxp-…)",
+   "ar": "رمز المستخدم  (xoxp-…)",
+   "fr": "Jeton utilisateur  (xoxp-…)",
+   "bn": "ইউজার টোকেন  (xoxp-…)",
+   "pt-BR": "Token de usuário  (xoxp-…)",
+   "ru": "Токен пользователя  (xoxp-…)",
+   "id": "Token pengguna  (xoxp-…)",
+   "de": "Benutzer-Token  (xoxp-…)",
+   "tr": "Kullanıcı belirteci  (xoxp-…)"
+  },
+  "Uses Claude Code with its sign-in, MCP servers, skills and hooks. No API key needed.": {
+   "zh-Hans": "使用 Claude Code 及其登录、MCP 服务器、技能和钩子。无需 API 密钥。",
+   "hi": "Claude Code को उसके साइन-इन, MCP सर्वर, स्किल और हुक के साथ इस्तेमाल करता है। API कुंजी की ज़रूरत नहीं।",
+   "es": "Usa Claude Code con su sesión, servidores MCP, skills y hooks. No hace falta clave de API.",
+   "ar": "يستخدم Claude Code مع تسجيل دخوله وخوادم MCP والمهارات والخطافات. لا حاجة إلى مفتاح API.",
+   "fr": "Utilise Claude Code avec sa connexion, ses serveurs MCP, ses skills et ses hooks. Aucune clé API nécessaire.",
+   "bn": "Claude Code-এর সাইন-ইন, MCP সার্ভার, স্কিল ও হুকসহ এটি ব্যবহার করে। API কী লাগে না।",
+   "pt-BR": "Usa o Claude Code com o login, servidores MCP, skills e hooks dele. Não precisa de chave de API.",
+   "ru": "Использует Claude Code с его входом, MCP-серверами, навыками и хуками. Ключ API не нужен.",
+   "id": "Memakai Claude Code dengan login, server MCP, skill, dan hook-nya. Tidak perlu kunci API.",
+   "de": "Verwendet Claude Code mit seiner Anmeldung, seinen MCP-Servern, Skills und Hooks. Kein API-Schlüssel nötig.",
+   "tr": "Claude Code’u oturum açma bilgisi, MCP sunucuları, skill’leri ve hook’larıyla kullanır. API anahtarı gerekmez."
+  },
+  "Video": {
+   "zh-Hans": "视频",
+   "hi": "वीडियो",
+   "es": "Vídeo",
+   "ar": "فيديو",
+   "fr": "Vidéo",
+   "bn": "ভিডিও",
+   "pt-BR": "Vídeo",
+   "ru": "Видео",
+   "id": "Video",
+   "de": "Video",
+   "tr": "Video"
   },
   "Voice": {
    "zh-Hans": "声音",
@@ -7879,6 +9868,19 @@
    "id": "Suara yang dipakai: {0}",
    "de": "Verwendete Stimme: {0}",
    "tr": "Kullanılan ses: {0}"
+  },
+  "Voice message": {
+   "zh-Hans": "语音消息",
+   "hi": "वॉइस संदेश",
+   "es": "Audio",
+   "ar": "رسالة صوتية",
+   "fr": "Vocal",
+   "bn": "ভয়েস বার্তা",
+   "pt-BR": "Áudio",
+   "ru": "Голосовое",
+   "id": "Pesan suara",
+   "de": "Sprachnachricht",
+   "tr": "Sesli ileti"
   },
   "Voice type": {
    "zh-Hans": "声音类型",
@@ -8010,6 +10012,19 @@
    "de": "Wetter per Sprachbefehl",
    "tr": "Sesle hava durumu"
   },
+  "Web search": {
+   "zh-Hans": "网页搜索",
+   "hi": "वेब खोज",
+   "es": "Búsqueda web",
+   "ar": "البحث في الويب",
+   "fr": "Recherche web",
+   "bn": "ওয়েব অনুসন্ধান",
+   "pt-BR": "Busca na web",
+   "ru": "Поиск в интернете",
+   "id": "Pencarian web",
+   "de": "Websuche",
+   "tr": "Web araması"
+  },
   "Week": {
    "zh-Hans": "一周",
    "hi": "सप्ताह",
@@ -8087,6 +10102,19 @@
    "id": "Apa pun bahasamu, ditempel dalam {0}.",
    "de": "Egal, in welcher Sprache du sprichst: Der Text wird auf {0} eingefügt.",
    "tr": "Hangi dilde konuşursan konuş, metin {0} dilinde yapıştırılır."
+  },
+  "WhatsApp (experimental)": {
+   "zh-Hans": "WhatsApp（实验性）",
+   "hi": "WhatsApp (प्रायोगिक)",
+   "es": "WhatsApp (experimental)",
+   "ar": "واتساب (تجريبي)",
+   "fr": "WhatsApp (expérimental)",
+   "bn": "WhatsApp (পরীক্ষামূলক)",
+   "pt-BR": "WhatsApp (experimental)",
+   "ru": "WhatsApp (экспериментально)",
+   "id": "WhatsApp (eksperimental)",
+   "de": "WhatsApp (experimentell)",
+   "tr": "WhatsApp (deneysel)"
   },
   "What’s new": {
    "zh-Hans": "新功能",
@@ -8296,6 +10324,19 @@
    "de": "Bei aktivierter Überarbeitung wird der Text mit deinem Claude-Schlüssel an Anthropic gesendet, niemals deine Stimme. Ist sie aus, bleibt alles auf deinem Mac.",
    "tr": "Düzenleme açıkken metin, Claude anahtarınla Anthropic'e gönderilir; sesin asla gönderilmez. Kapalıyken her şey Mac'inde kalır."
   },
+  "With your agents": {
+   "zh-Hans": "与智能体一起",
+   "hi": "एजेंटों के साथ",
+   "es": "Con tus agentes",
+   "ar": "مع وكلائك",
+   "fr": "Avec tes agents",
+   "bn": "এজেন্টদের সঙ্গে",
+   "pt-BR": "Com seus agentes",
+   "ru": "С агентами",
+   "id": "Bersama agenmu",
+   "de": "Mit deinen Agents",
+   "tr": "Ajanlarınla"
+  },
   "Without the “um” and the repeats, your tone kept.": {
    "zh-Hans": "去掉“嗯”和重复，保留你的语气。",
    "hi": "बिना “अं” और दोहराव के, आपका लहजा बना रहता है।",
@@ -8373,6 +10414,32 @@
    "id": "Alur kerja",
    "de": "Workflows",
    "tr": "İş akışları"
+  },
+  "Working folder": {
+   "zh-Hans": "工作文件夹",
+   "hi": "कार्य फ़ोल्डर",
+   "es": "Carpeta de trabajo",
+   "ar": "مجلد العمل",
+   "fr": "Dossier de travail",
+   "bn": "কাজের ফোল্ডার",
+   "pt-BR": "Pasta de trabalho",
+   "ru": "Рабочая папка",
+   "id": "Folder kerja",
+   "de": "Arbeitsordner",
+   "tr": "Çalışma klasörü"
+  },
+  "Workspace models": {
+   "zh-Hans": "工作区模型",
+   "hi": "वर्कस्पेस मॉडल",
+   "es": "Modelos del espacio de trabajo",
+   "ar": "نماذج مساحة العمل",
+   "fr": "Modèles de l'espace de travail",
+   "bn": "ওয়ার্কস্পেস মডেল",
+   "pt-BR": "Modelos do espaço de trabalho",
+   "ru": "Модели рабочего пространства",
+   "id": "Model ruang kerja",
+   "de": "Workspace-Modelle",
+   "tr": "Çalışma alanı modelleri"
   },
   "Write the summary": {
    "zh-Hans": "生成摘要",
@@ -8478,6 +10545,19 @@
    "de": "Gestern",
    "tr": "Dün"
   },
+  "You": {
+   "zh-Hans": "你",
+   "hi": "आप",
+   "es": "Tú",
+   "ar": "أنت",
+   "fr": "Toi",
+   "bn": "আপনি",
+   "pt-BR": "Você",
+   "ru": "Вы",
+   "id": "Kamu",
+   "de": "Du",
+   "tr": "Siz"
+  },
   "You have {0}": {
    "zh-Hans": "当前版本 {0}",
    "hi": "आपके पास {0} है",
@@ -8516,6 +10596,32 @@
    "id": "Kamu berbicara",
    "de": "Du sprichst",
    "tr": "Konuştuğun dil"
+  },
+  "Your Coucou so far": {
+   "zh-Hans": "你的 Coucou 至今",
+   "hi": "अब तक आपका Coucou",
+   "es": "Tu Coucou hasta ahora",
+   "ar": "Coucou الخاص بك حتى الآن",
+   "fr": "Ton Coucou jusqu’ici",
+   "bn": "এ পর্যন্ত আপনার Coucou",
+   "pt-BR": "Seu Coucou até agora",
+   "ru": "Ваш Coucou на сегодня",
+   "id": "Coucou-mu sejauh ini",
+   "de": "Dein Coucou bisher",
+   "tr": "Şimdiye kadar Coucou’n"
+  },
+  "Your GOWA gateway is set up": {
+   "zh-Hans": "你的 GOWA 网关已设置",
+   "hi": "आपका GOWA गेटवे सेट है",
+   "es": "Tu pasarela GOWA está configurada",
+   "ar": "بوابة GOWA الخاصة بك مُعدّة",
+   "fr": "Ta passerelle GOWA est configurée",
+   "bn": "আপনার GOWA গেটওয়ে সেট করা আছে",
+   "pt-BR": "Seu gateway GOWA está configurado",
+   "ru": "Ваш шлюз GOWA настроен",
+   "id": "Gateway GOWA-mu sudah diatur",
+   "de": "Eigenes GOWA-Gateway ist eingerichtet",
+   "tr": "GOWA ağ geçidiniz ayarlandı"
   },
   "Your Mac is hot": {
    "zh-Hans": "你的 Mac 很热",
@@ -8621,6 +10727,19 @@
    "de": "Deine Stimme wird mit der Spracherkennung deines Mac in Text umgewandelt, wenn unterstützt direkt auf dem Gerät; Coucou sendet sie nirgendwohin. Nach dem Einfügen wird der vorherige Inhalt der Zwischenablage wiederhergestellt.",
    "tr": "Sesin, Mac'inin konuşma tanıma özelliğiyle metne dönüştürülür; Mac'in destekliyorsa bu işlem cihazda yapılır. Coucou sesini hiçbir yere göndermez. Yapıştırmadan sonra pano önceki içeriğine döner."
   },
+  "You’re on Coucou {0}": {
+   "zh-Hans": "你已更新到 Coucou {0}",
+   "hi": "आप Coucou {0} पर हैं",
+   "es": "Ya tienes Coucou {0}",
+   "ar": "أنت الآن على Coucou {0}",
+   "fr": "Tu es sur Coucou {0}",
+   "bn": "আপনি এখন Coucou {0}-এ",
+   "pt-BR": "Você está no Coucou {0}",
+   "ru": "У вас Coucou {0}",
+   "id": "Kamu sekarang di Coucou {0}",
+   "de": "Du hast jetzt Coucou {0}",
+   "tr": "Artık Coucou {0} kullanıyorsun"
+  },
   "coding": {
    "zh-Hans": "编程",
    "hi": "कोडिंग",
@@ -8659,6 +10778,19 @@
    "id": "hari berturut-turut",
    "de": "Tage in Folge",
    "tr": "gün üst üste"
+  },
+  "devbox or user@host, as you type it after ssh": {
+   "zh-Hans": "devbox 或 user@host，与你在 ssh 后输入的一样",
+   "hi": "devbox या user@host, जैसा आप ssh के बाद लिखते हैं",
+   "es": "devbox o usuario@host, como lo escribes después de ssh",
+   "ar": "devbox أو user@host، كما تكتبه بعد ssh",
+   "fr": "devbox ou utilisateur@hôte, comme tu l'écris après ssh",
+   "bn": "devbox বা user@host, ssh-এর পরে যেভাবে লেখেন",
+   "pt-BR": "devbox ou usuario@host, como você digita depois de ssh",
+   "ru": "devbox или user@host, как вы пишете после ssh",
+   "id": "devbox atau user@host, seperti yang Anda ketik setelah ssh",
+   "de": "devbox oder Benutzer@Host, wie nach ssh eingegeben",
+   "tr": "devbox veya kullanıcı@ana-bilgisayar, ssh’den sonra yazdığınız gibi"
   },
   "failed": {
    "zh-Hans": "失败",
@@ -8764,6 +10896,19 @@
    "de": "gerade eben",
    "tr": "az önce"
   },
+  "macOS doesn’t let this build of Coucou read the Focus state yet: messages still arrive, Mochi keeps reacting.": {
+   "zh-Hans": "macOS 暂不允许此版本的 Coucou 读取专注状态：消息仍会到达，Mochi 仍会做出反应。",
+   "hi": "macOS अभी Coucou के इस बिल्ड को फ़ोकस की स्थिति पढ़ने नहीं देता: संदेश आते रहेंगे, Mochi प्रतिक्रिया देता रहेगा।",
+   "es": "macOS aún no deja a esta versión de Coucou leer el estado de Concentración: los mensajes siguen llegando y Mochi sigue reaccionando.",
+   "ar": "لا يسمح macOS بعد لهذا الإصدار من Coucou بقراءة حالة التركيز: تستمر الرسائل في الوصول ويستمر Mochi في التفاعل.",
+   "fr": "macOS ne laisse pas encore cette version de Coucou lire l’état Concentration : les messages arrivent quand même, Mochi continue de réagir.",
+   "bn": "macOS এখনও Coucou-র এই বিল্ডকে ফোকাসের অবস্থা পড়তে দেয় না: বার্তা আসতে থাকবে, Mochi সাড়া দিতে থাকবে।",
+   "pt-BR": "O macOS ainda não deixa esta versão do Coucou ler o estado do Foco: as mensagens continuam chegando e o Mochi continua reagindo.",
+   "ru": "macOS пока не даёт этой сборке Coucou читать состояние фокусирования: сообщения приходят, Mochi реагирует.",
+   "id": "macOS belum mengizinkan build Coucou ini membaca status Fokus: pesan tetap masuk, Mochi tetap bereaksi.",
+   "de": "macOS erlaubt diesem Build von Coucou noch nicht, den Fokus-Status zu lesen: Nachrichten kommen trotzdem an, Mochi reagiert weiter.",
+   "tr": "macOS, Coucou’nun bu derlemesinin Odak durumunu okumasına henüz izin vermiyor: iletiler yine gelir, Mochi tepki vermeye devam eder."
+  },
   "min without movement": {
    "zh-Hans": "分钟无动作",
    "hi": "मिनट बिना हलचल",
@@ -8802,6 +10947,19 @@
    "id": "baru saja",
    "de": "jetzt",
    "tr": "şimdi"
+  },
+  "pixels between the folded island's edges and Mochi or the pills": {
+   "zh-Hans": "收起的岛边缘与 Mochi 或标签页之间的像素",
+   "hi": "मुड़े हुए आइलैंड के किनारों और Mochi या टैब के बीच पिक्सेल",
+   "es": "píxeles entre los bordes de la isla plegada y Mochi o las pestañas",
+   "ar": "بكسلات بين حواف الشريط المطوي وMochi أو التبويبات",
+   "fr": "pixels entre les bords de l'île repliée et Mochi ou les onglets",
+   "bn": "ভাঁজ করা আইল্যান্ডের কিনারা আর Mochi বা ট্যাবের মধ্যে পিক্সেল",
+   "pt-BR": "pixels entre as bordas da ilha recolhida e o Mochi ou as abas",
+   "ru": "пикселей между краями свёрнутого острова и Mochi или вкладками",
+   "id": "piksel antara tepi pulau yang terlipat dan Mochi atau tab",
+   "de": "Pixel zwischen den Rändern der eingeklappten Insel und Mochi oder den Pills",
+   "tr": "katlanmış adanın kenarları ile Mochi veya pill’ler arasındaki piksel"
   },
   "presses this → island opens": {
    "zh-Hans": "按此键 → 岛打开",
@@ -8998,6 +11156,19 @@
    "de": "{0} Std. %02lld",
    "tr": "{0} sa %02lld"
   },
+  "{0} is not a folder.": {
+   "zh-Hans": "{0} 不是文件夹。",
+   "hi": "{0} फ़ोल्डर नहीं है।",
+   "es": "{0} no es una carpeta.",
+   "ar": "{0} ليس مجلدًا.",
+   "fr": "{0} n'est pas un dossier.",
+   "bn": "{0} কোনো ফোল্ডার নয়।",
+   "pt-BR": "{0} não é uma pasta.",
+   "ru": "{0} не является папкой.",
+   "id": "{0} bukan folder.",
+   "de": "{0} ist kein Ordner.",
+   "tr": "{0} bir klasör değil."
+  },
   "{0} min": {
    "zh-Hans": "{0} 分钟",
    "hi": "{0} मिनट",
@@ -9025,13 +11196,13 @@
    "tr": "{0} kaldırıldı"
   },
   "{0} unread": {
-   "zh-Hans": "{0} 封未读",
+   "zh-Hans": "{0} 条未读",
    "hi": "{0} अपठित",
    "es": "{0} sin leer",
    "ar": "{0} غير مقروءة",
-   "fr": "{0} non lus",
+   "fr": "{0} non lues",
    "bn": "{0} অপঠিত",
-   "pt-BR": "{0} não lidos",
+   "pt-BR": "{0} não lidas",
    "ru": "Непрочитанных: {0}",
    "id": "{0} belum dibaca",
    "de": "{0} ungelesen",
@@ -9516,6 +11687,19 @@
    "de": "✓ Statuszeile entfernt.",
    "tr": "✓ Durum satırı kaldırıldı."
   },
+  "✓ Timely connected.": {
+   "zh-Hans": "✓ 已连接 Timely。",
+   "hi": "✓ Timely कनेक्ट हो गया।",
+   "es": "✓ Timely conectado.",
+   "ar": "✓ تم الاتصال بـ Timely.",
+   "fr": "✓ Timely connecté.",
+   "bn": "✓ Timely সংযুক্ত হয়েছে।",
+   "pt-BR": "✓ Timely conectado.",
+   "ru": "✓ Timely подключён.",
+   "id": "✓ Timely terhubung.",
+   "de": "✓ Timely verbunden.",
+   "tr": "✓ Timely bağlandı."
+  },
   "❌ Select the .claude folder (hidden, in your Home directory).": {
    "zh-Hans": "❌ 请选择 .claude 文件夹（隐藏，在你的 Home 目录中）。",
    "hi": "❌ .claude फ़ोल्डर चुनें (छुपा हुआ, आपके Home डायरेक्टरी में)।",
@@ -9528,6 +11712,19 @@
    "id": "❌ Pilih folder .claude (tersembunyi, di direktori Home Anda).",
    "de": "❌ Wähle den Ordner .claude (versteckt in deinem Benutzerordner).",
    "tr": "❌ .claude klasörünü seç (ana dizinindeki gizli klasör)."
+  },
+  "❌ Timely did not accept the code. Check the client ID and secret, then connect again.": {
+   "zh-Hans": "❌ Timely 未接受该代码。请检查客户端 ID 和密钥，然后重新连接。",
+   "hi": "❌ Timely ने कोड स्वीकार नहीं किया। क्लाइंट ID और सीक्रेट जाँचें, फिर दोबारा कनेक्ट करें।",
+   "es": "❌ Timely no aceptó el código. Revisa el ID y el secreto de cliente y vuelve a conectar.",
+   "ar": "❌ لم يقبل Timely الرمز. تحقّق من معرّف العميل والسر ثم اتصل مجددًا.",
+   "fr": "❌ Timely a refusé le code. Vérifiez l'ID client et le secret, puis reconnectez-vous.",
+   "bn": "❌ Timely কোডটি গ্রহণ করেনি। ক্লায়েন্ট আইডি ও সিক্রেট যাচাই করে আবার সংযোগ করুন।",
+   "pt-BR": "❌ O Timely não aceitou o código. Confira o ID e o segredo do cliente e conecte de novo.",
+   "ru": "❌ Timely не принял код. Проверьте ID и секрет клиента и подключитесь снова.",
+   "id": "❌ Timely tidak menerima kode. Periksa ID dan rahasia klien, lalu hubungkan lagi.",
+   "de": "❌ Timely hat den Code nicht akzeptiert. Client-ID und Secret prüfen und erneut verbinden.",
+   "tr": "❌ Timely kodu kabul etmedi. İstemci kimliğini ve gizli anahtarı denetleyip yeniden bağlanın."
   }
  }
 }

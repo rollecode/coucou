@@ -8,12 +8,15 @@ import { Island } from "./island/island";
 import { registerHookHandlers } from "./island/hooks";
 import { registerPhoneLink } from "./island/phone-link";
 import { registerIntegrationHandlers, refreshConfigured } from "./island/integrations";
+import { registerCalendar } from "./island/calendar";
 import { registerShortcutHandlers } from "./island/shortcuts";
 import { registerVoiceHandlers } from "./island/voice";
 import { applySpotify, registerSpotifyHandlers } from "./island/spotify";
+import { registerWhatsAppHandlers } from "./island/whatsapp";
 import { SPOTIFY_ID } from "./core/spotify";
 import { Recap } from "./recap/recap";
 import { Updates } from "./island/update";
+import { WhatsNew } from "./whats-new/controller";
 import { onLanguageChange, resolveLanguage, setLanguage, systemLanguages } from "./i18n/i18n";
 
 /** Shows the language Settings asks for ("" = the system's, when Coucou has it). */
@@ -58,6 +61,7 @@ async function main() {
   await island.desktop.init();
 
   await onEvent<{ x: number; y: number }>("cursor", ({ x, y }) => island.onCursor(x, y));
+  await onEvent<{ x: number; y: number }>("pointer-global", ({ x, y }) => island.onGlobalPointer(x, y));
   await onEvent<boolean>("pointer-inside", (inside) => island.setPointerInside(inside));
 
   /** Pause has to reach Rust too, or the pollers keep calling out. */
@@ -98,6 +102,14 @@ async function main() {
     }
   });
 
+  // A call on another app: the island stays away and quiet (calls.rs).
+  const onCallSensors = (held: string[] | null) => {
+    State.callSensors = new Set(held ?? []);
+    island.syncCall();
+  };
+  await onEvent<string[]>("call-sensors", onCallSensors);
+  void Bridge.callSensors().then(onCallSensors).catch(() => {});
+
   const checkZoom = async () => {
     const dpr = window.devicePixelRatio || 1;
     await Bridge.fitZoom(dpr);
@@ -106,10 +118,22 @@ async function main() {
   await onEvent<null>("screen-changed", async () => {
     await checkZoom();
     void Bridge.reposition();
+    island.ensureRunning();
   });
 
-  const mediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
-  mediaQuery.addEventListener?.("change", () => void checkZoom());
+  // A query only matches the ratio it was made for: once it changes, watch the
+  // new one, or the next monitor's scale goes unnoticed and the zoom stays wrong.
+  // One frame redraws Mochi at the new ratio, even while the loop is idle.
+  const watchRatio = () => {
+    window
+      .matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+      .addEventListener?.("change", () => {
+        watchRatio();
+        void checkZoom();
+        island.ensureRunning();
+      }, { once: true });
+  };
+  watchRatio();
 
   window.addEventListener(
     "wheel",
@@ -128,6 +152,9 @@ async function main() {
   await onEvent<null>("sounds-changed", () => {
     void Sound.reload().then(() => Sound.play("pop"));
   });
+  // Clicking anywhere else on the desktop closes the island, the same way
+  // Escape already does.
+  await onEvent<null>("blur", () => island.onBlur());
 
   // The settings window writes preferences; apply them here without a restart.
   await onEvent<Settings>("settings-changed", (s) => {
@@ -144,9 +171,11 @@ async function main() {
   registerHookHandlers(island);
   registerPhoneLink(island);
   registerIntegrationHandlers(island);
+  registerCalendar(island);
   registerShortcutHandlers(island, () => setPaused(false));
   registerVoiceHandlers();
   registerSpotifyHandlers(island);
+  registerWhatsAppHandlers(island);
   // New versions: Rust offers the card, the island opens it when nothing else waits.
   await Updates.register(island);
   // Rust may have read Spotify before this page listened: ask once.
@@ -156,7 +185,14 @@ async function main() {
 
   // Monday recap: app start (greeting over), an agent starting work, waking up.
   const checkRecap = () => void Recap.check(island);
-  island.onGreetingDone = checkRecap;
+  // What's new, once after an update: when the greeting is over, or a few
+  // seconds in when there is no greeting (the card waits for a quiet island).
+  const whatsNew = () => void WhatsNew.launch(island);
+  island.onGreetingDone = () => {
+    checkRecap();
+    whatsNew();
+  };
+  window.setTimeout(whatsNew, 8000);
   island.onWake = checkRecap;
   await onEvent<null>("recap-check", checkRecap);
 

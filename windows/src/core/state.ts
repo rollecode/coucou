@@ -1,6 +1,6 @@
 // App state — mirror of AppState.swift (the parts the island needs).
 
-import type { BotEmoteName, BotStateName, IslandMode, IslandViewName } from "./layout";
+import { COMPACT_PADDING, type BotEmoteName, type CompactPadding, type BotStateName, type IslandMode, type IslandViewName } from "./layout";
 import type { EyeShape } from "../mochi/engine";
 import {
   DEFAULT_MAIN_PILL, HOST_OS, availablePills, orderPills, pillDefinition, sanitizeDeclared,
@@ -40,6 +40,9 @@ export interface AgentTask {
   /** Claude's final message after Stop, one line; cleared when a new turn starts. */
   finalLine?: string | null;
 }
+
+/** Requests that can wait for the island at once, the card on screen included (Mac ApprovalQueue.maxPending). */
+export const MAX_PENDING_APPROVALS = 5;
 
 export interface ApprovalInfo {
   requestId: string;
@@ -103,6 +106,18 @@ export interface Settings {
   autoCloseInterval: number;
   /** Hovering the island opens it all the way (off: hovering only peeks). */
   openOnHover: boolean;
+  /** Space between the folded island's edges and Mochi or the pills, px. */
+  compactPadding: CompactPadding;
+  /** The compact island hides a minute after the last activity; off, it stays. */
+  autoHide: boolean;
+  /** Each Claude Code file edit opens the island on its diff as it happens. */
+  followEdits: boolean;
+  /** Alerts that open the island instead of peeking: core/alerts.ts keys. Same as the Mac's "expandOnAlert". */
+  expandOnAlert: string[];
+  followActivity: boolean;
+  expandOnActivity: boolean;
+  /** The island steps aside while a full-screen app fills its display (src-tauri platform). */
+  hideInFullScreen: boolean;
   /** Date and time in the middle of the compact island. */
   showClock: boolean;
   absenceInterval: number;
@@ -122,6 +137,11 @@ export interface Settings {
   planRelayInstalled: boolean;
   /** Show the Codex plan pill in the island's header. */
   showCodexPlanInNotch: boolean;
+  compactShowAgents: boolean;
+  compactAgentsNumberOnly: boolean;
+  /** The agents count leaves out idle ones. */
+  compactAgentsWorkingOnly: boolean;
+  compactShowPlan: boolean;
   /** Who the chat talks to (see core/providers.ts); picked in the chat view. */
   chatProvider: ProviderId;
   /** The model picked for each provider other than Anthropic, by provider id. */
@@ -130,6 +150,10 @@ export interface Settings {
   ollamaUrl: string;
   lmstudioUrl: string;
   customUrl: string;
+  /** Open WebUI, which keeps the chats in its own history. */
+  openWebuiUrl: string;
+  /** Open WebUI searches the web for each question (its admin permitting). */
+  openWebuiWebSearch: boolean;
   /** Global shortcuts the user changed, by action id (see core/shortcuts.ts). */
   shortcuts: Bindings;
   /**
@@ -148,6 +172,10 @@ export interface Settings {
    * else English), or one of src/i18n's ten codes ("fr", "pt-BR", "zh-Hans"…).
    */
   language: string;
+  /** Settings → General → Calls: the island hides and goes silent while one of these is in use. */
+  quietOnCamera: boolean;
+  quietOnMic: boolean;
+  quietOnScreenShare: boolean;
   /**
    * The phone link for Coucou for Android is on. Rust owns it (only the switch in
    * Settings → Android phone turns it on): whatever the page sends back is ignored.
@@ -164,6 +192,13 @@ export interface Settings {
     onDesktop: boolean;
     spot: { x: number; y: number; space: string } | null;
   };
+  /** SSH destinations whose Claude Code sessions show in the island (remote.rs). */
+  remoteHosts: string[];
+  /** Claude Code in the chat: effort ("" = its own) and working folder ("" = Coucou's). */
+  claudeCodeEffort: string;
+  claudeCodeDir: string;
+  /** This install's id on remote hosts. Rust owns it: what the page sends back is ignored. */
+  remoteClientId: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -171,6 +206,13 @@ export const DEFAULT_SETTINGS: Settings = {
   soundVolume: 0.12,
   autoCloseInterval: 15,
   openOnHover: false,
+  compactPadding: COMPACT_PADDING,
+  autoHide: true,
+  followEdits: false,
+  expandOnAlert: [],
+  followActivity: false,
+  expandOnActivity: false,
+  hideInFullScreen: false,
   showClock: false,
   absenceInterval: 180,
   activeIntegrations: [
@@ -184,16 +226,36 @@ export const DEFAULT_SETTINGS: Settings = {
   showPlanInNotch: false,
   planRelayInstalled: false,
   showCodexPlanInNotch: false,
+  compactShowAgents: true,
+  compactAgentsNumberOnly: false,
+  compactAgentsWorkingOnly: false,
+  compactShowPlan: true,
   chatProvider: "anthropic",
   chatModels: {},
   ollamaUrl: "",
   lmstudioUrl: "",
   customUrl: "",
+  openWebuiUrl: "",
+  openWebuiWebSearch: true,
   shortcuts: {},
   mochiOutfit: DEFAULT_OUTFIT,
   pillColors: {},
   language: "",
+  remoteHosts: [],
+  claudeCodeEffort: "",
+  claudeCodeDir: "",
+  remoteClientId: "",
+  quietOnCamera: true,
+  quietOnMic: true,
+  quietOnScreenShare: true,
 };
+
+/** A call is on: one of `cam`, `mic`, `scr` held by another app, with its switch on. */
+export function callOn(settings: Settings, sensors: ReadonlySet<string>): boolean {
+  return (settings.quietOnCamera && sensors.has("cam"))
+    || (settings.quietOnMic && sensors.has("mic"))
+    || (settings.quietOnScreenShare && sensors.has("scr"));
+}
 
 type Listener = () => void;
 
@@ -201,6 +263,10 @@ type Listener = () => void;
 export const MAX_DIFFS_PER_PILL = 50;
 /** A pill's diffs are forgotten after an hour without a new one, as on macOS. */
 export const DIFF_TTL_MS = 3_600_000;
+/** Dynamic `coucou_agent` pills that may sit next to the declared ones at once. */
+export const MAX_AGENT_PILLS = 12;
+/** Chat bubbles kept in the island's history — dropped in whole turns. */
+export const MAX_CHAT_MESSAGES = 100;
 
 class AppState {
   mode: IslandMode = "hidden";
@@ -218,6 +284,12 @@ class AppState {
 
   isPinned = false;
   paused = false;
+  /** `cam`, `mic`, `scr` held by another app right now (calls.rs). */
+  callSensors: ReadonlySet<string> = new Set();
+  /** A call is on: nothing reveals, no alert, no sound, until it ends. */
+  get inCall(): boolean {
+    return callOn(this.settings, this.callSensors);
+  }
 
   uploadProgress = 0;
   uploadDuration = 2.4;
@@ -228,9 +300,35 @@ class AppState {
   noteMessage: string | null = null;
   searchResult: SearchResult | null = null;
   chatHistory: ChatMessage[] = [];
+  /** The chat's model picker is open: the chat view takes its full height. */
+  modelPickerOpen = false;
+  /** Bumped whenever chatHistory is reset or trimmed — chat views re-render fully. */
+  chatEpoch = 0;
   pendingApproval: ApprovalInfo | null = null;
+  /** Requests waiting behind the card on screen, oldest first (Mac ApprovalQueue). */
+  approvalQueue: ApprovalInfo[] = [];
   /** The pill that was in front when the card came up; it comes back after. */
   focusBeforeApproval: string | null = null;
+
+  /**
+   * One chat turn appended to the visible history. Once it grows past the cap
+   * the oldest turns are dropped in pairs, so a user bubble never loses its
+   * answer. Trimming bumps chatEpoch: the log was rendered from the longer
+   * array and can no longer be appended to.
+   */
+  addChat(message: ChatMessage) {
+    this.chatHistory.push(message);
+    while (this.chatHistory.length > MAX_CHAT_MESSAGES) {
+      this.chatHistory.splice(0, 2);
+      this.chatEpoch++;
+    }
+  }
+
+  /** The whole conversation forgotten (Ctrl+K, the provider switch reset). */
+  resetChat() {
+    this.chatHistory = [];
+    this.chatEpoch++;
+  }
 
   integrations: Record<string, IntegrationInfo> = {};
 
@@ -244,6 +342,16 @@ class AppState {
   planDetailIsCodex = false;
   /** Per-pill file diffs, in order of reception. Steps carry their ids. */
   sessionDiffs = new Map<string, FileDiff[]>();
+  /** The edit being followed live (Settings → Follow edits live). */
+  liveDiff: { pillId: string; diffId: number } | null = null;
+  /** Pills whose live diff was closed: not followed again until their next prompt. */
+  liveStopped = new Set<string>();
+
+  /** The live view was closed: that session is not followed until its next prompt. */
+  stopFollowing() {
+    if (this.liveDiff) this.liveStopped.add(this.liveDiff.pillId);
+    this.liveDiff = null;
+  }
   private sessionDiffTimers = new Map<string, number>();
   /** Never reset, so an id can never point at a newer diff than the one tapped. */
   private nextDiffId = 0;
@@ -296,6 +404,23 @@ class AppState {
     return this.tasks.filter((t) => t.id !== this.focusId);
   }
 
+  /**
+   * The pills that are not in front, the ones with something going on first:
+   * an alert, then a running session, then the rest in their usual order.
+   */
+  get othersByActivity(): AgentTask[] {
+    const rank = (t: AgentTask) => {
+      if (t.pillBadge) return 0;
+      if (t.state === "approval" || t.state === "question" || t.state === "error") return 0;
+      if (t.state === "working" || t.state === "thinking" || t.state === "searching") return 1;
+      return 2;
+    };
+    return this.otherTasks
+      .map((t, i) => ({ t, i }))
+      .sort((a, b) => rank(a.t) - rank(b.t) || a.i - b.i)
+      .map(({ t }) => t);
+  }
+
   setFocus(id: string) {
     const t = this.tasks.find((x) => x.id === id);
     if (!t) return;
@@ -309,6 +434,28 @@ class AppState {
    * A permission card or a question comes up: its pill comes to the front, and
    * the pill that was there is remembered (HookServer.focusBeforeApproval).
    */
+  /** The card on screen and the requests waiting behind it. */
+  get approvalCount(): number {
+    return (this.pendingApproval ? 1 : 0) + this.approvalQueue.length;
+  }
+
+  /** Puts a request behind the card on screen; false when MAX_PENDING_APPROVALS are already waiting. */
+  queueApproval(info: ApprovalInfo): boolean {
+    if (this.approvalCount >= MAX_PENDING_APPROVALS) return false;
+    this.approvalQueue.push(info);
+    this.notify();
+    return true;
+  }
+
+  /** Takes waiting requests out of the queue (never the card on screen) and returns them. */
+  unqueueApprovals(match: (info: ApprovalInfo) => boolean): ApprovalInfo[] {
+    const gone = this.approvalQueue.filter(match);
+    if (gone.length === 0) return gone;
+    this.approvalQueue = this.approvalQueue.filter((a) => !match(a));
+    this.notify();
+    return gone;
+  }
+
   beginApproval(info: ApprovalInfo) {
     this.pendingApproval = info;
     this.isPinned = true;
@@ -324,9 +471,17 @@ class AppState {
     const req = this.pendingApproval;
     if (!req) return;
     this.pendingApproval = null;
-    this.isPinned = false;
     this.updateTask(req.pillId, "working");
     this.setPillBadge(req.pillId, null);
+    // The next waiting request takes the card; the pill you were on comes back
+    // only once the queue is empty.
+    const next = this.approvalQueue.shift();
+    if (next) {
+      this.beginApproval(next);
+      this.updateTask(next.pillId, next.questions ? "question" : "approval");
+      return;
+    }
+    this.isPinned = false;
     const previous = this.focusBeforeApproval;
     this.focusBeforeApproval = null;
     if (previous && this.focusId === req.pillId && this.tasks.some((t) => t.id === previous)) {
@@ -457,11 +612,24 @@ class AppState {
 
   /**
    * Creates the pill of a tagged agent on its first event; no-op if it exists.
-   * Inserted right after the main pill so it is in the visible slice(0,4). A
+   * Inserted right after the main pill so it is among the first shown. A
    * catalog agent wears its catalog colour, as on macOS.
    */
   upsertExternalAgent(id: string, name: string, color: string) {
     if (this.tasks.some((t) => t.id === id)) return;
+    // Dynamic pills are created per coucou_agent tag and dropped on SessionEnd,
+    // so a tag whose session never ended would leak its pill forever. Past the
+    // cap, drop the oldest one that is not running — a busy pill owns a live
+    // session and its next event would recreate it anyway.
+    const dynamic = this.tasks.filter(
+      (t) => t.source === "agent" && !t.isIntegration && !this.isKept(t.id),
+    );
+    if (dynamic.length >= MAX_AGENT_PILLS) {
+      const BUSY: ReadonlySet<BotStateName> = new Set(["working", "thinking", "searching", "approval", "question"]);
+      const stale = dynamic.find((t) => !BUSY.has(t.state));
+      if (!stale) return; // every slot is a live session: this tag gets no pill
+      this.removeTask(stale.id);
+    }
     const def = pillDefinition(id);
     this.insertAfterMain({
       id, name, color: def ? pillColor(def.id, def.color, this.settings.pillColors) : color,
@@ -495,7 +663,7 @@ class AppState {
     this.notify();
   }
 
-  /** Declares or undeclares a pill (max 4 next to the main one). */
+  /** Declares or undeclares a pill. */
   toggleIntegration(id: string) {
     const next = toggleDeclared(sanitizeDeclared(this.settings, this.os), id, this.os);
     if (!next) return;

@@ -146,8 +146,8 @@ pub async fn send(
     let key = secrets::get(KEY).ok_or_else(|| t("API key missing. Open settings."))?;
     let endpoint = endpoint()?;
 
-    let turn = chat.begin(chat::ANTHROPIC);
-    let user = json!({ "role": "user", "content": user_content(turn.first, context.as_ref(), &query) });
+    let turn = chat.begin(chat::ANTHROPIC, context.as_ref());
+    let user = json!({ "role": "user", "content": user_content(turn.attach, context.as_ref(), &query) });
     let body = request_body(model, &chat::system_prompt(true), &turn.history, &user);
 
     let response = call(&endpoint, &key, &body).await?;
@@ -155,7 +155,7 @@ pub async fn send(
 
     // Store the whole content — tool_use / tool_result blocks included — so the
     // next turn has the right context.
-    let plain = chat::plain_question(turn.first, context.as_ref(), &query);
+    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
     chat.commit(&turn, user, json!({ "role": "assistant", "content": blocks }), &plain, &text);
     Ok(ChatReply { text })
 }
@@ -251,7 +251,7 @@ fn parse_models(json: &Value) -> Vec<ModelInfo> {
         .filter_map(|m| {
             let id = m.get("id")?.as_str()?.to_string();
             let label = m.get("display_name").and_then(Value::as_str).unwrap_or(&id).to_string();
-            Some(ModelInfo { id, label })
+            Some(ModelInfo { id, label, group: None })
         })
         .collect()
 }
@@ -408,8 +408,8 @@ mod tests {
         assert_eq!(
             parse_models(&list),
             vec![
-                ModelInfo { id: "claude-opus-5".into(), label: "Claude Opus 5".into() },
-                ModelInfo { id: "claude-x".into(), label: "claude-x".into() },
+                ModelInfo { id: "claude-opus-5".into(), label: "Claude Opus 5".into(), group: None },
+                ModelInfo { id: "claude-x".into(), label: "claude-x".into(), group: None },
             ]
         );
     }

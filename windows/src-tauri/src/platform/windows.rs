@@ -5,18 +5,22 @@ use std::os::windows::io::RawHandle;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 use ::windows::core::{w, BOOL, PWSTR};
 use ::windows::Win32::Foundation::{
-    CloseHandle, HANDLE, HLOCAL, HWND, LPARAM, LocalFree, POINT, RPC_E_CHANGED_MODE,
+    CloseHandle, HANDLE, HLOCAL, HWND, LPARAM, LocalFree, POINT, RECT, RPC_E_CHANGED_MODE,
 };
+use ::windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
 use ::windows::Win32::Security::Authorization::ConvertSidToStringSidW;
 use ::windows::Win32::Security::{GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER};
 use ::windows::Win32::System::Com::{
     CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE,
 };
+use ::windows::Win32::UI::Accessibility::{SetWinEventHook, HWINEVENTHOOK};
 use ::windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
 };
@@ -32,10 +36,11 @@ use ::windows::Win32::UI::Shell::{
     ShellExecuteExW, SHELLEXECUTEINFOW, SEE_MASK_FLAG_NO_UI, SEE_MASK_NOASYNC,
 };
 use ::windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetClassNameW, GetCursorPos, GetWindow, GetWindowLongPtrW,
-    GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetForegroundWindow,
-    SetWindowLongPtrW, ShowWindow, GWL_EXSTYLE, GW_OWNER, SW_RESTORE, SW_SHOWNORMAL, WS_EX_NOACTIVATE,
-    WS_EX_TOOLWINDOW,
+    EnumChildWindows, EnumWindows, GetClassNameW, GetCursorPos, GetForegroundWindow, GetShellWindow,
+    GetWindow, GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
+    IsWindowVisible, SetForegroundWindow, SetWindowLongPtrW, ShowWindow, CHILDID_SELF,
+    EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, GW_OWNER, OBJID_WINDOW,
+    SW_RESTORE, SW_SHOWNORMAL, WINEVENT_OUTOFCONTEXT, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
 };
 
 use super::LocalTime;
@@ -270,6 +275,19 @@ fn local_full_name() -> Option<String> {
 /// The 60 Hz poll reads the cursor and flips click-through from it.
 pub const CURSOR_POLL: bool = true;
 
+/// Linux only: Windows reads the cursor itself (`cursor_physical`).
+pub struct PointerSource;
+
+pub fn pointer_source() -> Option<PointerSource> {
+    None
+}
+
+impl PointerSource {
+    pub fn read(&self) -> Option<(f64, f64)> {
+        None
+    }
+}
+
 /// Cursor position in physical screen pixels.
 pub fn cursor_physical() -> Option<(f64, f64)> {
     let mut p = POINT::default();
@@ -355,6 +373,83 @@ pub fn set_input_region(_win: &WebviewWindow, _rect: Option<(f64, f64, f64, f64)
 /// The cursor poll already parks itself with the island (island.rs): nothing to do.
 pub fn set_pointer_watch(_active: bool) {}
 
+/// The island follows display changes through its layout watch (island.rs).
+pub fn on_monitor_added(_f: impl Fn() + 'static) {}
+// ── Hide in full screen ───────────────────────────────────────────────────────
+
+static FULL_SCREEN_APP: OnceLock<AppHandle> = OnceLock::new();
+static HIDE_IN_FULL_SCREEN: AtomicBool = AtomicBool::new(false);
+/// True while the island is hidden because a window fills its display.
+static HIDDEN_FOR_FULL_SCREEN: AtomicBool = AtomicBool::new(false);
+
+/// Settings → General → Hide in full screen: the island steps aside while the
+/// foreground window fills its display. Main thread (the hooks report to its message loop).
+pub fn hide_in_full_screen(app: &AppHandle, on: bool) {
+    HIDE_IN_FULL_SCREEN.store(on, Ordering::Relaxed);
+    if on && FULL_SCREEN_APP.set(app.clone()).is_ok() {
+        // Out of context: nothing is loaded into other apps, and a location change
+        // catches a video going full screen without the foreground changing.
+        for event in [EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_LOCATIONCHANGE] {
+            unsafe { SetWinEventHook(event, event, None, Some(on_window_event), 0, 0, WINEVENT_OUTOFCONTEXT) };
+        }
+    }
+    follow_full_screen();
+}
+
+unsafe extern "system" fn on_window_event(
+    _: HWINEVENTHOOK, event: u32, hwnd: HWND, id_object: i32, id_child: i32, _: u32, _: u32,
+) {
+    // Carets and scroll bars move all the time: only the foreground window itself counts.
+    if event == EVENT_OBJECT_LOCATIONCHANGE
+        && (id_object != OBJID_WINDOW.0 || id_child != CHILDID_SELF as i32 || hwnd != unsafe { GetForegroundWindow() })
+    {
+        return;
+    }
+    follow_full_screen();
+}
+
+fn follow_full_screen() {
+    let Some(app) = FULL_SCREEN_APP.get() else { return };
+    let Some(win) = app.get_webview_window(crate::island::WINDOW_LABEL) else { return };
+    let cover = HIDE_IN_FULL_SCREEN.load(Ordering::Relaxed) && hwnd_of(&win).is_some_and(foreground_fills);
+    if HIDDEN_FOR_FULL_SCREEN.swap(cover, Ordering::Relaxed) == cover {
+        return;
+    }
+    let _ = if cover { win.hide() } else { win.show() };
+}
+
+/// The foreground window, neither ours nor the desktop, covers the island's whole display.
+fn foreground_fills(island: HWND) -> bool {
+    unsafe {
+        let fg = GetForegroundWindow();
+        if fg.is_invalid() || fg == GetShellWindow() || matches!(class_of(fg).as_str(), "WorkerW" | "Progman") {
+            return false;
+        }
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(fg, Some(&mut pid));
+        if pid == std::process::id() {
+            return false;
+        }
+        let monitor = MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST);
+        if monitor != MonitorFromWindow(island, MONITOR_DEFAULTTONEAREST) {
+            return false;
+        }
+        let mut info = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
+        let mut rect = RECT::default();
+        if !GetMonitorInfoW(monitor, &mut info).as_bool() || GetWindowRect(fg, &mut rect).is_err() {
+            return false;
+        }
+        let m = info.rcMonitor;
+        rect.left <= m.left && rect.top <= m.top && rect.right >= m.right && rect.bottom >= m.bottom
+    }
+}
+
+fn class_of(hwnd: HWND) -> String {
+    let mut name = [0u16; 64];
+    let len = unsafe { GetClassNameW(hwnd, &mut name) };
+    String::from_utf16_lossy(&name[..len.max(0) as usize])
+}
+
 /// `set_position` already places a Win32 window on the right display.
 pub fn pin_to_monitor(_win: &WebviewWindow, _x: i32, _y: i32) {}
 
@@ -368,6 +463,39 @@ pub fn pipe_client_pid(handle: RawHandle) -> Option<u32> {
     let mut pid = 0u32;
     unsafe { GetNamedPipeClientProcessId(HANDLE(handle), &mut pid).ok()? };
     (pid != 0).then_some(pid)
+}
+
+/// True when `pid` is the deployed relay binary — the only process allowed to
+/// raise an Allow/Deny card on the island (see pipe.rs). Compared by resolved
+/// image path, case-insensitively.
+pub fn exe_is_hook(pid: u32) -> bool {
+    use ::windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    let Some(want) = std::fs::canonicalize(crate::settings::hook_exe_path()).ok() else {
+        return false;
+    };
+    unsafe {
+        let Ok(proc) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) else {
+            return false;
+        };
+        let mut buf = vec![0u16; 32768];
+        let mut len = buf.len() as u32;
+        let ok = QueryFullProcessImageNameW(proc, PROCESS_NAME_WIN32, PWSTR(buf.as_mut_ptr()), &mut len).is_ok();
+        let _ = CloseHandle(proc);
+        if !ok {
+            return false;
+        }
+        let got = PathBuf::from(String::from_utf16_lossy(&buf[..len as usize]));
+        // canonicalize() emits \\?\C:\… — QueryFullProcessImageNameW does not.
+        let strip = |p: &std::path::Path| {
+            p.to_string_lossy()
+                .trim_start_matches(r"\\?\")
+                .to_lowercase()
+        };
+        strip(&got) == strip(&want)
+    }
 }
 
 /// Every process, by ID: its parent and its executable's name.
@@ -629,6 +757,19 @@ pub fn layer_display(_island: &WebviewWindow, _mochi: &WebviewWindow) -> Option<
     None
 }
 
+/// Sessions are only discovered on Linux so far: Windows learns of one at its
+/// first hook event.
+pub fn claude_processes() -> Vec<(u32, String)> {
+    Vec::new()
+}
+
+pub fn farthest_named(_ancestors: &[u32], _name: &str) -> Option<u32> {
+    None
+}
+
+pub fn tmux_session_name(_pid: u32) -> Option<String> {
+    None
+}
 // ── Flow dictation's pill ─────────────────────────────────────────────────────
 // On Windows the pill is placed with set_position and a cursor poll decides
 // click-through (flow/pill.rs), like the island.

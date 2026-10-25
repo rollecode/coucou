@@ -11,15 +11,32 @@ pub const KNOWN_KEYS: &[&str] = &[
     "openai-api-key",
     "google-api-key",
     "openrouter-api-key",
+    "deepseek-api-key",
+    "qwen-api-key",
+    "moonshot-api-key",
     "openai-compatible-key",
+    "open-webui-key",
     "n8n-url",
     "n8n-api-key",
     "vercel-token",
     "github-token",
+    "gitlab-url",
+    "gitlab-token",
+    "gitea-url",
+    "gitea-token",
     "stripe-api-key",
     "resend-api-key",
     "notion-api-key",
     "calcom-api-key",
+    "calendar-ical-url",
+    "timely-client-id",
+    "timely-client-secret",
+    "timely-access-token",
+    "timely-refresh-token",
+    "slack-token",
+    "betterstack-token",
+    "betterstack-team",
+    "linear-api-key",
     // « OK Coucou »'s answers in an ElevenLabs voice.
     "elevenlabs-api-key",
 ];
@@ -58,7 +75,8 @@ pub fn present(key: &str) -> bool {
 
 // ── Entries only Rust reads and writes ───────────────────────────────────────
 //
-// The phone link's certificate, key and pairing token, and the relay's room, end-to-end key and access key.
+// The phone link's certificate, key and pairing token, the relay's room, end-to-end key and access key,
+// and WhatsApp's gateway address, credential and webhook secret.
 // They are not in KNOWN_KEYS
 // on purpose: the island has `secret_present` / `secret_set` / `secret_clear`
 // for those, and none of the three may be reachable from a webview.
@@ -71,11 +89,35 @@ pub const INTERNAL_KEYS: &[&str] = &[
     "phone-relay-room",
     "phone-relay-key",
     "phone-relay-access",
+    // WhatsApp's gateway address, its credential (GOWA's user:password or OpenWA's API key) and
+    // the webhook's signing secret: set from Settings through whatsapp_save_gateway, read by Rust only.
+    "whatsapp-url",
+    "whatsapp-api-key",
+    "whatsapp-webhook-secret",
+];
+
+/// The Portfolio pill's exchange keys, also Rust's only: portfolio.rs stores them after Test & Save.
+pub const PORTFOLIO_KEYS: &[&str] = &[
+    "portfolio-binance-key",
+    "portfolio-binance-secret",
+    "portfolio-binance-passphrase",
+    "portfolio-okx-key",
+    "portfolio-okx-secret",
+    "portfolio-okx-passphrase",
+    "portfolio-bybit-key",
+    "portfolio-bybit-secret",
+    "portfolio-bybit-passphrase",
+    "portfolio-kraken-key",
+    "portfolio-kraken-secret",
+    "portfolio-kraken-passphrase",
+    "portfolio-coinbase-key",
+    "portfolio-coinbase-secret",
+    "portfolio-coinbase-passphrase",
 ];
 
 /// Whether the keystore would accept this key through `get_internal` / `set_internal`.
 pub fn is_internal(key: &str) -> bool {
-    INTERNAL_KEYS.contains(&key)
+    INTERNAL_KEYS.contains(&key) || PORTFOLIO_KEYS.contains(&key)
 }
 
 fn internal_entry(key: &str) -> Result<Entry, String> {
@@ -109,7 +151,7 @@ mod tests {
     fn the_phone_links_secrets_cannot_be_reached_from_the_island() {
         // The island's commands go through `get`/`set`/`clear`/`present`, which
         // only know KNOWN_KEYS.
-        for key in INTERNAL_KEYS {
+        for key in INTERNAL_KEYS.iter().chain(PORTFOLIO_KEYS) {
             assert!(!KNOWN_KEYS.contains(key), "{key}");
             assert!(entry(key).is_none(), "{key}");
             assert!(set(key, "x").is_err(), "{key}");

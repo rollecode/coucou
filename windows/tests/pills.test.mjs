@@ -3,7 +3,7 @@
 import { beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  DEFAULT_MAIN_PILL, MAX_DECLARED, PILL_CATALOG, PILL_CATEGORIES, availablePills, chooseMainPill,
+  DEFAULT_MAIN_PILL, PILL_CATALOG, PILL_CATEGORIES, availablePills, chooseMainPill,
   isComingSoon, isHookPill, mainPillChoices, orderPills, pillDefinition, sanitizeDeclared, sessionSubtitle,
   toggleDeclared,
 } from "../src/core/pills.ts";
@@ -24,6 +24,7 @@ test("the catalog holds the Mac's pills with the Claude Code label for Windows a
     ["agent_cursor", "Cursor", "#C0C4CC", "workspace", "Integration"],
     ["agent_antigravity", "Antigravity", "#E879F9", "workspace", "Integration"],
     ["agent_codex", "Codex", "#2DD4BF", "workspace", "Integration"],
+    ["workspace_claude", "Claude Code", "#E07950", "workspace", "Terminal"],
     ["agent_gemini", "Gemini CLI", "#8AB4F8", "agent", "Agent"],
     ["agent_copilot", "Copilot CLI", "#818CF8", "agent", "Agent"],
     ["agent_muse", "Muse Code", "#38BDF8", "agent", "Agent"],
@@ -42,17 +43,39 @@ test("the catalog holds the Mac's pills with the Claude Code label for Windows a
     ["integration_github", "GitHub", "#F4505E", "service", "Integration"],
     ["integration_notion", "Notion", "#8C8C8C", "service", "Integration"],
     ["integration_calcom", "Cal.com", "#C9956A", "service", "Integration"],
+    ["integration_calendar", "Calendar", "#4F9DF7", "service", "Integration"],
     ["integration_stripe", "Stripe", "#0570DE", "service", "Integration"],
+    ["integration_timely", "Timely", "#F5A524", "service", "Integration"],
+    ["integration_slack", "Slack", "#E01E5A", "service", "Integration"],
+    ["integration_betterstack", "Better Stack", "#5B5FEF", "service", "Integration"],
+    ["integration_linear", "Linear", "#5E6AD2", "service", "Integration"],
     ["integration_music", "Apple Music", "#FA2D48", "service", "Integration"],
     ["integration_spotify", "Spotify", "#1DB954", "service", "Integration"],
+    ["integration_portfolio", "Portfolio", "#FFD700", "service", "Integration"],
+    ["integration_whatsapp", "WhatsApp", "#25D366", "service", "Integration"],
   ];
   assert.deepEqual(
-    PILL_CATALOG.map((p) => [p.id, p.name, p.color, p.category, p.subtitle]),
+    PILL_CATALOG.filter((p) => !["integration_gitlab", "integration_gitea"].includes(p.id))
+      .map((p) => [p.id, p.name, p.color, p.category, p.subtitle]),
     mac,
   );
   assert.deepEqual(PILL_CATEGORIES.map((c) => c.title), [
     "Where you code", "Agents", "AI for the chat", "Services",
   ]);
+});
+
+test("GitLab is a supported service integration", () => {
+  const def = pillDefinition("integration_gitlab");
+  assert.deepEqual([def.name, def.color, def.category, def.support], ["GitLab", "#FC6D26", "service", "yes"]);
+  assert.ok(!isComingSoon("integration_gitlab"));
+});
+
+test("Gitea is an available service pill", () => {
+  assert.deepEqual(
+    pillDefinition("integration_gitea"),
+    { id: "integration_gitea", name: "Gitea", color: "#609926", category: "service",
+      subtitle: "Integration", source: "n8n", support: "yes", connect: { kind: "key", key: "gitea-token" } },
+  );
 });
 
 test("the shipped pills keep their IDs, colours and sources with current display names", () => {
@@ -134,9 +157,10 @@ test("no chat provider that works here says Coming soon", () => {
 
 test("the main pill is a workspace tool that works here", () => {
   assert.deepEqual(mainPillChoices("linux").map((p) => p.id), [
-    "integration_claude", "agent_cursor", "agent_antigravity", "agent_codex",
+    "integration_claude", "agent_cursor", "agent_antigravity", "agent_codex", "workspace_claude",
   ]);
   assert.equal(DEFAULT_MAIN_PILL, "integration_claude");
+  assert.equal(sessionSubtitle("workspace_claude"), "Claude Code");
 });
 
 test("hook-driven pills are the workspace tools and the agents with hooks", () => {
@@ -176,14 +200,14 @@ test("a declaration from an older or edited settings file is made usable", () =>
     "integration_claude");
 });
 
-test("up to four pills next to the main one, never the main one itself", () => {
+test("any number of pills next to the main one, never the main one itself", () => {
   const d = {
     mainPill: "integration_claude",
     activeIntegrations: ["integration_n8n", "integration_github", "integration_stripe"],
   };
   const four = toggleDeclared(d, "agent_gemini", "linux");
-  assert.equal(four.length, MAX_DECLARED);
-  assert.equal(toggleDeclared({ ...d, activeIntegrations: four }, "ai_anthropic", "linux"), null);
+  assert.equal(four.length, 4);
+  assert.equal(toggleDeclared({ ...d, activeIntegrations: four }, "ai_anthropic", "linux").length, 5);
   assert.equal(toggleDeclared(d, "integration_claude", "linux"), null);
   assert.equal(toggleDeclared(d, "integration_music", "linux"), null);
   assert.equal(toggleDeclared(d, "agent_claude-desktop", "linux"), null);
@@ -292,14 +316,14 @@ test("a Claude Code session gets its pill even when it is not loaded", () => {
   assert.equal(State.upsertWorkspacePill("not_a_pill", "x", ""), null);
 });
 
-test("toggling declares up to four pills and never the main one", () => {
+test("toggling declares any number of pills and never the main one", () => {
   State.settings.activeIntegrations = [];
   State.loadIntegrationTasks();
   for (const id of ["integration_n8n", "agent_gemini", "ai_anthropic", "integration_stripe", "integration_github"]) {
     State.toggleIntegration(id);
   }
   assert.deepEqual(State.settings.activeIntegrations, [
-    "integration_n8n", "agent_gemini", "ai_anthropic", "integration_stripe",
+    "integration_n8n", "agent_gemini", "ai_anthropic", "integration_stripe", "integration_github",
   ]);
   State.toggleIntegration("integration_claude");
   assert.ok(ids().includes("integration_claude"));
@@ -307,6 +331,18 @@ test("toggling declares up to four pills and never the main one", () => {
   State.toggleIntegration("agent_gemini");
   assert.ok(!ids().includes("agent_gemini"));
   assert.equal(State.focusId, "integration_claude");
+});
+
+test("both grids put alerts and running sessions first", () => {
+  State.settings.activeIntegrations = ["integration_n8n", "agent_gemini", "ai_anthropic", "integration_stripe", "integration_github"];
+  State.loadIntegrationTasks();
+  State.setFocus("integration_claude");
+  const byId = (id) => State.tasks.find((t) => t.id === id);
+  byId("integration_github").state = "working";
+  byId("integration_stripe").pillBadge = "finished";
+  assert.deepEqual(State.othersByActivity.map((t) => t.id).slice(0, 2), ["integration_stripe", "integration_github"]);
+  assert.deepEqual(State.othersByActivity.slice(2).map((t) => t.id),
+    State.otherTasks.filter((t) => t.id !== "integration_stripe" && t.id !== "integration_github").map((t) => t.id));
 });
 
 test("Claude Code is named after the agent in main-tool choices on both platforms", () => {

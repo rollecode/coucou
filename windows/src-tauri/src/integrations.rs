@@ -1,5 +1,6 @@
 // Integration pollers — the Rust side of StripePoller / GithubPoller /
-// VercelPoller / N8nPoller / ResendPoller / NotionPoller / CalcomPoller.
+// VercelPoller / N8nPoller / ResendPoller / NotionPoller / CalcomPoller /
+// LinearPoller / TimelyPoller (SlackPoller is in slack.rs).
 //
 // Same endpoints, same first-run delays and intervals as the Swift pollers. Each
 // one emits an `integration` event; the island owns the badge, the sound and the
@@ -17,9 +18,10 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Notify;
 
-use crate::github::{self, GitHubActivity, GitHubPulse};
+use crate::github::{self, CiState, ContributionDay, GitHubActivity, GitHubPr, GitHubPulse, GitHubRepoCi, ReviewState};
 use crate::island::WINDOW_LABEL;
 use crate::log;
+use crate::portfolio;
 use crate::secrets;
 
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -43,11 +45,11 @@ pub struct IntegrationEvent {
     pub detail: Option<String>,
 }
 
-fn emit(app: &AppHandle, update: IntegrationUpdate) {
+pub(crate) fn emit(app: &AppHandle, update: IntegrationUpdate) {
     let _ = app.emit_to(WINDOW_LABEL, "integration", update);
 }
 
-fn client() -> reqwest::Client {
+pub(crate) fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(TIMEOUT)
         .build()
@@ -69,9 +71,17 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_stripe", 6, 30, poll_stripe);
     spawn(app.clone(), "integration_resend", 6, 60, poll_resend);
     spawn(app.clone(), "integration_github", 7, 300, poll_github);
+    spawn(app.clone(), "integration_gitlab", 7, 300, poll_gitlab);
+    spawn(app.clone(), "integration_gitea", 7, 300, poll_gitea);
     spawn_github_loops(app.clone());
     spawn(app.clone(), "integration_calcom", 8, 300, poll_calcom);
-    spawn(app, "integration_notion", 9, 300, poll_notion);
+    spawn(app.clone(), "integration_notion", 9, 300, poll_notion);
+    spawn(app.clone(), "integration_linear", 11, 60, poll_linear);
+    spawn(app.clone(), "integration_betterstack", 10, 60, poll_betterstack);
+    spawn(app.clone(), "integration_slack", 10, 60, crate::slack::poll);
+    spawn(app.clone(), TIMELY, 9, 60, poll_timely);
+    spawn(app.clone(), "integration_calendar", 10, 300, poll_calendar);
+    spawn(app, portfolio::PILL_ID, 4, 120, poll_portfolio);
 }
 
 /// True when the user has this integration switched on in settings.
@@ -115,13 +125,264 @@ pub async fn poll_once(app: AppHandle, id: &str) {
             github_refresh_if_stale("activity");
             poll_github(app).await
         }
+        "integration_gitlab" => poll_gitlab(app).await,
+        "integration_gitea" => poll_gitea(app).await,
         "integration_vercel" => poll_vercel(app).await,
         "integration_n8n" => poll_n8n(app).await,
         "integration_resend" => poll_resend(app).await,
         "integration_notion" => poll_notion(app).await,
         "integration_calcom" => poll_calcom(app).await,
+        "integration_calendar" => poll_calendar(app).await,
+        TIMELY => poll_timely(app).await,
+        "integration_slack" => crate::slack::poll(app).await,
+        "integration_betterstack" => poll_betterstack(app).await,
+        "integration_linear" => poll_linear(app).await,
+        portfolio::PILL_ID => poll_portfolio(app).await,
         _ => {}
     }
+}
+
+// ── GitLab ───────────────────────────────────────────────────────────────────
+fn gitea_api_base() -> Option<String> {
+    let url = secrets::get("gitea-url")?;
+    let parsed = reqwest::Url::parse(url.trim()).ok()?;
+    if !matches!(parsed.scheme(), "http" | "https") || parsed.host_str().is_none() {
+        return None;
+    }
+    Some(format!("{}/api/v1", parsed.as_str().trim_end_matches('/')))
+}
+
+async fn poll_gitea(app: AppHandle) {
+    if PAUSED.load(Ordering::Relaxed) || !enabled(&app, "integration_gitea") { return; }
+    let (Some(token), Some(base)) = (secrets::get("gitea-token"), gitea_api_base()) else { return };
+    let Ok(http) = reqwest::Client::builder().timeout(TIMEOUT)
+        .redirect(reqwest::redirect::Policy::none()).build() else { return };
+    let user = http.get(format!("{base}/user")).header("Authorization", format!("token {token}")).send().await;
+    let Ok(response) = user else { return };
+    if !response.status().is_success() {
+        emit(&app, IntegrationUpdate { id: "integration_gitea", data: json!({}),
+            error: Some(status_error(response.status().as_u16(), &crate::i18n::t("Token lacks the needed scope"))), event: None });
+        return;
+    }
+    let user: Value = response.json().await.unwrap_or(json!({}));
+    let repos_response = http.get(format!("{base}/user/repos?limit=100&sort=updated"))
+        .header("Authorization", format!("token {token}")).send().await;
+    let repos: Vec<Value> = match repos_response {
+        Ok(r) if r.status().is_success() => r.json().await.unwrap_or_default(),
+        _ => Vec::new(),
+    };
+    let stars: i64 = repos.iter().filter_map(|r| r.get("stars_count").and_then(Value::as_i64)).sum();
+    let open_prs: i64 = repos.iter().filter_map(|r| r.get("open_pr_counter").and_then(Value::as_i64)).sum();
+    let profile_url = user.get("html_url").and_then(Value::as_str).unwrap_or("");
+    // Gitea's heatmap API is the equivalent of GitHub's contribution calendar.
+    // The full year supplies the compact card and detail grid. This is optional
+    // on older/self-hosted instances, so a missing one never hides the stats.
+    let login = user.get("login").and_then(Value::as_str).unwrap_or("");
+    let heatmap: Vec<Value> = if login.is_empty() {
+        Vec::new()
+    } else {
+        match http.get(format!("{base}/users/{login}/heatmap"))
+            .header("Authorization", format!("token {token}")).send().await {
+            Ok(r) if r.status().is_success() => r.json().await.unwrap_or_default(),
+            _ => Vec::new(),
+        }
+    };
+    let activity = gitea_activity(&heatmap, now_ms());
+    let my_raw = gitea_get(&http, &token, format!("{base}/repos/issues/search?state=open&type=pulls&created=true&limit=20")).await;
+    let review_raw = gitea_get(&http, &token, format!("{base}/repos/issues/search?state=open&type=pulls&review_requested=true&limit=20")).await;
+    let my_prs = gitea_prs(&my_raw);
+    let to_review = gitea_prs(&review_raw);
+    let main_ci = gitea_main_ci(&http, &token, &base, &repos).await;
+    let pulse = GitHubPulse { login: login.to_string(), my_prs, to_review, main_ci, fetched_at: now_ms() };
+    emit(&app, IntegrationUpdate { id: "integration_gitea", data: json!({
+        "totalRepos": repos.len(), "totalStars": stars, "openPRs": open_prs,
+        "profileUrl": profile_url, "pulse": pulse, "activity": activity,
+    }), error: None, event: None });
+}
+
+async fn gitea_get(http: &reqwest::Client, token: &str, url: String) -> Vec<Value> {
+    match http.get(url).header("Authorization", format!("token {token}")).send().await {
+        Ok(r) if r.status().is_success() => r.json().await.unwrap_or_default(),
+        _ => Vec::new(),
+    }
+}
+
+fn gitea_prs(raw: &[Value]) -> Vec<GitHubPr> {
+    raw.iter().filter_map(|pr| {
+        let repo = pr.get("repository")?.get("full_name")?.as_str()?.to_string();
+        let number = pr.get("number")?.as_i64()?;
+        Some(GitHubPr { id: format!("{repo}#{number}"), title: pr.get("title").and_then(Value::as_str).unwrap_or("").to_string(),
+            url: pr.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(), repo, number,
+            is_draft: pr.get("is_draft").and_then(Value::as_bool).unwrap_or(false), ci: CiState::Unknown,
+            review: ReviewState::Unknown, head_sha: None })
+    }).collect()
+}
+
+fn gitea_ci(state: Option<&str>) -> CiState {
+    match state.map(str::to_ascii_lowercase).as_deref() {
+        Some("success") => CiState::Success,
+        Some("pending") => CiState::Pending,
+        Some("failure") | Some("error") => CiState::Failure,
+        _ => CiState::Unknown,
+    }
+}
+
+async fn gitea_main_ci(http: &reqwest::Client, token: &str, base: &str, repos: &[Value]) -> Vec<GitHubRepoCi> {
+    let mut out = Vec::new();
+    for repo in repos.iter().take(20) {
+        let Some(name) = repo.get("full_name").and_then(Value::as_str) else { continue };
+        let branch = repo.get("default_branch").and_then(Value::as_str).unwrap_or("main");
+        let statuses = gitea_get(http, token, format!("{base}/repos/{name}/commits/{branch}/statuses?limit=1&sort=recentupdate")).await;
+        out.push(GitHubRepoCi { repo: name.to_string(), url: repo.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(),
+            branch: branch.to_string(), ci: gitea_ci(statuses.first().and_then(|s| s.get("state")).and_then(Value::as_str)), head_sha: None });
+    }
+    out
+}
+
+fn gitea_activity(heatmap: &[Value], fetched_at: u64) -> GitHubActivity {
+    let today = (fetched_at / 86_400_000) as i64;
+    let mut start = today - 364;
+    start -= i64::from(civil_day(start).3);
+    let mut weeks: Vec<Vec<ContributionDay>> = Vec::new();
+    for day in start..=today {
+        let (y, m, d, weekday) = civil_day(day);
+        if weekday == 0 || weeks.is_empty() { weeks.push(Vec::new()); }
+        let count = heatmap.iter().find_map(|entry| {
+            let ts = entry.get("timestamp")?.as_i64()?;
+            let entry_day = if ts > 10_000_000_000 { ts / 86_400_000 } else { ts / 86_400 };
+            (entry_day == day).then(|| entry.get("contributions").and_then(Value::as_i64).unwrap_or(0).max(0))
+        }).unwrap_or(0);
+        weeks.last_mut().unwrap().push(ContributionDay {
+            date: format!("{y:04}-{m:02}-{d:02}"), count, weekday,
+            level: if count == 0 { 0 } else if count == 1 { 1 } else if count < 4 { 2 } else if count < 8 { 3 } else { 4 },
+        });
+    }
+    let total = weeks.iter().flatten().map(|d| d.count).sum(); GitHubActivity { total, weeks, fetched_at }
+}
+
+/// A Gitea address or token changed: old totals belong to the previous account
+/// and must not remain on the card while the new credentials are checked.
+pub fn gitea_credentials_changed(app: &AppHandle) {
+    emit(app, IntegrationUpdate { id: "integration_gitea", data: json!({}), error: None, event: None });
+    if !PAUSED.load(Ordering::Relaxed) && enabled(app, "integration_gitea") {
+        tauri::async_runtime::spawn(poll_gitea(app.clone()));
+    }
+}
+
+fn gitlab_ci(raw: Option<&str>) -> CiState {
+    match raw {
+        Some("success") => CiState::Success,
+        Some("failed") | Some("canceled") | Some("skipped") => CiState::Failure,
+        Some("running") | Some("pending") | Some("created") | Some("preparing") | Some("waiting_for_resource") => CiState::Pending,
+        _ => CiState::Unknown,
+    }
+}
+
+/// Gregorian date and Sunday-based weekday for a day counted from 1970-01-01.
+fn civil_day(day: i64) -> (i32, u32, u32, u8) {
+    let z = day + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = mp + if mp < 10 { 3 } else { -9 };
+    let year = y + i64::from(m <= 2);
+    (year as i32, m as u32, d as u32, (day + 4).rem_euclid(7) as u8)
+}
+
+fn gitlab_activity(events: &[Value], fetched_at: u64) -> GitHubActivity {
+    let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    for event in events {
+        if let Some(date) = event.get("created_at").and_then(Value::as_str).and_then(|s| s.get(..10)) {
+            *counts.entry(date.to_string()).or_default() += 1;
+        }
+    }
+    let today = (fetched_at / 86_400_000) as i64;
+    let mut start = today - 364;
+    start -= i64::from(civil_day(start).3); // start the first column on Sunday
+    let mut weeks: Vec<Vec<ContributionDay>> = Vec::new();
+    for day in start..=today {
+        let (year, month, date, weekday) = civil_day(day);
+        if weekday == 0 || weeks.is_empty() { weeks.push(Vec::new()); }
+        let key = format!("{year:04}-{month:02}-{date:02}");
+        let count = counts.get(&key).copied().unwrap_or(0);
+        let level = if count == 0 { 0 } else if count == 1 { 1 } else if count <= 3 { 2 } else if count <= 7 { 3 } else { 4 };
+        weeks.last_mut().unwrap().push(ContributionDay { date: key, count, level, weekday });
+    }
+    let total = weeks.iter().flatten().map(|day| day.count).sum();
+    GitHubActivity { total, weeks, fetched_at }
+}
+
+async fn poll_gitlab(app: AppHandle) {
+    if PAUSED.load(Ordering::Relaxed) || !enabled(&app, "integration_gitlab") { return; }
+    let Some(token) = secrets::get("gitlab-token") else { return };
+    let instance = secrets::get("gitlab-url").unwrap_or_else(|| "https://gitlab.com".into());
+    let Ok(instance) = reqwest::Url::parse(instance.trim()) else { return };
+    if !matches!(instance.scheme(), "http" | "https") || instance.host_str().is_none() { return; }
+    let base = instance.as_str().trim_end_matches('/').to_string();
+    // PRIVATE-TOKEN must never follow an instance redirect to another server.
+    let Ok(http) = reqwest::Client::builder().timeout(TIMEOUT)
+        .redirect(reqwest::redirect::Policy::none()).build() else { return };
+    let headers = |request: reqwest::RequestBuilder| request.header("PRIVATE-TOKEN", &token);
+    let user = headers(http.get(format!("{base}/api/v4/user"))).send().await;
+    let Ok(user) = user else { return };
+    if !user.status().is_success() {
+        emit(&app, IntegrationUpdate { id: "integration_gitlab", data: json!({}), error: Some(status_error(user.status().as_u16(), &crate::i18n::t("Token lacks the needed scope"))), event: None }); return;
+    }
+    let user: Value = user.json().await.unwrap_or(json!({}));
+    let login = user.get("username").and_then(Value::as_str).unwrap_or("GitLab").to_string();
+    let profile_url = user.get("web_url").and_then(Value::as_str).map(str::to_string);
+
+    // GitHub's overview counts repositories owned by the user, so GitLab does
+    // the same. Walk the pages for accurate repository and star totals; the
+    // first ten (ordered by recent activity) also drive default-branch CI.
+    let mut projects = Vec::new();
+    for page in 1..=10 {
+        let response = headers(http.get(format!("{base}/api/v4/projects")).query(&[
+            ("owned", "true"),
+            ("simple", "true"),
+            ("order_by", "last_activity_at"),
+            ("per_page", "100"),
+            ("page", &page.to_string()),
+        ])).send().await;
+        let batch: Vec<Value> = match response {
+            Ok(r) if r.status().is_success() => r.json().await.unwrap_or_default(),
+            _ => Vec::new(),
+        };
+        let done = batch.len() < 100;
+        projects.extend(batch);
+        if done { break; }
+    }
+    let list = |url: String| async { match headers(http.get(url)).send().await { Ok(v) if v.status().is_success() => v.json::<Vec<Value>>().await.unwrap_or_default(), _ => Vec::new() } };
+    let mine = list(format!("{base}/api/v4/merge_requests?scope=created_by_me&state=opened&per_page=20")).await;
+    let review = list(format!("{base}/api/v4/merge_requests?scope=reviews_for_me&state=opened&per_page=20")).await;
+    let mut events = Vec::new();
+    let today = (now_ms() / 86_400_000) as i64;
+    let (year, month, day, _) = civil_day(today - 364);
+    let after = format!("{year:04}-{month:02}-{day:02}");
+    for page in 1..=10 {
+        let batch = list(format!("{base}/api/v4/events?scope=all&after={after}&per_page=100&page={page}")).await;
+        let done = batch.len() < 100;
+        events.extend(batch);
+        if done { break; }
+    }
+    let to_pr = |v: &Value| -> Option<GitHubPr> { let repo = v.get("references")?.get("full")?.as_str()?.split('!').next()?.to_string(); let n = v.get("iid")?.as_i64()?; Some(GitHubPr { id: format!("{repo}#{n}"), title: v.get("title")?.as_str()?.to_string(), url: v.get("web_url")?.as_str()?.to_string(), repo, number: n, is_draft: v.get("draft").and_then(Value::as_bool).unwrap_or(false), ci: gitlab_ci(v.get("head_pipeline").and_then(|p| p.get("status")).and_then(Value::as_str)), review: ReviewState::Unknown, head_sha: v.get("sha").and_then(Value::as_str).map(str::to_string) }) };
+    let mut main_ci = Vec::new();
+    for project in projects.iter().take(10) {
+        let (Some(id), Some(repo), Some(url)) = (project.get("id").and_then(Value::as_i64), project.get("path_with_namespace").and_then(Value::as_str), project.get("web_url").and_then(Value::as_str)) else { continue };
+        let branch = project.get("default_branch").and_then(Value::as_str).unwrap_or("main");
+        let pipelines: Vec<Value> = match http.get(format!("{base}/api/v4/projects/{id}/pipelines")).query(&[("ref", branch), ("per_page", "1")]).header("PRIVATE-TOKEN", &token).send().await { Ok(r) if r.status().is_success() => r.json().await.unwrap_or_default(), _ => Vec::new() };
+        let ci = gitlab_ci(pipelines.first().and_then(|p| p.get("status")).and_then(Value::as_str));
+        main_ci.push(GitHubRepoCi { repo: repo.into(), url: url.into(), branch: branch.into(), ci, head_sha: None });
+    }
+    let fetched_at = now_ms();
+    let pulse = GitHubPulse { login, my_prs: mine.iter().filter_map(to_pr).collect(), to_review: review.iter().filter_map(to_pr).collect(), main_ci, fetched_at };
+    let activity = gitlab_activity(&events, fetched_at);
+    let stars: i64 = projects.iter().filter_map(|p| p.get("star_count").and_then(Value::as_i64)).sum();
+    emit(&app, IntegrationUpdate { id: "integration_gitlab", data: json!({ "projects": projects.len(), "totalRepos": projects.len(), "totalStars": stars, "profileUrl": profile_url, "pulse": pulse, "activity": activity }), error: None, event: None });
 }
 
 /// Remembers the newest id per integration so an event fires once, not on every poll.
@@ -549,6 +810,10 @@ pub fn github_token_changed(app: &AppHandle) {
 /// Switching the pill off forgets the pulse, so switching it back on starts
 /// silent instead of alerting on everything that changed in between.
 pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
+    let portfolio_on = active_integrations.iter().any(|id| id == portfolio::PILL_ID);
+    if PORTFOLIO_ON.swap(portfolio_on, Ordering::SeqCst) != portfolio_on {
+        portfolio_changed(app);
+    }
     if active_integrations.iter().any(|id| id == GITHUB_ID) {
         return;
     }
@@ -561,6 +826,29 @@ pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
     };
     if had_data {
         emit_github(app);
+    }
+}
+
+// ── Portfolio (PortfolioController.swift) ────────────────────────────────────
+
+/// Whether the pill was on at the last settings save, to start over when it changes.
+static PORTFOLIO_ON: AtomicBool = AtomicBool::new(false);
+
+async fn poll_portfolio(app: AppHandle) {
+    let wallets = app
+        .try_state::<crate::Shared>()
+        .map(|shared| shared.settings.lock().unwrap().portfolio_wallets.clone())
+        .unwrap_or_default();
+    let Some(data) = portfolio::fetch(wallets).await else { return };
+    emit(&app, IntegrationUpdate { id: portfolio::PILL_ID, data, error: None, event: None });
+}
+
+/// Accounts were added or removed, or the pill was switched: the card starts
+/// over from "Loading…" and fetches at once while the pill is on.
+pub fn portfolio_changed(app: &AppHandle) {
+    emit(app, IntegrationUpdate { id: portfolio::PILL_ID, data: json!({}), error: None, event: None });
+    if !PAUSED.load(Ordering::Relaxed) && enabled(app, portfolio::PILL_ID) {
+        tauri::async_runtime::spawn(poll_portfolio(app.clone()));
     }
 }
 
@@ -631,6 +919,80 @@ async fn poll_vercel(app: AppHandle) {
     emit(&app, IntegrationUpdate {
         id: "integration_vercel",
         data: json!({ "deployments": deployments }),
+        error: None,
+        event,
+    });
+}
+
+// ── Better Stack ──────────────────────────────────────────────────────────────
+
+/// Open incidents seen on the last poll (id → name); None until the first one.
+static BETTERSTACK_SEEN: Mutex<Option<std::collections::HashMap<String, String>>> = Mutex::new(None);
+
+/// A new token is a new account: alert on none of its existing incidents.
+pub fn reset_betterstack() {
+    *BETTERSTACK_SEEN.lock().unwrap() = None;
+}
+
+async fn poll_betterstack(app: AppHandle) {
+    use crate::betterstack::{self, Change};
+
+    let Some(token) = secrets::get("betterstack-token") else { return };
+    let http = client();
+    let auth = format!("Bearer {token}");
+    let get = |url: &'static str| {
+        http.get(url)
+            .header("Authorization", &auth)
+            .header("Accept", "application/json")
+            .send()
+    };
+    let Ok(incidents) = get(betterstack::INCIDENTS_URL).await else { return };
+    if !incidents.status().is_success() {
+        emit(&app, IntegrationUpdate {
+            id: "integration_betterstack",
+            data: json!({}),
+            error: Some(status_error(incidents.status().as_u16(), &crate::i18n::t("Token lacks access"))),
+            event: None,
+        });
+        return;
+    }
+    let body: Value = incidents.json().await.unwrap_or(json!({}));
+    let Some(open) = betterstack::incidents(&body) else { return };
+
+    // Monitors are extra: without them the card still lists the incidents.
+    let down = match get(betterstack::MONITORS_URL).await {
+        Ok(r) if r.status().is_success() => {
+            let body: Value = r.json().await.unwrap_or(json!({}));
+            betterstack::down_monitors(&body).unwrap_or_default()
+        }
+        _ => Vec::new(),
+    };
+
+    let change = {
+        let mut seen = BETTERSTACK_SEEN.lock().unwrap();
+        let change = betterstack::change(seen.as_ref(), &open);
+        *seen = Some(betterstack::seen(&open));
+        change
+    };
+    let event = match change {
+        Change::None => None,
+        Change::Opened { name, cause } => Some(IntegrationEvent { success: false, label: name, detail: cause }),
+        // Only all-clear is good news; one of two incidents resolving isn't.
+        Change::Resolved { name } if open.is_empty() => Some(IntegrationEvent {
+            success: true,
+            label: name,
+            detail: Some(crate::i18n::t("Resolved")),
+        }),
+        Change::Resolved { .. } => None,
+    };
+
+    emit(&app, IntegrationUpdate {
+        id: "integration_betterstack",
+        data: json!({
+            "incidents": open,
+            "down": down,
+            "team": secrets::get("betterstack-team").and_then(|raw| betterstack::team(&raw)),
+        }),
         error: None,
         event,
     });
@@ -846,6 +1208,258 @@ async fn poll_calcom(app: AppHandle) {
     });
 }
 
+// ── Calendar ──────────────────────────────────────────────────────────────────
+//
+// The secret iCal address (Google Calendar or any other) stays here; the island
+// gets the feed's text and reads it itself (src/core/calendar.ts), where Intl
+// knows every time zone.
+
+/// The feed address as pasted: `webcal://` (iCloud, Outlook) is https.
+fn calendar_url(raw: &str) -> Option<reqwest::Url> {
+    let raw = raw.trim();
+    let raw = match raw.strip_prefix("webcal://") {
+        Some(rest) => format!("https://{rest}"),
+        None => raw.to_string(),
+    };
+    let url = reqwest::Url::parse(&raw).ok()?;
+    // The address is the key to the calendar: https only.
+    (url.scheme() == "https" && url.host_str().is_some_and(|h| !h.is_empty())).then_some(url)
+}
+
+async fn poll_calendar(app: AppHandle) {
+    let Some(raw) = secrets::get("calendar-ical-url") else { return };
+    let fail = |error: String| {
+        emit(&app, IntegrationUpdate { id: "integration_calendar", data: json!({}), error: Some(error), event: None });
+    };
+    let Some(url) = calendar_url(&raw) else {
+        fail(crate::i18n::t("The calendar address must start with https:// or webcal://."));
+        return;
+    };
+    let Ok(response) = client().get(url).send().await else { return };
+    if !response.status().is_success() {
+        fail(status_error(response.status().as_u16(), &crate::i18n::t("Key lacks access")));
+        return;
+    }
+    let body = match crate::net::read_capped(response, crate::net::MAX_BODY).await {
+        Ok(body) => body,
+        Err(error) => return fail(error),
+    };
+    emit(&app, IntegrationUpdate {
+        id: "integration_calendar",
+        data: json!({ "ics": String::from_utf8_lossy(&body) }),
+        error: None,
+        event: None,
+    });
+}
+
+// ── Timely ────────────────────────────────────────────────────────────────────
+
+const TIMELY: &str = "integration_timely";
+
+/// Account and user, looked up once per token; the daily capacity, once per day.
+#[derive(Default)]
+struct TimelyCache {
+    ids: Option<(i64, i64)>,
+    capacity: Option<(String, Option<f64>)>,
+}
+
+static TIMELY_CACHE: std::sync::LazyLock<Mutex<TimelyCache>> =
+    std::sync::LazyLock::new(|| Mutex::new(TimelyCache::default()));
+
+fn timely_forget() {
+    *TIMELY_CACHE.lock().unwrap() = TimelyCache::default();
+}
+
+fn store_timely_tokens(tokens: &crate::timely::Tokens) {
+    let _ = secrets::set("timely-access-token", &tokens.access);
+    if let Some(refresh) = &tokens.refresh {
+        let _ = secrets::set("timely-refresh-token", refresh);
+    }
+}
+
+async fn timely_token_request(body: Value, old_refresh: Option<&str>) -> Option<crate::timely::Tokens> {
+    let response = client()
+        .post(format!("{}/oauth/token", crate::timely::BASE))
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
+    if !response.status().is_success() {
+        log::line(format!("timely token HTTP {}", response.status()));
+        return None;
+    }
+    let json: Value = response.json().await.ok()?;
+    crate::timely::parse_tokens(&json, old_refresh)
+}
+
+async fn timely_refresh() -> Option<String> {
+    let (id, secret, refresh) = (
+        secrets::get("timely-client-id")?,
+        secrets::get("timely-client-secret")?,
+        secrets::get("timely-refresh-token")?,
+    );
+    let tokens = timely_token_request(crate::timely::refresh_body(&id, &secret, &refresh), Some(&refresh)).await?;
+    store_timely_tokens(&tokens);
+    Some(tokens.access)
+}
+
+/// Settings → Timely → Save: trades the pasted code for tokens.
+pub async fn timely_connect(app: AppHandle, code: &str) -> Result<(), String> {
+    let (Some(id), Some(secret)) = (secrets::get("timely-client-id"), secrets::get("timely-client-secret")) else {
+        return Err("missing client".into());
+    };
+    let tokens = timely_token_request(crate::timely::code_body(&id, &secret, code.trim()), None)
+        .await
+        .ok_or_else(|| "refused".to_string())?;
+    store_timely_tokens(&tokens);
+    timely_forget();
+    if enabled(&app, TIMELY) {
+        poll_timely(app).await;
+    }
+    Ok(())
+}
+
+pub fn timely_disconnect(app: &AppHandle) {
+    let _ = secrets::clear("timely-access-token");
+    let _ = secrets::clear("timely-refresh-token");
+    timely_forget();
+    emit(app, IntegrationUpdate { id: TIMELY, data: json!({}), error: None, event: None });
+}
+
+async fn timely_get(path: &str) -> (u16, Option<Value>) {
+    let Some(access) = secrets::get("timely-access-token") else {
+        return (crate::timely::HTTP_UNAUTHORIZED, None);
+    };
+    let url = format!("{}{path}", crate::timely::BASE);
+    let http = client();
+    crate::timely::with_refresh(
+        access,
+        |token: String| {
+            let request = http.get(&url).bearer_auth(token).header("Accept", "application/json");
+            async move {
+                match request.send().await {
+                    Ok(r) => {
+                        let status = r.status().as_u16();
+                        (status, r.json::<Value>().await.ok())
+                    }
+                    Err(_) => (0, None),
+                }
+            }
+        },
+        timely_refresh,
+    )
+    .await
+}
+
+async fn timely_ids() -> Result<(i64, i64), u16> {
+    if let Some(ids) = TIMELY_CACHE.lock().unwrap().ids {
+        return Ok(ids);
+    }
+    let (status, accounts) = timely_get("/accounts").await;
+    let account = accounts.as_ref().and_then(crate::timely::first_account_id).ok_or(status)?;
+    let (status, me) = timely_get(&format!("/{account}/users/current")).await;
+    let user = me.as_ref().and_then(crate::timely::user_id).ok_or(status)?;
+    TIMELY_CACHE.lock().unwrap().ids = Some((account, user));
+    Ok((account, user))
+}
+
+/// No answer at all (status 0) is left alone, as the other pollers do: the card keeps its last data.
+fn timely_error(app: &AppHandle, status: u16) {
+    if status == 0 {
+        return;
+    }
+    let error = status_error(status, &crate::i18n::t("Key lacks access"));
+    emit(app, IntegrationUpdate { id: TIMELY, data: json!({}), error: Some(error), event: None });
+}
+
+async fn poll_timely(app: AppHandle) {
+    if !secrets::present("timely-access-token") {
+        return;
+    }
+    let (account, user) = match timely_ids().await {
+        Ok(ids) => ids,
+        Err(status) => return timely_error(&app, status),
+    };
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let today = crate::timely::utc_day(now);
+    let cached = TIMELY_CACHE.lock().unwrap().capacity.clone().filter(|(day, _)| *day == today);
+    let capacity = match cached {
+        Some((_, hours)) => hours,
+        None => {
+            let (_, caps) = timely_get(&format!("/{account}/users/{user}/capacities")).await;
+            let hours = caps.as_ref().and_then(crate::timely::daily_capacity);
+            TIMELY_CACHE.lock().unwrap().capacity = Some((today, hours));
+            hours
+        }
+    };
+
+    let (since, upto) = crate::timely::day_window(now);
+    let (status, events) = timely_get(&format!("/{account}/users/{user}/events?since={since}&upto={upto}")).await;
+    let Some(entries) = events.as_ref().and_then(crate::timely::parse_entries) else {
+        return timely_error(&app, status);
+    };
+    emit(&app, IntegrationUpdate {
+        id: TIMELY,
+        data: json!({ "entries": entries, "capacityHours": capacity }),
+        error: None,
+        event: None,
+    });
+}
+
+// ── Linear ────────────────────────────────────────────────────────────────────
+
+/// Inbox ids the last poll saw unread; None until the first poll, which is silent.
+static LINEAR_SEEN: Mutex<Option<std::collections::HashSet<String>>> = Mutex::new(None);
+
+/// A new key starts silently, like the first poll.
+pub fn forget_linear() {
+    *LINEAR_SEEN.lock().unwrap() = None;
+}
+
+async fn poll_linear(app: AppHandle) {
+    let Some(key) = secrets::get("linear-api-key") else { return };
+    // Personal API keys go in the header as-is, without "Bearer".
+    let response = client()
+        .post(crate::linear::ENDPOINT)
+        .header("Authorization", key)
+        .json(&crate::linear::request_body())
+        .send()
+        .await;
+    let Ok(response) = response else { return };
+    let code = response.status().as_u16();
+    let json: Value = response.json().await.unwrap_or(json!({}));
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let Some(inbox) = (code == 200).then(|| crate::linear::parse(&json, now)).flatten() else {
+        let error = match code {
+            200 => crate::i18n::t("Unexpected response"),
+            _ => status_error(code, &crate::i18n::t("Key lacks access")),
+        };
+        emit(&app, IntegrationUpdate { id: "integration_linear", data: json!({}), error: Some(error), event: None });
+        return;
+    };
+
+    let unread = inbox["unread"].as_array().cloned().unwrap_or_default();
+    let event = {
+        let mut seen = LINEAR_SEEN.lock().unwrap();
+        let newest = crate::linear::fresh(&unread, seen.as_ref()).first().map(|n| IntegrationEvent {
+            success: true,
+            label: [n["key"].as_str(), n["title"].as_str()].into_iter().flatten().collect::<Vec<_>>().join(" "),
+            detail: None,
+        });
+        *seen = Some(unread.iter().filter_map(|n| n["id"].as_str().map(str::to_string)).collect());
+        newest
+    };
+
+    emit(&app, IntegrationUpdate { id: "integration_linear", data: inbox, error: None, event });
+}
+
 // ── n8n ───────────────────────────────────────────────────────────────────────
 
 async fn poll_n8n(app: AppHandle) {
@@ -853,6 +1467,13 @@ async fn poll_n8n(app: AppHandle) {
         return;
     };
     let base = raw_base.trim_end_matches('/').to_string();
+    // The API key rides every request: only https, or a server on this computer
+    // — the same rule the chat providers' keys follow (local_chat.rs).
+    let Ok(base_url) = reqwest::Url::parse(&base) else { return };
+    if base_url.scheme() != "https" && !crate::net::is_loopback_url(&base_url) {
+        log::line("n8n skipped — the key would travel cleartext on a non-https URL");
+        return;
+    }
     let http = client();
 
     // Same two shapes as the Swift poller: the public API first, then /rest.
@@ -1010,6 +1631,50 @@ mod tests {
     use super::*;
 
     #[test]
+    fn gitea_calendar_keeps_full_weeks_and_yearly_totals() {
+        let today = 20_000_i64;
+        let activity = gitea_activity(&[
+            json!({ "timestamp": (today - 300) * 86_400, "contributions": 5 }),
+            json!({ "timestamp": today * 86_400_000, "contributions": 2 }),
+        ], today as u64 * 86_400_000);
+        assert_eq!(activity.total, 7);
+        assert!(activity.weeks.iter().flatten().count() >= 365);
+        for week in &activity.weeks {
+            assert_eq!(week[0].weekday, 0);
+            for (index, day) in week.iter().enumerate() {
+                assert_eq!(day.weekday as usize, index);
+            }
+        }
+        let last = activity.weeks.last().unwrap().last().unwrap();
+        assert_eq!(last.count, 2);
+    }
+
+
+
+
+    #[test]
+    fn gitlab_activity_builds_a_full_calendar_and_counts_events() {
+        let events = vec![
+            json!({ "created_at": "1970-01-01T12:00:00Z" }),
+            json!({ "created_at": "1970-01-01T18:00:00Z" }),
+        ];
+        let activity = gitlab_activity(&events, 0);
+        let days: Vec<_> = activity.weeks.iter().flatten().collect();
+        assert!(days.len() >= 365);
+        let first_day = days.iter().find(|day| day.date == "1970-01-01").unwrap();
+        assert_eq!((first_day.count, first_day.level, first_day.weekday), (2, 2, 4));
+        assert_eq!(activity.total, 2);
+    }
+
+    #[test]
+    fn gitlab_ci_maps_pipeline_states() {
+        assert_eq!(gitlab_ci(Some("success")), CiState::Success);
+        assert_eq!(gitlab_ci(Some("running")), CiState::Pending);
+        assert_eq!(gitlab_ci(Some("failed")), CiState::Failure);
+        assert_eq!(gitlab_ci(None), CiState::Unknown);
+    }
+
+    #[test]
     fn github_card_data_sends_only_what_is_known() {
         let mut cache = GitHubCache::default();
         assert_eq!(github_card_data(&cache), json!({}));
@@ -1020,5 +1685,19 @@ mod tests {
         assert_eq!(data["totalRepos"], json!(12));
         assert_eq!(data["activity"], json!({ "total": 5, "weeks": [], "fetchedAt": 9 }));
         assert!(data.get("pulse").is_none());
+    }
+
+    #[test]
+    fn calendar_url_takes_https_and_webcal_only() {
+        let google = "https://calendar.google.com/calendar/ical/x%40gmail.com/private-abc/basic.ics";
+        assert_eq!(calendar_url(google).unwrap().as_str(), google);
+        assert_eq!(
+            calendar_url(" webcal://p01-caldav.icloud.com/published/2/abc ").unwrap().as_str(),
+            "https://p01-caldav.icloud.com/published/2/abc"
+        );
+        assert!(calendar_url("file:///etc/passwd").is_none());
+        assert!(calendar_url("not a url").is_none());
+        // The address is the key: never in cleartext.
+        assert!(calendar_url("http://calendar.google.com/calendar/ical/x/private-abc/basic.ics").is_none());
     }
 }

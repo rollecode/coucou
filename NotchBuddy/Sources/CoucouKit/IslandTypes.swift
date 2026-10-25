@@ -14,8 +14,10 @@ enum IslandView: String, CaseIterable {
     case searching, result, note, settings, greeting, wardrobe, recap
     case listening    // voice wake detected — "À l'écoute…" with live transcript
     case voiceResult  // voice command executed — "✓ Musique lancée" for ~2 s
+    case code         // Claude Code session as a small editor (CodeSessionView)
     case capture      // a screen capture just taken (⌃⌥X): paste, copy, annotate, ask Claude
     case update       // a new Coucou is out on GitHub: one click to install it (GitHub build)
+    case whatsNew     // Coucou just updated itself: what the version brings, then your Coucou so far (GitHub build)
 }
 
 // MARK: - Bot State
@@ -54,12 +56,13 @@ struct ApprovalInfo: Sendable {
     var inputKey: String
     /// Pill that owns this approval: "integration_claude", "agent_cursor", or "agent_codex".
     var pillId: String
-    /// Queued request this card answers (Mac): a decision is only accepted for this id.
+    /// Queue entry this card answers. A decision is only accepted for this id.
     var id: UUID = UUID()
-    /// Requests waiting, this one included; the card shows the count when above 1.
-    var queueCount: Int = 1
-    /// Project of the session that asks (several sessions can share one pill).
-    var projectName: String = ""
+    /// 1-based position and size of the approval queue, shown as "1 of N" when total > 1.
+    var position: Int = 1
+    var total: Int = 1
+    /// Agent name, set only when queued requests come from different sessions or agents.
+    var sourceLabel: String? = nil
 }
 
 // MARK: - Pill badge (shown on pill edge when non-focused task has an alert)
@@ -82,6 +85,7 @@ struct AgentTask: Identifiable, Equatable {
     var pillBadge: PillBadge? = nil  // alert badge shown on pill when not focused
     var sessionCwd: String?  = nil  // last known working directory (Claude Code sessions)
     var sessionBundleId: String? = nil  // app the session runs in (hook bundle_id), for "Open terminal"
+    var sessionTTY: String?  = nil  // tty of the session's terminal tab (hook tty), to bring back that tab
     var finalLine: String?   = nil  // last assistant message shown as static text after Stop
     var hostApp: String?     = nil  // bundle id of the terminal running a Claude Code session; nil = VS Code
 }
@@ -96,10 +100,13 @@ enum AgentSource: Equatable {
 
 enum ChatProvider: String, CaseIterable, Codable {
     case anthropic = "anthropic"
+    /// The user's own Claude Code CLI (ClaudeCodeChat.swift); no key, no pill.
+    case claudecode = "claudecode"
     case google    = "google"
     case openai    = "openai"
     case ollama    = "ollama"
     case lmstudio  = "lmstudio"
+    case openwebui = "openwebui"
     case deepseek  = "deepseek"
     case qwen      = "qwen"
     case moonshot  = "moonshot"
@@ -107,10 +114,12 @@ enum ChatProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .anthropic: "Anthropic"
+        case .claudecode: "Claude Code"
         case .google:    "Google"
         case .openai:    "OpenAI"
         case .ollama:    "Ollama"
         case .lmstudio:  "LM Studio"
+        case .openwebui: "Open WebUI"
         case .deepseek:  "DeepSeek"
         case .qwen:      "Qwen"
         case .moonshot:  "Moonshot"
@@ -120,10 +129,12 @@ enum ChatProvider: String, CaseIterable, Codable {
     var accentHex: String {
         switch self {
         case .anthropic: "#E07950"
+        case .claudecode: "#D97757"
         case .google:    "#4285F4"
         case .openai:    "#10A37F"
         case .ollama:    "#FACC15"
         case .lmstudio:  "#A3E635"
+        case .openwebui: "#FFFFFF"
         case .deepseek:  "#5B8FF9"
         case .qwen:      "#FF6A00"
         case .moonshot:  "#7C5CFC"
@@ -133,10 +144,12 @@ enum ChatProvider: String, CaseIterable, Codable {
     var defaultModel: String {
         switch self {
         case .anthropic: "claude-sonnet-4-6"
+        case .claudecode: "default"
         case .google:    "gemini-2.0-flash"
         case .openai:    "gpt-4o"
         case .ollama:    "llama3.2"
         case .lmstudio:  "local-model"
+        case .openwebui: ""
         case .deepseek:  "deepseek-chat"
         case .qwen:      "qwen-max"
         case .moonshot:  "moonshot-v1-32k"
@@ -146,10 +159,13 @@ enum ChatProvider: String, CaseIterable, Codable {
     var keychainKey: String {
         switch self {
         case .anthropic: "anthropic-api-key"
+        case .claudecode: ""
         case .google:    "google-api-key"
         case .openai:    "openai-api-key"
         case .ollama:    ""
         case .lmstudio:  ""
+        // Bound to its address: OpenWebUI.keychainKey.
+        case .openwebui: ""
         case .deepseek:  "deepseek-api-key"
         case .qwen:      "qwen-api-key"
         case .moonshot:  "moonshot-api-key"
@@ -157,16 +173,18 @@ enum ChatProvider: String, CaseIterable, Codable {
     }
 
     var isLocal: Bool {
-        self == .ollama || self == .lmstudio
+        self == .ollama || self == .lmstudio || self == .openwebui
     }
 
     var pillID: String {
         switch self {
         case .anthropic: "ai_anthropic"
+        case .claudecode: ""
         case .google:    "ai_google"
         case .openai:    "ai_openai"
         case .ollama:    "ai_ollama"
         case .lmstudio:  "ai_lmstudio"
+        case .openwebui: "ai_openwebui"
         case .deepseek:  "ai_deepseek"
         case .qwen:      "ai_qwen"
         case .moonshot:  "ai_moonshot"
@@ -204,12 +222,30 @@ enum AgentLayoutMode {
 
 // MARK: - Constants (from NW, NH, EW in prototype)
 
+/// Compact island: the gap from each edge to Mochi's body and to the mini pills
+/// (Settings → Behavior → Padding). The defaults are the shipped layout: Mochi
+/// 30 pt in, the pills 26 pt in, the 32 pt island; a notch keeps its height.
+struct CompactPadding: Equatable, Sendable {
+    var top: CGFloat
+    var right: CGFloat
+    var bottom: CGFloat
+    var left: CGFloat
+
+    static let standard = CompactPadding(top: 6, right: 26, bottom: 6, left: 30)
+}
+
 enum IslandConst {
     static let notchWidth: CGFloat  = IslandScreenGeometry.fallbackNotchWidth
     static let notchHeight: CGFloat = 32
     static let expandedWidth: CGFloat = 640
     static let earRadius: CGFloat   = 14
     static let roundedCorner: CGFloat = 14    // hidden/peek/compact
+    static let compactPaddingMax: Double = 40
+    /// Mochi's 20 pt body: the compact island's content row.
+    static let compactRow: CGFloat = 20
+    static let compactBotHalf: CGFloat = compactRow / 2
+    /// Half the width of the compact mini-pill grid.
+    static let miniGridHalf: CGFloat = 14
     static let expandedCorner: CGFloat = 22
 
     static let viewLayouts: [IslandView: ViewLayout] = [
@@ -239,10 +275,14 @@ enum IslandConst {
         .listening:    ViewLayout(height: 160, botX: 68,  botY: nil, botDiameter: 58, agentMode: .none),
         // Voice result: same layout as listening — Mochi on left, ✓/✗ on right
         .voiceResult:  ViewLayout(height: 160, botX: 68,  botY: nil, botDiameter: 58, agentMode: .none),
+        // Code view: Mochi top-left above the phases, the editor on the right
+        .code:         ViewLayout(height: 240, botX: 62,  botY: 82,  botDiameter: 48, agentMode: .none),
         // Screen capture: Mochi on the left (he just swallowed it), the image and what to do with it
         .capture:      ViewLayout(height: 160, botX: 58,  botY: nil, botDiameter: 52, agentMode: .none),
         // New version: Mochi on the left, the version and Update now
         .update:       ViewLayout(height: 160, botX: 62,  botY: nil, botDiameter: 58, agentMode: .none),
+        // After an update: taller, four items then the stats (like mail, it fills the height)
+        .whatsNew:     ViewLayout(height: 232, botX: 62,  botY: nil, botDiameter: 58, agentMode: .none),
     ]
 
     // Project colors — keyed by lowercase display name or slug

@@ -47,6 +47,9 @@ class DesktopMochi {
   /** Pointer in window coordinates, and when the page last heard of it. */
   private cursor: Point | null = null;
   private lastPointer = -Infinity;
+  /** Linux: the compositor's pointer, and when it last came. */
+  private globalPointer: Point | null = null;
+  private lastGlobal = -Infinity;
 
   private timer: number | null = null;
   private lastDraw = 0;
@@ -86,6 +89,10 @@ class DesktopMochi {
       this.schedule();
     });
     await onEvent<Point>(DESKTOP_EVENTS.cursor, (p) => this.notePointer(p));
+    await onEvent<Point>(DESKTOP_EVENTS.gaze, (p) => {
+      this.globalPointer = p;
+      this.lastGlobal = performance.now();
+    });
     await onEvent<boolean>(DESKTOP_EVENTS.visible, (on) => this.setVisible(on));
     await onEvent<string>(DESKTOP_EVENTS.flight, (kind) => {
       // He fades in on the way out of the island (alphaValue 0 → 1 on macOS).
@@ -202,7 +209,9 @@ class DesktopMochi {
     if (!this.asleep) {
       // Windows: the global cursor. Linux: only while the pointer is over him.
       const fresh = this.mode === "poll" || now - this.lastPointer < 1500;
-      const g = this.cursor && fresh ? gaze(lookOrigin(0, 0), this.cursor) : { lookX: 0, lookY: 0 };
+      const global = now - this.lastGlobal < 1500 ? this.globalPointer : null;
+      const target = this.cursor && fresh ? this.cursor : global;
+      const g = target ? gaze(lookOrigin(0, 0), target) : { lookX: 0, lookY: 0 };
       engine.lookX = g.lookX;
       engine.lookY = g.lookY;
     }
@@ -210,6 +219,11 @@ class DesktopMochi {
     engine.setDancing(this.snap.dancing && !this.asleep);
     engine.update(dt);
     const dpr = this.dpr();
+    // Dragged onto a monitor of another scale, the bitmap follows the ratio.
+    if (this.canvas.width !== Math.round(PANEL_SIZE * dpr)) {
+      this.canvas.width = Math.round(PANEL_SIZE * dpr);
+      this.canvas.height = Math.round(PANEL_SIZE * dpr);
+    }
     ctx.setTransform(dpr, 0, 0, dpr, SIDE * dpr, 0);
     ctx.clearRect(-SIDE, 0, PANEL_SIZE, PANEL_SIZE);
     ctx.save();
