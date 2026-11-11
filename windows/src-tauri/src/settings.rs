@@ -37,6 +37,7 @@ pub struct Settings {
     pub expand_on_activity: bool,
     /// The island steps aside while a full-screen app fills its display. Off by default.
     pub hide_in_full_screen: bool,
+    pub alerts_from_all_pills: bool,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
     /// The always-on workspace pill (src/core/pills.ts checks it is one).
@@ -50,6 +51,8 @@ pub struct Settings {
     /// Show the Claude plan pill (5 h and weekly limits) in the island's header.
     /// Off until the user turns it on, so the header stays as it shipped.
     pub show_plan_in_notch: bool,
+    /// Show the Claude plan percentage in the compact island next to the agent dots.
+    pub show_plan_in_compact_island: bool,
     /// Coucou's status line relay is the one in Claude Code's settings.json.
     /// Like `hooks_installed`, the real state wins at launch over what was stored.
     pub plan_relay_installed: bool,
@@ -68,6 +71,10 @@ pub struct Settings {
     /// The model picked for each provider other than Anthropic (whose model is
     /// `model`), by provider id.
     pub chat_models: BTreeMap<String, String>,
+    /// Settings → Chat → Your AI subscriptions: the switch of each provider
+    /// that can answer through its own terminal tool (cli_relay.rs). A
+    /// provider not in it was never switched: see cli_relay::uses_subscription.
+    pub chat_subscriptions: BTreeMap<String, bool>,
     /// Addresses of the model servers once connected; empty means not connected.
     pub ollama_url: String,
     pub lmstudio_url: String,
@@ -146,6 +153,18 @@ pub struct Settings {
     pub portfolio_wallets: Vec<crate::portfolio::Wallet>,
     /// The date and time in the middle of the compact island. Off by default.
     pub show_clock: bool,
+    /// What the closed island shows at the top of the screen, where the Mac
+    /// has its notch: "mochi" (the Mac's island on a screen without a notch),
+    /// "time", "datetime", "claude" (the plan's usage), "music" (what plays),
+    /// "empty" (the black shape alone) or "hidden" (nothing; the top edge of
+    /// the screen wakes it). Kept as it comes, like `mochi_outfit`: the island
+    /// reads what it doesn't know as "mochi".
+    pub closed_island: String,
+    /// Settings → Agents → Antigravity → Approve commands from the notch: a shell command
+    /// none of Antigravity's rules covers waits for Allow / Deny on the island
+    /// (agy_approvals.rs). Off by default; owned by the Rust side like `phone_link`, so
+    /// what a webview sends back is ignored. The Mac's key is the same.
+    pub agy_approvals_enabled: bool,
 }
 
 /// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
@@ -199,6 +218,7 @@ impl Default for Settings {
             follow_activity: false,
             expand_on_activity: false,
             hide_in_full_screen: false,
+            alerts_from_all_pills: false,
             absence_interval: 180.0,
             active_integrations: vec![
                 "integration_resend".into(),
@@ -212,6 +232,7 @@ impl Default for Settings {
             hooks_installed: false,
             model: default_model(),
             show_plan_in_notch: false,
+            show_plan_in_compact_island: false,
             plan_relay_installed: false,
             show_codex_plan_in_notch: false,
             compact_show_agents: true,
@@ -219,6 +240,7 @@ impl Default for Settings {
             compact_show_plan: true,
             chat_provider: crate::chat::ANTHROPIC.into(),
             chat_models: BTreeMap::new(),
+            chat_subscriptions: BTreeMap::new(),
             ollama_url: String::new(),
             lmstudio_url: String::new(),
             custom_url: String::new(),
@@ -249,6 +271,8 @@ impl Default for Settings {
             quiet_on_screen_share: true,
             portfolio_wallets: Vec::new(),
             show_clock: false,
+            closed_island: "mochi".into(),
+            agy_approvals_enabled: false,
         }
     }
 }
@@ -289,6 +313,14 @@ static NOT_LOADED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
 
 fn not_loaded() -> MutexGuard<'static, Vec<PathBuf>> {
     NOT_LOADED.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Serializes saves across all threads so concurrent writes do not collide on
+/// the temporary file or interleave file renames.
+static SAVE_LOCK: Mutex<()> = Mutex::new(());
+
+fn save_lock() -> MutexGuard<'static, ()> {
+    SAVE_LOCK.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// One line in coucou.log. Tests must never write to the real one.
@@ -476,12 +508,7 @@ fn write_whole(file: &mut std::fs::File, bytes: &[u8]) -> std::io::Result<()> {
 
 /// `save`, for the file at `path`, whose directory already exists.
 fn save_to(path: &Path, settings: &Settings) -> std::io::Result<()> {
-    // Callers save outside the settings lock, so the file write itself is
-    // serialized here: two saves sharing the temp name can otherwise truncate
-    // each other mid-flight and install half a settings.json.
-    static SAVE_LOCK: Mutex<()> = Mutex::new(());
-    let _save = SAVE_LOCK.lock().unwrap();
-
+    let _lock = save_lock();
     keep_what_was_not_loaded(path)?;
     let json = serde_json::to_vec_pretty(settings)
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
@@ -524,6 +551,7 @@ mod tests {
   "followActivity": true,
   "expandOnActivity": true,
   "hideInFullScreen": true,
+  "alertsFromAllPills": true,
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
   "mainPill": "agent_cursor",
@@ -532,6 +560,7 @@ mod tests {
   "hooksInstalled": true,
   "model": "some-model",
   "showPlanInNotch": true,
+  "showPlanInCompactIsland": true,
   "planRelayInstalled": true,
   "showCodexPlanInNotch": true,
   "compactShowAgents": false,
@@ -539,6 +568,7 @@ mod tests {
   "compactShowPlan": false,
   "chatProvider": "ollama",
   "chatModels": { "ollama": "llama3.2", "openai": "gpt-x" },
+  "chatSubscriptions": { "google": true, "anthropic": false },
   "ollamaUrl": "http://127.0.0.1:11434",
   "lmstudioUrl": "http://127.0.0.1:1234",
   "customUrl": "https://llm.example.com",
@@ -568,7 +598,9 @@ mod tests {
   "quietOnMic": false,
   "quietOnScreenShare": false,
   "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }],
-  "showClock": true
+  "showClock": true,
+  "closedIsland": "music",
+  "agyApprovalsEnabled": true
 }"##;
 
     fn custom() -> Value {
@@ -1062,6 +1094,7 @@ mod tests {
                 "followActivity",
                 "expandOnActivity",
                 "hideInFullScreen",
+                "alertsFromAllPills",
                 "absenceInterval",
                 "activeIntegrations",
                 "mainPill",
@@ -1070,6 +1103,7 @@ mod tests {
                 "hooksInstalled",
                 "model",
                 "showPlanInNotch",
+                "showPlanInCompactIsland",
                 "planRelayInstalled",
                 "showCodexPlanInNotch",
                 "compactShowAgents",
@@ -1077,6 +1111,7 @@ mod tests {
                 "compactShowPlan",
                 "chatProvider",
                 "chatModels",
+                "chatSubscriptions",
                 "ollamaUrl",
                 "lmstudioUrl",
                 "customUrl",
@@ -1107,6 +1142,8 @@ mod tests {
                 "quietOnScreenShare",
                 "portfolioWallets",
                 "showClock",
+                "closedIsland",
+                "agyApprovalsEnabled",
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);
@@ -1141,6 +1178,30 @@ mod tests {
 
         assert!(save_to(&file, &Settings::default()).is_err());
         assert_eq!(std::fs::read(&file).unwrap(), CUSTOM.as_bytes());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn concurrent_saves_never_collide() {
+        let (dir, file) = scratch("concurrent");
+        let handles: Vec<_> = (0..20)
+            .map(|i| {
+                let path = file.clone();
+                std::thread::spawn(move || {
+                    let mut s = Settings::default();
+                    s.sound_volume = (i as f64) * 0.05;
+                    save_to(&path, &s)
+                })
+            })
+            .collect();
+
+        for h in handles {
+            assert!(h.join().unwrap().is_ok());
+        }
+
+        // Must still be valid settings that load cleanly without corruption
+        let loaded = load_from(&file);
+        assert!(loaded.sound_volume >= 0.0);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

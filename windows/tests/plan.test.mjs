@@ -11,7 +11,7 @@ import {
 import { emit } from "./tauri.mjs";
 import { registerHookHandlers } from "../src/island/hooks.ts";
 import {
-  claudePillVisible, codexPillVisible, compactPlanWindows, openPlanColor, planCardOpen,
+  claudeCompactPillVisible, claudePillVisible, codexPillVisible, compactPlanWindows, openPlanColor, planCardOpen,
 } from "../src/views/usage.ts";
 import { DEFAULT_SETTINGS, State } from "../src/core/state.ts";
 
@@ -216,6 +216,17 @@ test("the Claude pill needs the switch and the relay, and the overview", () => {
   assert.equal(claudePillVisible(), false);
 });
 
+test("the compact Claude pill needs compact mode, the switch and the relay", () => {
+  assert.equal(claudeCompactPillVisible(), false);
+  State.mode = "compact";
+  State.settings.showPlanInCompactIsland = true;
+  assert.equal(claudeCompactPillVisible(), false);
+  State.settings.planRelayInstalled = true;
+  assert.equal(claudeCompactPillVisible(), true);
+  State.mode = "expanded";
+  assert.equal(claudeCompactPillVisible(), false);
+});
+
 test("the Codex pill needs only its switch, on the overview", () => {
   State.settings.showCodexPlanInNotch = true;
   assert.equal(codexPillVisible(), true);
@@ -257,6 +268,15 @@ test("the compact plan row follows the header's switches, Claude first, both win
   State.settings.compactShowPlan = false;
   assert.deepEqual(pcts(), []);
   State.settings.compactShowPlan = true;
+});
+
+test("the plan card opens via compact island setting on the overview", () => {
+  State.view = "overview";
+  State.settings.showPlanInNotch = false;
+  State.settings.showPlanInCompactIsland = true;
+  State.settings.planRelayInstalled = true;
+  State.showingPlanDetail = true;
+  assert.equal(planCardOpen(), true);
 });
 
 test("focusing another pill closes the plan card", () => {

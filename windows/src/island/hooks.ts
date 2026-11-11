@@ -12,13 +12,14 @@ import { Sound } from "../core/sound";
 import { State, type ApprovalInfo, type AskedQuestion } from "../core/state";
 import { pillDefinition } from "../core/pills";
 import { colorForProject } from "../core/layout";
-import { APPROVAL_AGENTS, agentColor, agentName, validateAgent } from "./agents";
+import { agentColor, agentName, takesCard, validateAgent } from "./agents";
 import type { Island } from "./island";
 import { parseClaudePlan, restorePlanUsage } from "../core/plan";
 import { setClaudePlanUsage, storedClaudePlanUsage } from "../views/usage";
 import { N_, t } from "../i18n/i18n";
 import { sshLabel } from "../core/ssh";
 import { beginTurn, dropCode, endTurn, hasCode, toolFinished, toolStarted, type CodeSource } from "../views/session";
+import { Launch } from "../core/launch";
 
 const CLAUDE_ID = "integration_claude";
 const WORKSPACE_CLAUDE = "workspace_claude";
@@ -47,7 +48,9 @@ export function dropPendingCard(island: Island): void {
   State.endApproval();
   const next = State.pendingApproval as ApprovalInfo | null;
   if (next) {
-    island.alert(next.questions ? "question" : "approval");
+    const view = next.questions ? "question" : "approval";
+    Sound.play(view);
+    island.alert(view);
     State.notify();
     return;
   }
@@ -280,8 +283,83 @@ function subagentDone(sessionId: string) {
   }, BACKGROUND_DONE_GRACE_MS);
 }
 
+/** The pill that was focused before another pill's alert borrowed the front. */
+let focusBeforeAlert: string | null = null;
+let alertPill: string | null = null;
+
+function showsAlert(pill: string, focused: boolean): boolean {
+  if (State.pendingApproval) return false;
+  if (focused) return true;
+  if (!State.settings.alertsFromAllPills) return false;
+  if (State.mode === "expanded" && !["overview", "finished", "error", "empty"].includes(State.view)) {
+    return false;
+  }
+  if (focusBeforeAlert == null) focusBeforeAlert = State.focusId;
+  alertPill = pill;
+  State.setFocus(pill);
+  return true;
+}
+
+export function restoreAlertFocus(): void {
+  if (!focusBeforeAlert) return;
+  const prev = focusBeforeAlert;
+  const borrowed = alertPill;
+  focusBeforeAlert = null;
+  alertPill = null;
+  if (
+    !State.pendingApproval &&
+    State.focusId === borrowed &&
+    borrowed !== prev &&
+    State.tasks.some((t) => t.id === prev)
+  ) {
+    State.setFocus(prev);
+  }
+}
+
 /** Events after which a pending permission request of the same session is moot. */
 const TURN_OVER = new Set(["Stop", "StopFailure", "UserPromptSubmit", "SessionEnd", "Interrupt"]);
+
+/**
+ * True when `name` (from `agentId`'s session) shows the pending card was
+ * settled somewhere else: the turn is over (interrupted, a new prompt, the
+ * session ended), or the very tool call it asked about has run, so it was
+ * allowed in the terminal or the Claude app. A tool result of another call (a
+ * subagent working alongside) does not count. The relay hanging up is the
+ * fastest sign of all; it arrives as `approval-expired`.
+ */
+export function settledElsewhere(
+  pending: ApprovalInfo,
+  name: string,
+  agentId: string,
+  sessionId: string,
+  tool: string | undefined,
+  input: Record<string, unknown> | undefined,
+): boolean {
+  if (pending.pillId !== agentId || pending.sessionId !== sessionId) return false;
+  if (TURN_OVER.has(name)) return true;
+  if (name !== "PostToolUse" && name !== "PostToolUseFailure") return false;
+  const t = tool ?? "Tool";
+  return t === pending.tool && approvalTarget(t, input ?? {}) === pending.command;
+}
+
+/**
+ * A prompt as the session's step line. Claude Code also submits text the
+ * user never typed (a background task's `<task-notification>`, system
+ * reminders, slash-command echoes): those show as their summary or command,
+ * or not at all, never as raw tags.
+ */
+export function promptStep(raw: string): string | null {
+  const tag = (name: string) => raw.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1]?.trim();
+  if (raw.includes("<task-notification>")) return tag("summary") ?? null;
+  const command = tag("command-name");
+  if (command) return command;
+  const text = raw
+    .replace(/<(system-reminder|local-command-\w+)>[\s\S]*?<\/\1>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text ? text.slice(0, 60) : null;
+}
 
 interface HookPayload {
   hook_event_name?: string;
@@ -302,6 +380,8 @@ interface HookPayload {
   coucou_diff_truncated?: boolean;
   /** Optional agent tag: lowercase, digits and hyphens, ≤ 24 chars. */
   coucou_agent?: string;
+  /** "agy_pre_tool": an Antigravity command Coucou may show on the card (agents.ts). */
+  coucou_kind?: string;
   /** Hermes: where the session runs (telegram, discord…; "cli" in a terminal). */
   platform?: string;
   /** The SSH host the session runs on, set by the app for a remote host's events. */
@@ -528,6 +608,13 @@ export function registerHookHandlers(island: Island) {
   State.planUsage ??= restorePlanUsage(storedClaudePlanUsage());
   void onEvent<HookPayload>("hook", (payload) => handleHook(island, payload));
   void discoverSessions();
+  // The relay stopped waiting without a decision and the terminal has taken
+  // over: a card still up for that request would be lying (#857).
+  void onEvent<string>("approval-expired", (requestId) => {
+    State.unqueueApprovals((x) => x.requestId === requestId);
+    if (State.pendingApproval?.requestId !== requestId) return;
+    dropPendingCard(island);
+  });
 }
 
 function handleHook(island: Island, payload: HookPayload) {
@@ -622,9 +709,8 @@ function handleHook(island: Island, payload: HookPayload) {
       if (q.requestId) void Bridge.approvalDecline(q.requestId);
     }
   }
-  // The tool ran: answered elsewhere (another Coucou, the terminal).
-  const toolDone = (name === "PostToolUse" || name === "PostToolUseFailure") && pending?.tool === payload.tool_name;
-  if (pending && (TURN_OVER.has(name) || toolDone) && ownTurn(pending)) {
+  // The turn is over, or this very call ran: answered elsewhere (another Coucou, the terminal).
+  if (pending && settledElsewhere(pending, name, agentId, payload.session_id ?? "", payload.tool_name, payload.tool_input)) {
     if (pending.requestId) void Bridge.approvalDecline(pending.requestId);
     dropPendingCard(island);
   }
@@ -659,6 +745,8 @@ function handleHook(island: Island, payload: HookPayload) {
   const leaveCode = () => {
     if (focused && State.view === "code") island.setView(State.defaultView());
   };
+  // Each Claude Code session teaches the launch card a project (Mac: SessionLauncher.remember).
+  if ((name === "SessionStart" || name === "UserPromptSubmit") && !payload.coucou_agent && cwd) Launch.remember(cwd);
 
   switch (name) {
     case "SessionStart":
@@ -680,8 +768,8 @@ function handleHook(island: Island, payload: HookPayload) {
       State.updateTask(agentId, "thinking");
       endFollow(agentId);
       // The field is `prompt`; reading `message` meant this step was always blank.
-      const asked = payload.prompt ?? payload.message;
-      if (asked) State.appendStep(agentId, asked.slice(0, 60));
+      const asked = promptStep(payload.prompt ?? payload.message ?? "");
+      if (asked) State.appendStep(agentId, asked);
       if (code) {
         beginTurn(agentId, code);
         leaveCode();
@@ -787,7 +875,7 @@ function handleHook(island: Island, payload: HookPayload) {
       State.updateTask(agentId, "finished");
       Sound.play("finish");
       // A card waiting for an answer is never covered by another alert.
-      if (focused && !State.pendingApproval) {
+      if (showsAlert(agentId, focused)) {
         surface("finished", true);
       } else if (!openForAlert(island, AGENT_FINISHED, agentId, "finished")) {
         State.setPillBadge(agentId, "finished");
@@ -797,6 +885,10 @@ function handleHook(island: Island, payload: HookPayload) {
         agentId,
         window.setTimeout(() => {
           stopTimers.delete(agentId);
+          // While the island is open the alert's card stays on its own pill, and the
+          // pill you had comes back when it closes (island.ts), as on the Mac. An agent
+          // pill about to go hands the front back now.
+          if (isExternalAgent || State.mode !== "expanded") restoreAlertFocus();
           if (isExternalAgent) {
             State.removeTask(agentId);
           } else {
@@ -819,7 +911,7 @@ function handleHook(island: Island, payload: HookPayload) {
       supersedeStop();
       State.updateTask(agentId, "error");
       Sound.play("error");
-      if (focused && !State.pendingApproval) {
+      if (showsAlert(agentId, focused)) {
         surface("error", true);
       } else if (!openForAlert(island, AGENT_ERROR, agentId, "error")) {
         State.setPillBadge(agentId, "error");
@@ -851,6 +943,10 @@ function handleHook(island: Island, payload: HookPayload) {
       break;
 
     case "SubagentStop":
+      // Claude Code's own helpers (the prompt suggestion after each turn) end
+      // with a SubagentStop of empty agent_type and never start one. Shown, it
+      // pushed the turn's last edit off the ticker a few seconds after Stop.
+      if (payload.agent_type === "") break;
       State.appendStep(agentId, t("• subagent done"));
       break;
 
@@ -861,9 +957,10 @@ function handleHook(island: Island, payload: HookPayload) {
         break;
       }
       // Only Claude Code and the agents the relay can answer for (Codex, Copilot
-      // CLI, Muse Code — same as the Mac) get a card. Anyone else's request is
-      // declined at once, so the agent asks in its own terminal.
-      if (isExternalAgent && !APPROVAL_AGENTS.has(validAgent!)) {
+      // CLI, Muse Code, and Antigravity's commands when that is turned on — same
+      // as the Mac) get a card. Anyone else's request is declined at once, so the
+      // agent asks in its own terminal.
+      if (isExternalAgent && !takesCard(validAgent, payload.coucou_kind)) {
         if (payload.request_id) void Bridge.approvalDecline(payload.request_id);
         break;
       }
@@ -871,10 +968,10 @@ function handleHook(island: Island, payload: HookPayload) {
       const requestId = payload.request_id ?? "";
       const tool = payload.tool_name ?? "Tool";
       const input = payload.tool_input ?? {};
-      // Claude Code asking a question is not a permission to grant: the island
-      // shows the options and sends back the one that was picked. Only Claude
-      // Code asks questions this way.
-      const questions = isExternalAgent ? null : askedQuestions(tool, input);
+      // Claude Code (including Claude Desktop) asking a question is not a permission to grant: the island
+      // shows the options and sends back the one that was picked.
+      const isClaude = !isExternalAgent || validAgent === "claude-desktop";
+      const questions = isClaude ? askedQuestions(tool, input) : null;
       const view = questions ? "question" : "approval";
       const info: ApprovalInfo = {
         requestId,
@@ -910,7 +1007,6 @@ function handleHook(island: Island, payload: HookPayload) {
       // line is synchronous, so the card really is up by the time it lands.
       if (requestId) void Bridge.approvalAck(requestId);
       State.updateTask(agentId, view);
-      Sound.play(view);
       // Any agent's card (Claude Code, Codex, Copilot CLI, Muse Code) comes up
       // the same way: beginApproval brought its pill to the front.
       island.alert(view);

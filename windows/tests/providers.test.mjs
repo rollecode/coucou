@@ -11,8 +11,14 @@ import { DEFAULT_SETTINGS } from "../src/core/state.ts";
 const settings = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
 
 test("the ids and key names match the Rust side and the Mac", () => {
-  assert.deepEqual(PROVIDERS.map((p) => p.id), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "ollama", "lmstudio", "custom", "openwebui"]);
+  assert.deepEqual(PROVIDERS.map((p) => p.id), [
+    "anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot",
+    "ollama", "lmstudio", "custom", "openwebui", "cursor", "copilot",
+  ]);
   assert.equal(providerDef("claudecode").key, null);
+  // Cursor and Copilot answer only through the subscription: no key, no address.
+  assert.equal(providerDef("cursor").key, null);
+  assert.equal(providerDef("copilot").urlField, null);
   assert.equal(providerDef("google").key, "google-api-key");
   assert.equal(providerDef("openai").key, "openai-api-key");
   assert.equal(providerDef("openrouter").key, "openrouter-api-key");
@@ -53,6 +59,13 @@ test("Claude Code's button names its model and effort", () => {
   assert.equal(cc({}), "Claude Code");
   assert.equal(cc({ claudeCodeEffort: "high" }), "Claude Code · high");
   assert.equal(cc({ chatModels: { claudecode: "opus" }, claudeCodeEffort: "max" }), "opus · max");
+});
+
+test("Cursor and Copilot show once their subscription is on, or while in use", () => {
+  const ids = (s, on) => visibleProviders(s, on).map((p) => p.id);
+  assert.deepEqual(ids(settings(), new Set(["cursor"])), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "cursor"]);
+  assert.deepEqual(ids(settings({ chatSubscriptions: { copilot: true } })), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "copilot"]);
+  assert.deepEqual(ids(settings({ chatProvider: "copilot" })), ["anthropic", "claudecode", "google", "openai", "openrouter", "deepseek", "qwen", "moonshot", "copilot"]);
 });
 
 test("the saved model is kept when offered, else a sensible one is picked", () => {

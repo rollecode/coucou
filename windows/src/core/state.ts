@@ -118,8 +118,12 @@ export interface Settings {
   expandOnActivity: boolean;
   /** The island steps aside while a full-screen app fills its display (src-tauri platform). */
   hideInFullScreen: boolean;
+  /** Open the island for a moment when any pill finishes or hits an error. */
+  alertsFromAllPills: boolean;
   /** Date and time in the middle of the compact island. */
   showClock: boolean;
+  /** What the closed island shows at the top of the screen (see core/closed.ts). */
+  closedIsland: string;
   absenceInterval: number;
   /** Declared pills next to the main one (at most 4), in the order they were added. */
   activeIntegrations: string[];
@@ -133,6 +137,8 @@ export interface Settings {
   model: string;
   /** Show the Claude plan pill (5 h and weekly limits) in the island's header. */
   showPlanInNotch: boolean;
+  /** Show the Claude plan percentage in the compact island next to the agent dots. */
+  showPlanInCompactIsland: boolean;
   /** Coucou's status line relay is installed in Claude Code's settings. */
   planRelayInstalled: boolean;
   /** Show the Codex plan pill in the island's header. */
@@ -146,6 +152,8 @@ export interface Settings {
   chatProvider: ProviderId;
   /** The model picked for each provider other than Anthropic, by provider id. */
   chatModels: Record<string, string>;
+  /** Settings → Chat → Your AI subscriptions: each provider's switch (cli_relay.rs). */
+  chatSubscriptions: Record<string, boolean>;
   /** Model server addresses once connected; empty means not connected. */
   ollamaUrl: string;
   lmstudioUrl: string;
@@ -213,7 +221,9 @@ export const DEFAULT_SETTINGS: Settings = {
   followActivity: false,
   expandOnActivity: false,
   hideInFullScreen: false,
+  alertsFromAllPills: false,
   showClock: false,
+  closedIsland: "mochi",
   absenceInterval: 180,
   activeIntegrations: [
     "integration_resend", "integration_n8n", "integration_vercel", "integration_github",
@@ -224,6 +234,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hooksInstalled: false,
   model: "claude-opus-5",
   showPlanInNotch: false,
+  showPlanInCompactIsland: false,
   planRelayInstalled: false,
   showCodexPlanInNotch: false,
   compactShowAgents: true,
@@ -232,6 +243,7 @@ export const DEFAULT_SETTINGS: Settings = {
   compactShowPlan: true,
   chatProvider: "anthropic",
   chatModels: {},
+  chatSubscriptions: {},
   ollamaUrl: "",
   lmstudioUrl: "",
   customUrl: "",
@@ -294,6 +306,8 @@ class AppState {
   uploadProgress = 0;
   uploadDuration = 2.4;
   fileDragOver = false;
+  /** The session pill a dragged file is over on the drop card (Mac dropSessionTarget). */
+  dropSessionTarget: string | null = null;
 
   promptContext: PromptContext | null = null;
   droppedFile: { name: string; path: string } | null = null;
@@ -479,6 +493,7 @@ class AppState {
     if (next) {
       this.beginApproval(next);
       this.updateTask(next.pillId, next.questions ? "question" : "approval");
+      this.notify();
       return;
     }
     this.isPinned = false;

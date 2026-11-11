@@ -228,7 +228,7 @@ function parseRule(value: string): Rule | null {
 }
 
 /** Days of one month the rule picks, ascending. */
-function monthDays(rule: Rule, y: number, mo: number, defaultDay: number): number[] {
+function ruleMonthDays(rule: Rule, y: number, mo: number, defaultDay: number): number[] {
   const dim = daysInMonth(y, mo);
   const firstWd = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
   const wdOf = (d: number) => (firstWd + d - 1) % 7;
@@ -295,7 +295,7 @@ function* candidates(rule: Rule, start: Wall, first = 0): Generator<Wall> {
       case "DAILY": {
         const w = addDays(start, k * rule.interval);
         const dayOk = rule.byday.length === 0 || rule.byday.some((b) => b.wd === weekday(w));
-        const mdOk = rule.bymonthday.length === 0 || monthDays(rule, w.y, w.mo, w.d).includes(w.d);
+        const mdOk = rule.bymonthday.length === 0 || ruleMonthDays(rule, w.y, w.mo, w.d).includes(w.d);
         if (monthOk(w) && dayOk && mdOk) yield w;
         break;
       }
@@ -315,14 +315,14 @@ function* candidates(rule: Rule, start: Wall, first = 0): Generator<Wall> {
         const y = start.y + Math.floor(index / 12);
         const mo = (index % 12) + 1;
         if (rule.bymonth.length > 0 && !rule.bymonth.includes(mo)) break;
-        for (const d of monthDays(rule, y, mo, start.d)) yield at(y, mo, d);
+        for (const d of ruleMonthDays(rule, y, mo, start.d)) yield at(y, mo, d);
         break;
       }
       case "YEARLY": {
         const y = start.y + k * rule.interval;
         const months = rule.bymonth.length > 0 ? [...rule.bymonth].sort((a, b) => a - b) : [start.mo];
         for (const mo of months) {
-          for (const d of monthDays(rule, y, mo, start.d)) yield at(y, mo, d);
+          for (const d of ruleMonthDays(rule, y, mo, start.d)) yield at(y, mo, d);
         }
         break;
       }
@@ -531,4 +531,37 @@ export function isAfterToday(e: CalendarEvent, now: number, localTz = localZone(
 export function reminderAt(next: CalendarEvent | null, now: number): number | null {
   if (!next || next.start <= now) return null;
   return Math.max(now, next.start - REMINDER_MS);
+}
+
+// ── Cal.com bookings ──────────────────────────────────────────────────────────
+
+export interface Booking {
+  id: string; title: string; start: Date; end: Date;
+  attendeeName: string; attendeeEmail: string; attendeeNotes: string;
+}
+
+/** Invalid data must not appear as an empty, successfully loaded calendar. */
+export function readBookings(value: unknown): Booking[] | null {
+  if (!Array.isArray(value)) return null;
+  const out: Booking[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw.id !== "string" || typeof raw.start !== "string" || typeof raw.end !== "string") return null;
+    const start = new Date(raw.start), end = new Date(raw.end);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) return null;
+    const text = (key: string) => typeof raw[key] === "string" ? raw[key] : "";
+    out.push({ id: raw.id, title: text("title"), start, end, attendeeName: text("attendeeName"),
+      attendeeEmail: text("attendeeEmail"), attendeeNotes: text("attendeeNotes") });
+  }
+  return out.sort((a, b) => a.start.getTime() - b.start.getTime());
+}
+
+/** Local calendar dates, independent of UTC offset and daylight-saving transitions. */
+export function dayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+export function monthIndex(date: Date): number { return date.getFullYear() * 12 + date.getMonth(); }
+export function monthDays(month: Date): Date[] {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  return Array.from({ length: 42 }, (_, index) => new Date(first.getFullYear(), first.getMonth(), index + 1 - offset));
 }

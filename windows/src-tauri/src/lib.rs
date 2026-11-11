@@ -2,25 +2,33 @@
 
 mod agent_hooks;
 mod agents;
+mod agy_approvals;
+mod agy_rules;
 mod betterstack;
 mod calls;
 mod chat;
 mod claude;
 mod claude_code;
+mod claude_code_chat;
+mod cli_relay;
 mod codex_plan;
 mod config_file;
 mod desktop;
 mod files;
 mod flow;
 mod github;
+mod herdr;
 mod hooks;
 mod i18n;
 mod identity;
 mod integrations;
+mod calcom;
 mod island;
+mod launch;
 mod linear;
 mod local_chat;
 mod log;
+mod mail;
 mod net;
 mod open_webui;
 mod notes;
@@ -48,6 +56,7 @@ mod update;
 mod voice;
 #[cfg(windows)]
 mod webview_drop;
+mod webview_memory;
 mod whatsapp;
 
 use std::process::Command;
@@ -101,7 +110,7 @@ fn boot(app: AppHandle, shared: State<Shared>) -> BootInfo {
 
 #[tauri::command]
 fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
-    let (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed) = {
+    let (settings, screen_changed, autostart_changed, shortcuts_changed, full_screen_changed) = {
         let mut current = shared.settings.lock().unwrap();
         let screen_changed = current.screen != settings.screen;
         let full_screen_changed = current.hide_in_full_screen != settings.hide_in_full_screen;
@@ -125,10 +134,11 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         settings.phone_relay_url = current.phone_relay_url.clone();
         settings.phone_chat_models = current.phone_chat_models.clone();
         settings.portfolio_wallets = current.portfolio_wallets.clone();
+        // Antigravity approvals: only their own switch changes them (agy_approvals.rs).
+        settings.agy_approvals_enabled = current.agy_approvals_enabled;
         *current = settings;
-        (screen_changed, autostart_changed, shortcuts_changed, full_screen_changed)
+        (current.clone(), screen_changed, autostart_changed, shortcuts_changed, full_screen_changed)
     };
-    let settings = shared.settings.lock().unwrap().clone();
     if let Err(err) = settings::save(&settings) {
         log::line(format!("could not save settings: {err}"));
     }
@@ -145,7 +155,8 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
     }
     if screen_changed {
         let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
-        island::apply_geometry(&app, &settings.screen, collapsed);
+        let size = *shared.gate.collapsed_size.lock().unwrap();
+        island::apply_geometry(&app, &settings.screen, collapsed.then_some(size));
     }
     integrations::settings_saved(&app, &settings.active_integrations);
     spotify::sync(&app, &settings.active_integrations);
@@ -182,11 +193,19 @@ fn language_changed(app: &AppHandle) {
 /// Hidden island → shrink the window to the invisible wake strip and park the
 /// cursor poll; anything else → full panel and 60 Hz polling.
 #[tauri::command]
-fn set_collapsed(app: AppHandle, shared: State<Shared>, collapsed: bool) {
+fn set_collapsed(app: AppHandle, shared: State<Shared>, collapsed: bool, width: Option<f64>, height: Option<f64>) {
     let pref = shared.settings.lock().unwrap().screen.clone();
     shared.gate.collapsed.store(collapsed, Ordering::Relaxed);
-    island::apply_geometry(&app, &pref, collapsed);
-    // The wake strip must always take the mouse, and a resize invalidates the flag.
+    // An older page sends no size: the wake strip, as before.
+    let size = island::clamp_collapsed((width.unwrap_or(island::STRIP_W), height.unwrap_or(island::STRIP_H)));
+    *shared.gate.collapsed_size.lock().unwrap() = size;
+    // The poll stops first: a tick of it after this could make the closed
+    // island click-through again (see spawn_cursor_poll).
+    if collapsed {
+        shared.gate.set_active(false);
+    }
+    island::apply_geometry(&app, &pref, collapsed.then_some(size));
+    // The closed island must always take the mouse, and a resize invalidates the flag.
     island::refresh_click_through(&app, &shared.gate);
     shared.gate.set_active(!collapsed);
     platform::set_pointer_watch(!collapsed);
@@ -226,7 +245,8 @@ fn place_island(app: &AppHandle) {
     let Some(shared) = app.try_state::<Shared>() else { return };
     let pref = shared.settings.lock().unwrap().screen.clone();
     let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
-    island::apply_geometry(app, &pref, collapsed);
+    let size = *shared.gate.collapsed_size.lock().unwrap();
+    island::apply_geometry(app, &pref, collapsed.then_some(size));
 }
 
 /// The panel is laid out in CSS px against the window's own scale. If the webview
@@ -394,7 +414,8 @@ const KEYBOARD_HANDOVER: std::time::Duration = std::time::Duration::from_millis(
 
 /// "Open terminal": brings forward the terminal or editor window the session
 /// runs in, when it was found (see session_window.rs); otherwise opens the
-/// folder in VS Code, as before.
+/// folder in VS Code, as before. A session in herdr also gets its pane selected,
+/// and never falls back to VS Code.
 #[tauri::command]
 fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>) -> bool {
     // On another machine: the local terminal ssh'd into it, else a new one. Off the UI thread, as below.
@@ -407,14 +428,15 @@ fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>
         });
         return true;
     }
+    let in_herdr = session_id.as_deref().is_some_and(herdr::focus);
     let Some(owners) = session_id.as_deref().and_then(session_window::lookup) else {
-        return open_in_vscode(path);
+        return in_herdr || open_in_vscode(path);
     };
     let folder = path.as_deref().map(session_window::folder_name).unwrap_or_default().to_string();
     #[cfg(windows)]
     {
         let _ = app;
-        if platform::focus_session_window(&owners, &folder) {
+        if platform::focus_session_window(&owners, &folder) || in_herdr {
             return true;
         }
         open_in_vscode(path)
@@ -428,7 +450,7 @@ fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>
         focus_window(app, false);
         std::thread::spawn(move || {
             std::thread::sleep(KEYBOARD_HANDOVER);
-            if platform::focus_session_window(&owners, &folder) {
+            if platform::focus_session_window(&owners, &folder) || in_herdr {
                 return;
             }
             if platform::runs_in_terminal(&owners) {
@@ -441,8 +463,8 @@ fn open_session(app: AppHandle, session_id: Option<String>, path: Option<String>
     }
 }
 
-/// The Claude Desktop pill's target: the Claude app (Windows only — it has no
-/// Linux build).
+/// The Claude Desktop pill's target: the Claude app (Windows, and Linux with
+/// Anthropic's .deb).
 #[tauri::command]
 fn open_claude_desktop() -> bool {
     platform::open_claude_desktop()
@@ -592,6 +614,7 @@ fn status_line_apply(
         // As on the Mac: taking the relay out turns the pill off with it.
         if !install {
             current.show_plan_in_notch = false;
+            current.show_plan_in_compact_island = false;
         }
         if let Err(err) = settings::save(&current) {
             log::line(format!("could not save settings: {err}"));
@@ -674,9 +697,20 @@ async fn chat_send(
     query: String,
     context: Option<ChatContext>,
     variables: Option<chat::PromptVariables>,
+    mail: Option<bool>,
 ) -> Result<ChatReply, String> {
     let settings = shared.settings.lock().unwrap().clone();
-    chat::send(&app, &chat, &settings, query, context, variables.unwrap_or_default()).await
+    let variables = variables.unwrap_or_default();
+    // The chat's Mail switch: the latest Outlook messages ride under the request, and the
+    // system prompt says how to write a plan (mail/plan.rs) that runs only after a click.
+    if mail == Some(true) {
+        let query = mail::decorate(&query).await;
+        mail::MAIL_TURN.store(true, std::sync::atomic::Ordering::Relaxed);
+        let reply = chat::send(&app, &chat, &settings, query, context, variables).await;
+        mail::MAIL_TURN.store(false, std::sync::atomic::Ordering::Relaxed);
+        return reply;
+    }
+    chat::send(&app, &chat, &settings, query, context, variables).await
 }
 
 /// The models a provider offers, for the picker in the chat view. Only asked
@@ -685,6 +719,12 @@ async fn chat_send(
 async fn chat_models(shared: State<'_, Shared>, provider: String) -> Result<Vec<ModelInfo>, String> {
     let settings = shared.settings.lock().unwrap().clone();
     chat::models(&settings, &provider).await
+}
+
+/// The Claude API settings use their own key even when chat uses a CLI plan.
+#[tauri::command]
+async fn claude_api_models() -> Result<Vec<ModelInfo>, String> {
+    claude::available_models().await
 }
 
 /// Settings → Local models → Connect: does the server answer, and with which models?
@@ -703,7 +743,7 @@ fn local_set_key(provider: String, url: String, key: String) -> Result<(), Strin
 #[tauri::command]
 fn chat_reset(chat: State<Chat>) {
     chat.reset();
-    claude_code::cancel();
+    claude_code_chat::cancel();
 }
 
 /// Copies a dropped file into the inbox and reports its name back.
@@ -716,6 +756,36 @@ fn ingest_file(path: String) -> Result<DroppedFile, String> {
 #[tauri::command]
 fn secret_present(key: String) -> bool {
     secrets::present(&key)
+}
+
+/// Whether Claude can answer: an API key, or else the user's own Claude Code.
+#[tauri::command]
+fn claude_ready() -> bool {
+    claude::ready()
+}
+
+/// Settings → Chat → Your AI subscriptions: each provider's switch and
+/// whether its terminal tool is installed (looked up again on every call).
+#[tauri::command]
+fn subscription_status(shared: State<Shared>) -> Vec<cli_relay::Status> {
+    let settings = shared.settings.lock().unwrap().clone();
+    cli_relay::status(&settings)
+}
+
+/// A switch under "Your AI subscriptions" moved: saved, and both windows told.
+#[tauri::command]
+fn subscription_set(app: AppHandle, shared: State<Shared>, provider: String, on: bool) -> Vec<cli_relay::Status> {
+    let settings = {
+        let mut current = shared.settings.lock().unwrap();
+        cli_relay::set(&mut current, &provider, on);
+        current.clone()
+    };
+    if let Err(err) = settings::save(&settings) {
+        log::line(format!("could not save settings: {err}"));
+    }
+    let status = cli_relay::status(&settings);
+    let _ = app.emit("settings-changed", settings);
+    status
 }
 
 #[tauri::command]
@@ -881,6 +951,7 @@ fn create_settings_window(app: &AppHandle) {
                     api.prevent_close();
                     let _ = this.hide();
                     set_hub_shown(&this, false);
+                    webview_memory::set_low(&this, true);
                 }
                 // Minimised (a 0×0 resize on Windows) or back from it.
                 tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Focused(true) => {
@@ -889,6 +960,7 @@ fn create_settings_window(app: &AppHandle) {
                 }
                 _ => {}
             });
+            webview_memory::set_low(&win, true); // created hidden
         }
         Err(err) => log::line(format!("Coucou window failed: {err}")),
     }
@@ -906,6 +978,11 @@ fn set_hub_shown(win: &tauri::WebviewWindow, shown: bool) {
     }
 }
 
+/// Whether the Coucou window is on screen, for what only it shows.
+pub(crate) fn hub_is_shown() -> bool {
+    HUB_SHOWN.load(Ordering::Relaxed)
+}
+
 /// The page asks once at load, in case it missed the event.
 #[tauri::command]
 fn hub_shown() -> bool {
@@ -920,12 +997,26 @@ pub fn show_settings_window(app: &AppHandle) {
 /// "settings", "general", "shortcuts"…).
 pub fn show_hub(app: &AppHandle, page: Option<&str>) {
     let Some(win) = app.get_webview_window(HUB_LABEL) else {
-        log::line("Coucou window missing");
+        // Creating it at startup can fail on some machines (WebView2
+        // 0x80070578, #775): try again now, on the main thread, where
+        // window creation can't deadlock a command.
+        log::line("Coucou window missing, creating it again");
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            create_settings_window(&handle);
+            if let Some(win) = handle.get_webview_window(HUB_LABEL) {
+                webview_memory::set_low(&win, false);
+                let _ = win.show();
+                let _ = win.set_focus();
+                set_hub_shown(&win, true);
+            }
+        });
         return;
     };
     if let Some(page) = page {
         let _ = win.emit("hub-page", page.to_string());
     }
+    webview_memory::set_low(&win, false);
     let _ = win.unminimize();
     let _ = win.show();
     let _ = win.set_focus();
@@ -978,6 +1069,20 @@ pub fn run() {
         .manage(recap::load())
         .invoke_handler(tauri::generate_handler![
             boot,
+            mail::mail_refresh,
+            mail::mail_more,
+            mail::mail_search,
+            mail::mail_detail,
+            mail::mail_open,
+            mail::mail_act,
+            mail::mail_triage,
+            mail::mail_triage_set,
+            mail::mail_journal_clear,
+            mail::mail_undo,
+            mail::mail_plan_show,
+            mail::mail_plan_test,
+            mail::mail_plan_start,
+            mail::mail_plan_cancel,
             save_settings,
             set_system_languages,
             set_collapsed,
@@ -994,6 +1099,9 @@ pub fn run() {
             open_in_vscode,
             file_snippet,
             open_session,
+            launch::launch_session,
+            launch::pick_folder,
+            launch::drop_into_session,
             open_claude_desktop,
             open_file_in_vscode,
             quit_app,
@@ -1014,15 +1122,21 @@ pub fn run() {
             approval_answer,
             approval_ack,
             approval_decline,
+            agy_approvals::agy_approvals_status,
+            agy_approvals::agy_approvals_set_enabled,
             log_line,
             chat_send,
             chat_models,
+            claude_api_models,
             local_connect,
             local_set_key,
             claude_sessions,
             chat_reset,
             ingest_file,
             secret_present,
+            claude_ready,
+            subscription_status,
+            subscription_set,
             secret_set,
             secret_clear,
             refresh_integration,
@@ -1096,6 +1210,7 @@ pub fn run() {
             whatsapp::whatsapp_island,
             whatsapp::whatsapp_open,
             whatsapp::whatsapp_close,
+            whatsapp::whatsapp_open_app,
             whatsapp::whatsapp_send,
             whatsapp::whatsapp_ignore,
             whatsapp::whatsapp_unignore,
@@ -1157,6 +1272,7 @@ pub fn run() {
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
+            secrets::warm_up();
             app.manage(phone_link::PhoneLink::new(handle.clone()));
             tray::build(&handle)?;
             // Before the island: see create_settings_window.
@@ -1189,7 +1305,7 @@ pub fn run() {
                         let _ = blur_handle.emit_to(island::WINDOW_LABEL, "blur", ());
                     }
                 });
-                island::apply_geometry(&handle, &loaded.screen, false);
+                island::apply_geometry(&handle, &loaded.screen, None);
                 let _ = win.show();
                 platform::hide_in_full_screen(&handle, loaded.hide_in_full_screen);
             }
@@ -1207,6 +1323,7 @@ pub fn run() {
             pipe::start(handle.clone());
             phone_link::start_if_enabled(&handle);
             integrations::start(handle.clone());
+            mail::start(handle.clone());
             spotify::sync(&handle, &loaded.active_integrations);
             remote::sync(&handle, &loaded.remote_hosts, &loaded.remote_client_id);
             // The entry stores the executable's path: point it at this one, in case the app moved.

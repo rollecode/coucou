@@ -34,6 +34,8 @@ struct SettingsView: View {
     @State private var hookNeedsUpdate: Bool = HookServer.hooksNeedUpdate()
 
     #if !APPSTORE
+    /// Bumped when a subscription tool is found or a switch moves: redraws Settings → Chat.
+    @State private var cliScan = 0
     @State private var showStatusLineDiff: Bool = false
     @State private var pendingStatusLineJSON: String = ""
     @State private var statusLinePendingInstall: Bool = true
@@ -48,6 +50,8 @@ struct SettingsView: View {
     @State private var showAgyDiff: Bool = false
     @State private var pendingAgyJSON: String = ""
     @State private var agyPendingInstall: Bool = true
+    @AppStorage(HookServer.agyApprovalsKey) private var agyApprovalsEnabled = false
+    @State private var agyHookTimeout: Int? = HookServer.agyPreToolTimeout()
 
     @State private var codexHooksInstalled: Bool = HookServer.codexHooksInstalled()
     @State private var showCodexDiff: Bool = false
@@ -125,6 +129,8 @@ struct SettingsView: View {
     @AppStorage(CryptoSettings.coinsKey)        private var cryptoCoins = CryptoSettings.defaultCoins
     @AppStorage(CryptoSettings.alertKey)        private var cryptoAlert = false
     @AppStorage(CryptoSettings.alertPercentKey) private var cryptoAlertPercent = 5.0
+    @AppStorage(CoucoudoroSettings.workKey)     private var coucoudoroWork = CoucoudoroSettings.defaultWork
+    @AppStorage(CoucoudoroSettings.restKey)     private var coucoudoroRest = CoucoudoroSettings.defaultRest
 
     // Hotkey
     @State private var hotkeyFlags: UInt    = AppState.shared.hotkeyFlags
@@ -238,14 +244,17 @@ struct SettingsView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 12)
                 }
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        sectionContent
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            sectionContent
+                        }
+                        .padding(.horizontal, embeddedSection == nil ? 20 : 28)
+                        .padding(.top, embeddedSection == nil ? 0 : 20)
+                        .padding(.bottom, 16)
+                        .frame(maxWidth: embeddedSection == nil ? .infinity : 1100, alignment: .leading)
                     }
-                    .padding(.horizontal, embeddedSection == nil ? 20 : 28)
-                    .padding(.top, embeddedSection == nil ? 0 : 20)
-                    .padding(.bottom, 16)
-                    .frame(maxWidth: embeddedSection == nil ? .infinity : 1100, alignment: .leading)
+                    .settingsSearchScroll(proxy)
                 }
                 if !statusMessage.isEmpty {
                     Divider()
@@ -327,6 +336,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.demo")
 
         GroupBox("Sound") {
             VStack(alignment: .leading, spacing: 10) {
@@ -361,6 +371,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.sound")
 
         #if !APPSTORE
         GroupBox("Calls") {
@@ -438,6 +449,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.behavior")
 
         GroupBox("Display") {
             VStack(alignment: .leading, spacing: 10) {
@@ -469,6 +481,20 @@ struct SettingsView: View {
                 #if !APPSTORE
                 Toggle("Show plan usage in the folded island", isOn: $state.compactShowPlan)
                 #endif
+                // The notch or a corner of the screen (IslandPlacement), both builds.
+                Picker(String(localized: "island.position"), selection: $state.islandPlacement) {
+                    Text("island.position.notch").tag(IslandPlacement.notch)
+                    Divider()
+                    Text("island.position.top-left").tag(IslandPlacement.topLeft)
+                    Text("island.position.top-right").tag(IslandPlacement.topRight)
+                    Text("island.position.bottom-left").tag(IslandPlacement.bottomLeft)
+                    Text("island.position.bottom-right").tag(IslandPlacement.bottomRight)
+                }
+                .frame(maxWidth: 360)
+                Text("island.position.hint")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(6)
             .onAppear { refreshConnectedScreens() }
@@ -477,6 +503,7 @@ struct SettingsView: View {
                 refreshConnectedScreens()
             }
         }
+            .settingsAnchor("general.display")
 
         GroupBox(String(localized: "vitals.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -490,6 +517,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.vitals")
 
         GroupBox("Hotkey") {
             VStack(alignment: .leading, spacing: 10) {
@@ -518,15 +546,18 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.hotkey")
 
         GroupBox("Startup") {
             Toggle("Launch at Mac startup", isOn: $launchAtStartup)
                 .onChange(of: launchAtStartup) { _, on in toggleStartup(on) }
                 .padding(6)
         }
+            .settingsAnchor("general.startup")
 
         #if !APPSTORE
         UpdateSettingsSection()
+            .settingsAnchor("general.update")
         #endif
 
         GroupBox(String(localized: "Weekly recap")) {
@@ -542,6 +573,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.recap")
 
         GroupBox(String(localized: "Language")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -561,6 +593,8 @@ struct SettingsView: View {
                     Text("Deutsch").tag("de")
                     Text("Türkçe").tag("tr")
                     Text("ไทย").tag("th")
+                    Text("한국어").tag("ko")
+                    Text("日本語").tag("ja")
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
@@ -574,6 +608,15 @@ struct SettingsView: View {
                 }
                 HStack(spacing: 8) {
                     Button(String(localized: "Restart Coucou")) {
+                        #if APPSTORE
+                        // Sandboxed: no helper process that outlives the app (guideline 2.4.5).
+                        // Launch a fresh copy through Launch Services, then quit once it is on its way.
+                        let config = NSWorkspace.OpenConfiguration()
+                        config.createsNewApplicationInstance = true
+                        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, _ in
+                            DispatchQueue.main.async { NSApp.terminate(nil) }
+                        }
+                        #else
                         let appPath = Bundle.main.bundleURL.path
                         let pid = ProcessInfo.processInfo.processIdentifier
                         let task = Process()
@@ -581,6 +624,7 @@ struct SettingsView: View {
                         task.arguments = ["-c", "while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done; open \"$1\"", "--", appPath]
                         try? task.run()
                         NSApp.terminate(nil)
+                        #endif
                     }
                     .buttonStyle(.bordered)
                     Text(String(localized: "Applies on next launch"))
@@ -590,6 +634,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.language")
 
         #if PHONE_LINK
         GroupBox("iPhone") {
@@ -619,6 +664,12 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("general.iphone")
+        #endif
+
+        #if !APPSTORE
+        AndroidLinkSettingsBox()
+            .settingsAnchor("general.android")
         #endif
     }
 
@@ -662,6 +713,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("pills.main")
     }
 
     // MARK: - Agents section
@@ -732,10 +784,12 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.claude")
 
         #if !APPSTORE
         RemoteHostsSection()
         ClaudeDesktopChatSettingsSection()
+            .settingsAnchor("agents.claude-desktop")
 
         GroupBox(String(localized: "hooks.gemini.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -769,6 +823,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.gemini")
 
         GroupBox(String(localized: "hooks.antigravity.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -799,9 +854,28 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                     }
                 }
+
+                if agyHooksInstalled {
+                    Divider()
+                    Toggle(String(localized: "hooks.antigravity.approvals"), isOn: $agyApprovalsEnabled)
+                    Text(agyApprovalsEnabled
+                         ? String(localized: "hooks.antigravity.approvals.on")
+                         : String(localized: "hooks.antigravity.approvals.off"))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    // Hooks written by an older Coucou give Antigravity 10 s: too short to wait for a click.
+                    if agyApprovalsEnabled, (agyHookTimeout ?? 0) < HookServer.agyApprovalHookTimeout {
+                        Text(String(localized: "hooks.antigravity.approvals.update"))
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             .padding(6)
         }
+            .settingsAnchor("agents.antigravity")
 
         GroupBox(String(localized: "hooks.codex.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -835,6 +909,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.codex")
 
         GroupBox(String(localized: "hooks.copilot.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -868,6 +943,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.copilot")
 
         GroupBox(String(localized: "hooks.muse.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -901,6 +977,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.muse")
 
         GroupBox(String(localized: "plugin.opencode.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -934,6 +1011,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.opencode")
 
         GroupBox(String(localized: "plugin.amp.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -967,6 +1045,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.amp")
 
         GroupBox(String(localized: "plugin.hermes.title")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -1039,6 +1118,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.hermes")
         #if !APPSTORE
         .task(id: hermesPluginInstalled) {
             guard hermesPluginInstalled else { hermesSupportsApprovals = false; return }
@@ -1118,12 +1198,81 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("agents.plan")
         #endif
     }
 
     // MARK: - Chat section
 
+    #if !APPSTORE
+    /// One provider under "Your AI subscriptions": its switch, and whether its tool is there.
+    @ViewBuilder private func subscriptionRow(_ provider: ChatProvider) -> some View {
+        let installed = provider.installedCLI
+        let tool = installed ?? provider.subscriptionCLIs[0]
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Circle().fill(Color(hex: provider.accentHex)).frame(width: 8, height: 8)
+                Text(provider.subscriptionName).font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Toggle(String(localized: "chat.subscriptions.use"), isOn: Binding(
+                    get: { state.usesSubscription(provider) },
+                    set: { on in
+                        state.setUsesSubscription(on, for: provider)
+                        cliScan += 1
+                    }))
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+            if let installed {
+                Text(String(format: String(localized: "chat.subscriptions.found"), installed.displayName))
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#22C55E"))
+                Text(String(format: String(localized: "chat.subscriptions.sign-in"), installed.signIn))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .textSelection(.enabled)
+            } else {
+                HStack(spacing: 6) {
+                    Text(String(format: String(localized: "chat.subscriptions.missing"), tool.displayName))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    Button(String(localized: "chat.subscriptions.install")) {
+                        if let url = URL(string: tool.installURL) { NSWorkspace.shared.open(url) }
+                    }
+                    .buttonStyle(.link)
+                    .font(.system(size: 11))
+                }
+            }
+            if !provider.subscriptionOnly && !state.usesSubscription(provider) {
+                Text(String(localized: "chat.subscriptions.off"))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    #endif
+
     @ViewBuilder private var chatSection: some View {
+        #if !APPSTORE
+        GroupBox(String(localized: "chat.subscriptions.title")) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(String(localized: "chat.subscriptions.description"))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(ChatProvider.subscriptionProviders, id: \.self) { provider in
+                    subscriptionRow(provider)
+                    if provider != ChatProvider.subscriptionProviders.last { Divider() }
+                }
+            }
+            .padding(6)
+            .id(cliScan)
+        }
+            .settingsAnchor("chat.subscriptions")
+        .onAppear { CLILocator.shared.refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: CLILocator.changed)) { _ in cliScan += 1 }
+        #endif
+
         GroupBox(String(localized: "chat.anthropic-api.title")) {
             VStack(alignment: .leading, spacing: 8) {
                 SecureField(String(localized: "chat.api-key.claude"), text: $apiKey)
@@ -1133,6 +1282,7 @@ struct SettingsView: View {
                     statusMessage = String(localized: "status.key-saved")
                 }
                 .buttonStyle(.borderedProminent)
+
 
                 Divider().padding(.vertical, 2)
 
@@ -1162,6 +1312,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("chat.anthropic")
 
         GroupBox(String(localized: "chat.other-providers.title")) {
             VStack(alignment: .leading, spacing: 12) {
@@ -1239,6 +1390,7 @@ struct SettingsView: View {
             }
             .padding(.vertical, 4)
         }
+            .settingsAnchor("chat.others")
 
         GroupBox(String(localized: "chat.local.title")) {
             VStack(alignment: .leading, spacing: 12) {
@@ -1363,6 +1515,7 @@ struct SettingsView: View {
             }
             .padding(.vertical, 4)
         }
+            .settingsAnchor("chat.local")
 
         #if !APPSTORE
         // Claude Code in the chat: what it starts with. The picker above the chat box changes the same values.
@@ -1642,9 +1795,30 @@ struct SettingsView: View {
                 .onChange(of: cryptoExchange) { _, _ in CryptoController.shared.settingsChanged() }
                 .onChange(of: cryptoCurrency) { _, _ in CryptoController.shared.settingsChanged() }
 
-                // Portfolio: exchange accounts + wallets.
+                // Coucoudoro: a local countdown. Lengths are minutes and apply to the next phase.
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#0EA5E9")).frame(width: 8, height: 8)
+                        Text(verbatim: "Coucoudoro").font(.system(size: 12, weight: .semibold))
+                    }
+                    coucoudoroMinutes(String(localized: "coucoudoro.work", defaultValue: "Work"),
+                                 value: $coucoudoroWork, bounds: CoucoudoroSettings.workBounds)
+                    coucoudoroMinutes(String(localized: "coucoudoro.rest", defaultValue: "Rest"),
+                                 value: $coucoudoroRest, bounds: CoucoudoroSettings.restBounds)
+                    Text(String(localized: "coucoudoro.hint", defaultValue: "Work, then rest, on repeat, until you stop. Turn the Coucoudoro pill on to use it."))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .onAppear { applyCoucoudoroSettings() }
+                .onChange(of: coucoudoroWork) { _, _ in applyCoucoudoroSettings() }
+                .onChange(of: coucoudoroRest) { _, _ in applyCoucoudoroSettings() }
+
+                #if !APPSTORE
+                // Portfolio: exchange accounts + wallets (GitHub build, like its pill).
                 PortfolioSettingsSection()
                     .padding(.top, 4)
+                #endif
 
                 #if !APPSTORE
                 // WhatsApp through a local gateway: its own fields, saved by its own button.
@@ -1660,6 +1834,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("integrations.all")
     }
 
     // MARK: - Voice section
@@ -1673,6 +1848,7 @@ struct SettingsView: View {
     @AppStorage("voiceElevenGender")   private var elevenGender: String = "female"
     @AppStorage("voicePitchFemale")    private var pitchFemale: Double = VoiceSettings.defaultPitchFemale
     @AppStorage("voicePitchMale")      private var pitchMale: Double = VoiceSettings.defaultPitchMale
+    @AppStorage(VoiceSettings.rateKey) private var speechRate: Double = VoiceSettings.defaultRate
     @State private var webKeySaved: Bool = !(KeychainStore.shared.get("anthropic-api-key") ?? "").isEmpty
     @State private var elevenKeyDraft: String = ""
     @State private var elevenKeySaved: Bool = KeychainStore.shared.get(ElevenLabsTTS.keyName) != nil
@@ -1740,6 +1916,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("voice.wake")
         .onAppear {
             voicePermissionsGranted = VoiceSettings.micStatus == .granted
                 && VoiceSettings.speechStatus == .granted
@@ -1778,6 +1955,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("voice.language")
 
         GroupBox(String(localized: "voice.tts-engine")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -1825,6 +2003,15 @@ struct SettingsView: View {
                                })
                         .frame(maxWidth: 180)
                     }
+                    HStack(spacing: 8) {
+                        Text(String(localized: "voice.tts-speed"))
+                        Slider(value: $speechRate, in: 0.7...1.5, step: 0.05,
+                               onEditingChanged: { editing in
+                                   // Released: hear the new speed right away.
+                                   if !editing { speakVoiceSample() }
+                               })
+                        .frame(maxWidth: 180)
+                    }
                     let current = VoiceSpeaker.macVoiceName(for: Locale(identifier: voiceLanguage == "fr" ? "fr-FR" : "en-US"),
                                                             gender: elevenGender)
                     Text(String(format: String(localized: "voice.mac-voice-current %@"), current))
@@ -1845,6 +2032,7 @@ struct SettingsView: View {
             }
             .padding(6)
         }
+            .settingsAnchor("voice.tts")
     }
 
     #if !APPSTORE
@@ -1899,6 +2087,7 @@ struct SettingsView: View {
                     }
                     .padding(6)
                 }
+                    .settingsAnchor("voice.history")
             }
         }
     }
@@ -1964,9 +2153,18 @@ struct SettingsView: View {
 
     private func installHooksAppStore() {
         guard let claudeURL = pickClaudeFolder(prompt: "Select") else { return }
+        // Show the settings.json Coucou is about to write, as the GitHub build does.
+        let preview: String
+        do {
+            preview = try HookServer.shared.previewClaudeHooksAppStore(claudeURL: claudeURL)
+        } catch {
+            statusMessage = "❌ \(error.localizedDescription)"
+            return
+        }
         let alert = NSAlert()
         alert.messageText = String(localized: "alert.hooks.title")
         alert.informativeText = String(localized: "alert.hooks.body")
+        alert.accessoryView = Self.hooksPreviewView(preview)
         alert.addButton(withTitle: String(localized: "alert.hooks.button-install"))
         alert.addButton(withTitle: String(localized: "Cancel"))
         alert.alertStyle = .informational
@@ -1978,6 +2176,21 @@ struct SettingsView: View {
         } catch {
             statusMessage = "❌ \(error.localizedDescription)"
         }
+    }
+
+    /// A read-only, scrollable copy of the settings.json to be written, for the alert.
+    private static func hooksPreviewView(_ json: String) -> NSView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 420, height: 180))
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        let text = NSTextView(frame: scroll.bounds)
+        text.isEditable = false
+        text.isSelectable = true
+        text.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
+        text.string = json
+        text.autoresizingMask = [.width]
+        scroll.documentView = text
+        return scroll
     }
 
     private func uninstallHooksAppStore() {
@@ -2149,6 +2362,7 @@ struct SettingsView: View {
             showAgyDiff = false
             pendingAgyJSON = ""
             agyHooksInstalled = agyPendingInstall
+            agyHookTimeout = HookServer.agyPreToolTimeout()
             statusMessage = agyPendingInstall
                 ? String(localized: "status.agy-hooks-installed")
                 : String(localized: "status.agy-hooks-removed")
@@ -2396,6 +2610,40 @@ struct SettingsView: View {
         }
     }
     #endif
+
+    /// Pull each length into 1…60 minutes.
+    private func applyCoucoudoroSettings() {
+        let work = CoucoudoroSettings.clampWork(coucoudoroWork)
+        let rest = CoucoudoroSettings.clampRest(coucoudoroRest)
+        if coucoudoroWork != work { coucoudoroWork = work }
+        if coucoudoroRest != rest { coucoudoroRest = rest }
+        CoucoudoroController.shared.settingsChanged()
+    }
+
+    /// One minute per step, with the current length beside the slider. Same row as the volume slider.
+    private func coucoudoroMinutes(_ label: String, value: Binding<Int>, bounds: ClosedRange<Int>) -> some View {
+        let shown = min(max(value.wrappedValue, bounds.lowerBound), bounds.upperBound)
+        let minutes = Binding<Double>(
+            get: { Double(min(max(value.wrappedValue, bounds.lowerBound), bounds.upperBound)) },
+            set: { value.wrappedValue = Int($0.rounded()) }
+        )
+        let unit = String(localized: "coucoudoro.unit", defaultValue: "min")
+        return HStack(spacing: 8) {
+            Text(label)
+                .lineLimit(1)
+            Slider(value: minutes, in: Double(bounds.lowerBound)...Double(bounds.upperBound), step: 1)
+                .accessibilityLabel(Text(label))
+                .accessibilityValue(Text("\(shown) \(unit)"))
+            Text(verbatim: "\(shown)")
+                .monospacedDigit()
+                .foregroundColor(.secondary)
+                .frame(minWidth: 16, alignment: .trailing)
+            Text(unit)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+        .font(.system(size: 11))
+    }
 
     private func saveIntegrations() {
         saveKey("resend-api-key",  value: resendKey)

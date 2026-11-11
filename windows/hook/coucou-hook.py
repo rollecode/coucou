@@ -183,7 +183,8 @@ def prepare(raw, arg_event, env, cwd):
         payload["home"] = env["HOME"]
     for field, var in (("term_program", "TERM_PROGRAM"), ("wt_session", "WT_SESSION"),
                      ("term_session_id", "TERM_SESSION_ID"), ("vscode_pid", "VSCODE_PID"),
-                     ("session_pid", "CLAUDE_CODE_SSE_PORT")):
+                     ("session_pid", "CLAUDE_CODE_SSE_PORT"), ("herdr_pane", "HERDR_PANE_ID"),
+                     ("herdr_bin", "HERDR_BIN_PATH"), ("wsl_distro", "WSL_DISTRO_NAME")):
         payload.setdefault(field, env.get(var, ""))
     # As a remote relay: the machine and who ran the hook, so Coucou on this same machine finds the session's terminal.
     if env.get("COUCOU_SOCKET"):

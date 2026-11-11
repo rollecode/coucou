@@ -74,7 +74,7 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_gitlab", 7, 300, poll_gitlab);
     spawn(app.clone(), "integration_gitea", 7, 300, poll_gitea);
     spawn_github_loops(app.clone());
-    spawn(app.clone(), "integration_calcom", 8, 300, poll_calcom);
+    spawn(app.clone(), "integration_calcom", 8, 300, crate::calcom::poll);
     spawn(app.clone(), "integration_notion", 9, 300, poll_notion);
     spawn(app.clone(), "integration_linear", 11, 60, poll_linear);
     spawn(app.clone(), "integration_betterstack", 10, 60, poll_betterstack);
@@ -85,7 +85,7 @@ pub fn start(app: AppHandle) {
 }
 
 /// True when the user has this integration switched on in settings.
-fn enabled(app: &AppHandle, id: &str) -> bool {
+pub(crate) fn enabled(app: &AppHandle, id: &str) -> bool {
     app.try_state::<crate::Shared>()
         .map(|shared| {
             let settings = shared.settings.lock().unwrap();
@@ -131,7 +131,7 @@ pub async fn poll_once(app: AppHandle, id: &str) {
         "integration_n8n" => poll_n8n(app).await,
         "integration_resend" => poll_resend(app).await,
         "integration_notion" => poll_notion(app).await,
-        "integration_calcom" => poll_calcom(app).await,
+        "integration_calcom" => crate::calcom::poll(app).await,
         "integration_calendar" => poll_calendar(app).await,
         TIMELY => poll_timely(app).await,
         "integration_slack" => crate::slack::poll(app).await,
@@ -227,14 +227,100 @@ fn gitea_ci(state: Option<&str>) -> CiState {
     }
 }
 
+pub(crate) fn gitea_workflow_ci(status: Option<&str>, conclusion: Option<&str>) -> CiState {
+    let s = status.map(str::to_ascii_lowercase);
+    let c = conclusion.map(str::to_ascii_lowercase);
+
+    match (s.as_deref(), c.as_deref()) {
+        (Some("completed") | Some("done"), Some("success")) => CiState::Success,
+        (
+            Some("completed") | Some("done"),
+            Some("failure") | Some("timed_out") | Some("cancelled") | Some("action_required"),
+        ) => CiState::Failure,
+        (Some("completed") | Some("done"), Some("skipped") | Some("neutral")) => CiState::Success,
+        (
+            Some(
+                "running"
+                | "in_progress"
+                | "queued"
+                | "waiting"
+                | "pending"
+                | "blocked"
+                | "requested",
+            ),
+            _,
+        ) => CiState::Pending,
+        _ => match (s.as_deref(), c.as_deref()) {
+            (Some("success"), _) | (_, Some("success")) => CiState::Success,
+            (Some("failure"), _) | (_, Some("failure")) => CiState::Failure,
+            (Some("pending"), _) | (_, Some("pending")) => CiState::Pending,
+            _ => CiState::Unknown,
+        },
+    }
+}
+
+async fn gitea_actions_ci(
+    http: &reqwest::Client,
+    token: &str,
+    base: &str,
+    repo: &str,
+    branch: &str,
+) -> Option<(CiState, Option<String>)> {
+    let url = format!("{base}/repos/{repo}/actions/runs?branch={branch}&page=1&limit=5");
+    let resp = http
+        .get(url)
+        .header("Authorization", format!("token {token}"))
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let body: Value = resp.json().await.ok()?;
+    let runs = if let Some(arr) = body.get("workflow_runs").and_then(Value::as_array) {
+        arr.as_slice()
+    } else if let Some(arr) = body.as_array() {
+        arr.as_slice()
+    } else {
+        &[]
+    };
+
+    let target = runs.iter().find(|r| {
+        r.get("head_branch")
+            .and_then(Value::as_str)
+            .map_or(true, |b| b.eq_ignore_ascii_case(branch))
+    })?;
+
+    let status = target.get("status").and_then(Value::as_str);
+    let conclusion = target.get("conclusion").and_then(Value::as_str);
+    let head_sha = target
+        .get("head_sha")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let ci = gitea_workflow_ci(status, conclusion);
+    if ci != CiState::Unknown {
+        Some((ci, head_sha))
+    } else {
+        None
+    }
+}
+
 async fn gitea_main_ci(http: &reqwest::Client, token: &str, base: &str, repos: &[Value]) -> Vec<GitHubRepoCi> {
     let mut out = Vec::new();
     for repo in repos.iter().take(20) {
         let Some(name) = repo.get("full_name").and_then(Value::as_str) else { continue };
         let branch = repo.get("default_branch").and_then(Value::as_str).unwrap_or("main");
         let statuses = gitea_get(http, token, format!("{base}/repos/{name}/commits/{branch}/statuses?limit=1&sort=recentupdate")).await;
+        let mut ci = gitea_ci(statuses.first().and_then(|s| s.get("state")).and_then(Value::as_str));
+        let mut head_sha = None;
+        if ci == CiState::Unknown {
+            if let Some((action_ci, action_sha)) = gitea_actions_ci(http, token, base, name, branch).await {
+                ci = action_ci;
+                head_sha = action_sha;
+            }
+        }
         out.push(GitHubRepoCi { repo: name.to_string(), url: repo.get("html_url").and_then(Value::as_str).unwrap_or("").to_string(),
-            branch: branch.to_string(), ci: gitea_ci(statuses.first().and_then(|s| s.get("state")).and_then(Value::as_str)), head_sha: None });
+            branch: branch.to_string(), ci, head_sha });
     }
     out
 }
@@ -413,6 +499,27 @@ fn status_error(code: u16, unauthorised_hint: &str) -> String {
 
 // ── Stripe ────────────────────────────────────────────────────────────────────
 
+fn parse_stripe_balance(json: &Value) -> (i64, String) {
+    let mut buckets: Vec<Value> = Vec::new();
+    for k in ["available", "pending"] {
+        if let Some(arr) = json.get(k).and_then(Value::as_array) {
+            buckets.extend(arr.iter().cloned());
+        }
+    }
+    let currency = buckets
+        .first()
+        .and_then(|b| b.get("currency"))
+        .and_then(Value::as_str)
+        .unwrap_or("eur")
+        .to_string();
+    let amount: i64 = buckets
+        .iter()
+        .filter(|b| b.get("currency").and_then(Value::as_str) == Some(&currency))
+        .filter_map(|b| b.get("amount").and_then(Value::as_i64))
+        .sum();
+    (amount, currency)
+}
+
 async fn poll_stripe(app: AppHandle) {
     let Some(key) = secrets::get("stripe-api-key") else { return };
     let auth = format!("Basic {}", crate::claude::base64_for(format!("{key}:").as_bytes()));
@@ -427,23 +534,7 @@ async fn poll_stripe(app: AppHandle) {
     let (amount, currency) = match balance {
         Ok(r) if r.status().is_success() => {
             let json: Value = r.json().await.unwrap_or(json!({}));
-            let mut buckets: Vec<Value> = Vec::new();
-            for k in ["available", "pending"] {
-                if let Some(arr) = json.get(k).and_then(Value::as_array) {
-                    buckets.extend(arr.iter().cloned());
-                }
-            }
-            let currency = buckets
-                .first()
-                .and_then(|b| b.get("currency"))
-                .and_then(Value::as_str)
-                .unwrap_or("eur")
-                .to_string();
-            let amount: i64 = buckets
-                .iter()
-                .filter_map(|b| b.get("amount").and_then(Value::as_i64))
-                .sum();
-            (amount, currency)
+            parse_stripe_balance(&json)
         }
         Ok(r) => {
             let code = r.status().as_u16();
@@ -563,30 +654,51 @@ async fn poll_github(app: AppHandle) {
         .and_then(Value::as_i64)
         .unwrap_or(0);
 
-    let repos = http
-        .get("https://api.github.com/user/repos?per_page=100&affiliation=owner&sort=pushed")
-        .header("Authorization", format!("Bearer {token}"))
-        .header("Accept", "application/vnd.github+json")
-        .header("User-Agent", "Coucou")
-        .send()
-        .await;
-    let stars: i64 = match repos {
-        Ok(r) if r.status().is_success() => r
-            .json::<Value>()
-            .await
-            .ok()
-            .and_then(|v| v.as_array().cloned())
-            .map(|list| {
-                list.iter()
-                    .filter_map(|r| r.get("stargazers_count").and_then(Value::as_i64))
-                    .sum()
-            })
-            .unwrap_or(0),
-        _ => 0,
-    };
+    let total_repos = public + private;
+    let max_pages = calculate_repo_pages(total_repos);
+    let mut stars: i64 = 0;
 
-    GITHUB.cache.lock().unwrap().stats = Some((public + private, stars));
+    for page in 1..=max_pages {
+        let url = format!(
+            "https://api.github.com/user/repos?per_page=100&affiliation=owner&sort=pushed&page={page}"
+        );
+        let resp = http
+            .get(&url)
+            .header("Authorization", format!("Bearer {token}"))
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "Coucou")
+            .send()
+            .await;
+        match resp {
+            Ok(r) if r.status().is_success() => {
+                let Ok(list) = r.json::<Vec<Value>>().await else { break };
+                let count = list.len();
+                stars += sum_repo_stars(&list);
+                if count < 100 {
+                    break;
+                }
+            }
+            _ => break,
+        }
+    }
+
+    GITHUB.cache.lock().unwrap().stats = Some((total_repos, stars));
     emit_github(&app);
+}
+
+pub(crate) fn calculate_repo_pages(total_repos: i64) -> usize {
+    if total_repos <= 0 {
+        1
+    } else {
+        usize::try_from((total_repos + 99) / 100).unwrap_or(1).clamp(1, 50)
+    }
+}
+
+pub(crate) fn sum_repo_stars(repos: &[Value]) -> i64 {
+    repos
+        .iter()
+        .filter_map(|r| r.get("stargazers_count").and_then(Value::as_i64))
+        .sum()
 }
 
 // ── GitHub pulse and activity (GithubPoller.swift) ────────────────────────────
@@ -1149,65 +1261,6 @@ fn parse_notion_page(obj: &Value) -> Option<Value> {
 
 // ── Cal.com ───────────────────────────────────────────────────────────────────
 
-async fn poll_calcom(app: AppHandle) {
-    let Some(key) = secrets::get("calcom-api-key") else { return };
-    let response = client()
-        .get("https://api.cal.com/v2/bookings?status=upcoming")
-        .header("Authorization", format!("Bearer {key}"))
-        .header("cal-api-version", "2024-08-13")
-        .send()
-        .await;
-    let Ok(response) = response else { return };
-    if !response.status().is_success() {
-        emit(&app, IntegrationUpdate {
-            id: "integration_calcom",
-            data: json!({}),
-            error: Some(status_error(response.status().as_u16(), &crate::i18n::t("Key lacks access"))),
-            event: None,
-        });
-        return;
-    }
-    let json: Value = response.json().await.unwrap_or(json!({}));
-    let bookings: Vec<Value> = json
-        .get("data")
-        .and_then(Value::as_array)
-        .map(|list| {
-            list.iter()
-                .filter_map(|b| {
-                    let start = b
-                        .get("start")
-                        .or_else(|| b.get("startTime"))
-                        .and_then(Value::as_str)?;
-                    let attendee = b.get("attendees").and_then(Value::as_array).and_then(|a| a.first());
-                    let notes = b
-                        .get("responses")
-                        .and_then(|r| r.get("notes"))
-                        .and_then(|n| n.get("value"))
-                        .and_then(Value::as_str)
-                        .or_else(|| b.get("description").and_then(Value::as_str))
-                        .filter(|s| !s.is_empty());
-                    Some(json!({
-                        "id": b.get("id").map(|v| v.to_string()).unwrap_or_default(),
-                        "title": b.get("title").and_then(Value::as_str).unwrap_or("Meeting"),
-                        "start": start,
-                        "status": b.get("status").and_then(Value::as_str).unwrap_or("accepted"),
-                        "attendeeName": attendee.and_then(|a| a.get("name")).and_then(Value::as_str),
-                        "attendeeEmail": attendee.and_then(|a| a.get("email")).and_then(Value::as_str),
-                        "attendeeNotes": notes,
-                    }))
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    emit(&app, IntegrationUpdate {
-        id: "integration_calcom",
-        data: json!({ "bookings": bookings }),
-        error: None,
-        event: None,
-    });
-}
-
 // ── Calendar ──────────────────────────────────────────────────────────────────
 //
 // The secret iCal address (Google Calendar or any other) stays here; the island
@@ -1478,8 +1531,8 @@ async fn poll_n8n(app: AppHandle) {
 
     // Same two shapes as the Swift poller: the public API first, then /rest.
     let list_urls = [
-        format!("{base}/api/v1/executions?limit=1&includeData=false"),
-        format!("{base}/rest/executions?limit=1&includeData=false"),
+        format!("{base}/api/v1/executions?limit=10&includeData=false"),
+        format!("{base}/rest/executions?limit=10&includeData=false"),
     ];
 
     let mut items: Option<Vec<Value>> = None;
@@ -1504,17 +1557,10 @@ async fn poll_n8n(app: AppHandle) {
         }
     }
 
-    let Some(first) = items.and_then(|list| list.into_iter().next()) else { return };
-    let id = match first.get("id") {
-        Some(Value::String(s)) => s.clone(),
-        Some(Value::Number(n)) => n.to_string(),
-        _ => return,
-    };
+    let Some(first) = items.as_deref().and_then(find_terminal_execution) else { return };
+    let Some(id) = parse_execution_id(first) else { return };
 
     let status = first.get("status").and_then(Value::as_str).unwrap_or("");
-    if !["success", "error", "crashed", "canceled", "failed"].contains(&status) {
-        return;
-    }
     if !is_new("n8n", &id) {
         return;
     }
@@ -1626,6 +1672,24 @@ fn fmt_value(v: &Value) -> String {
     }
 }
 
+pub(crate) fn find_terminal_execution(list: &[Value]) -> Option<&Value> {
+    const TERMINAL: [&str; 5] = ["success", "error", "crashed", "canceled", "failed"];
+    list.iter().find(|item| {
+        item.get("status")
+            .and_then(Value::as_str)
+            .map(|s| TERMINAL.contains(&s))
+            .unwrap_or(false)
+    })
+}
+
+pub(crate) fn parse_execution_id(item: &Value) -> Option<String> {
+    match item.get("id") {
+        Some(Value::String(s)) => Some(s.clone()),
+        Some(Value::Number(n)) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1667,6 +1731,21 @@ mod tests {
     }
 
     #[test]
+    fn gitea_workflow_ci_maps_runs_and_conclusions() {
+        assert_eq!(gitea_workflow_ci(Some("completed"), Some("success")), CiState::Success);
+        assert_eq!(gitea_workflow_ci(Some("completed"), Some("failure")), CiState::Failure);
+        assert_eq!(gitea_workflow_ci(Some("completed"), Some("timed_out")), CiState::Failure);
+        assert_eq!(gitea_workflow_ci(Some("completed"), Some("cancelled")), CiState::Failure);
+        assert_eq!(gitea_workflow_ci(Some("completed"), Some("skipped")), CiState::Success);
+        assert_eq!(gitea_workflow_ci(Some("running"), None), CiState::Pending);
+        assert_eq!(gitea_workflow_ci(Some("in_progress"), None), CiState::Pending);
+        assert_eq!(gitea_workflow_ci(Some("queued"), None), CiState::Pending);
+        assert_eq!(gitea_workflow_ci(Some("waiting"), None), CiState::Pending);
+        assert_eq!(gitea_workflow_ci(None, Some("success")), CiState::Success);
+        assert_eq!(gitea_workflow_ci(None, None), CiState::Unknown);
+    }
+
+    #[test]
     fn gitlab_ci_maps_pipeline_states() {
         assert_eq!(gitlab_ci(Some("success")), CiState::Success);
         assert_eq!(gitlab_ci(Some("running")), CiState::Pending);
@@ -1699,5 +1778,64 @@ mod tests {
         assert!(calendar_url("not a url").is_none());
         // The address is the key: never in cleartext.
         assert!(calendar_url("http://calendar.google.com/calendar/ical/x/private-abc/basic.ics").is_none());
+    }
+
+    #[test]
+    fn stripe_balance_does_not_mix_different_currencies() {
+        let payload = json!({
+            "available": [
+                { "amount": 10000, "currency": "eur" },
+                { "amount": 5000, "currency": "usd" }
+            ],
+            "pending": [
+                { "amount": 2000, "currency": "eur" },
+                { "amount": 3000, "currency": "usd" }
+            ]
+        });
+        let (amount, currency) = parse_stripe_balance(&payload);
+        assert_eq!(currency, "eur");
+        assert_eq!(amount, 12000);
+    }
+
+    #[test]
+    fn calculate_repo_pages_bounds_correctly() {
+        assert_eq!(calculate_repo_pages(0), 1);
+        assert_eq!(calculate_repo_pages(1), 1);
+        assert_eq!(calculate_repo_pages(100), 1);
+        assert_eq!(calculate_repo_pages(101), 2);
+        assert_eq!(calculate_repo_pages(200), 2);
+        assert_eq!(calculate_repo_pages(500), 5);
+        assert_eq!(calculate_repo_pages(5000), 50);
+        assert_eq!(calculate_repo_pages(9999), 50);
+    }
+
+    #[test]
+    fn sum_repo_stars_sums_stargazers_count() {
+        let repos = vec![
+            json!({ "name": "repo1", "stargazers_count": 42 }),
+            json!({ "name": "repo2", "stargazers_count": 10 }),
+            json!({ "name": "repo3" }),
+            json!({ "name": "repo4", "stargazers_count": 0 }),
+        ];
+        assert_eq!(sum_repo_stars(&repos), 52);
+    }
+
+    #[test]
+    fn find_terminal_execution_skips_running_and_finds_terminal() {
+        let list = vec![
+            json!({ "id": "1", "status": "running" }),
+            json!({ "id": "2", "status": "waiting" }),
+            json!({ "id": "3", "status": "error" }),
+            json!({ "id": "4", "status": "success" }),
+        ];
+        let term = find_terminal_execution(&list).unwrap();
+        assert_eq!(term["id"], "3");
+    }
+
+    #[test]
+    fn parse_execution_id_handles_string_and_number() {
+        assert_eq!(parse_execution_id(&json!({ "id": "abc-123" })), Some("abc-123".to_string()));
+        assert_eq!(parse_execution_id(&json!({ "id": 42 })), Some("42".to_string()));
+        assert_eq!(parse_execution_id(&json!({ "foo": "bar" })), None);
     }
 }

@@ -1,368 +1,243 @@
-// Claude Code as a chat provider: each turn runs the user's own `claude -p`,
-// so the chat has their sign-in, MCP servers, skills, CLAUDE.md and hooks.
-// Coucou holds no key and talks to nobody new.
+// The Claude Code relay: with no Anthropic API key saved, the chat, Flow's
+// clean-up and the notes of a call are answered by the user's own Claude Code
+// (`claude -p`), signed in with their own account. Coucou reads no credential
+// and makes no network call of its own: Claude Code answers exactly as it does
+// in a terminal.
 //
-// A conversation is one Claude Code session, resumed turn after turn. It runs
-// in Coucou's own folder (claude-chat in the app's data) unless the user picks
-// a project folder, so nothing lands in the home folder. COUCOU_CHAT=1 marks
-// its hook events: the island shows its permission requests and nothing else.
+// Each run is kept apart from the user's sessions: no settings file is loaded
+// (so no hooks: Coucou's own would show the relay's runs as sessions), no MCP
+// server, no skill, nothing saved to resume, and it runs in an empty folder of
+// Coucou's, so no CLAUDE.md is picked up. It may only use the tools it is
+// given: web search for the chat, and reading the one dropped file.
 
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
+use std::process::Stdio;
+use std::time::Duration;
 
-use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter};
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use serde_json::Value;
+use tokio::io::AsyncWriteExt;
 
-use crate::chat::{self, Chat, ChatContext, ChatReply, ModelInfo};
-use crate::i18n::t;
-use crate::island::WINDOW_LABEL;
-use crate::settings::Settings;
+use crate::chat::{self, ChatContext, ModelInfo};
+use crate::i18n::{t, tf};
+use crate::{platform, settings};
 
-pub const ID: &str = "claudecode";
-/// No --model: whatever the user's Claude Code uses.
-pub const DEFAULT_MODEL: &str = "default";
-/// What `claude --model` takes as aliases (claude --help).
-const MODELS: &[&str] = &["fable", "opus", "sonnet", "haiku"];
-/// What `claude --effort` takes (claude --help).
-pub const EFFORTS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
+/// The models offered in the picker without a key. Claude Code takes these ids
+/// as they are, and so does the API once a key is added.
+const MODELS: [(&str, &str); 3] = [
+    ("claude-opus-5", "Claude Opus 5"),
+    ("claude-sonnet-5", "Claude Sonnet 5"),
+    ("claude-haiku-4-5", "Claude Haiku 4.5"),
+];
 
-/// Ends the turn that is running, if any (New chat).
-static CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
+/// What one run of `claude -p` is asked.
+pub struct Request<'a> {
+    pub model: &'a str,
+    pub system: &'a str,
+    pub prompt: &'a str,
+    /// Built-in tools the run may use; none at all when empty.
+    pub tools: &'a [&'a str],
+    /// A folder the run may read from, besides its own.
+    pub read_dir: Option<&'a Path>,
+    pub timeout: Duration,
+}
 
+/// The Claude Code CLI, when it is installed.
+pub fn exe() -> Option<PathBuf> {
+    platform::cli_candidates("claude").into_iter().next()
+}
+
+pub fn available() -> bool {
+    exe().is_some()
+}
+
+/// The models offered in the picker when Claude Code answers.
 pub fn models() -> Vec<ModelInfo> {
-    let mut out = vec![ModelInfo { id: DEFAULT_MODEL.into(), label: t("Claude Code's default"), group: None }];
-    out.extend(MODELS.iter().map(|m| ModelInfo { id: m.to_string(), label: capitalised(m), group: None }));
+    MODELS.iter().map(|(id, label)| ModelInfo { id: (*id).into(), label: (*label).into(), group: None }).collect()
+}
+
+/// Runs `claude -p` once and returns the text of its answer, or why there is none.
+pub async fn ask(request: &Request<'_>) -> Result<String, String> {
+    let exe = exe().ok_or_else(|| t("Claude Code is not installed."))?;
+    let workdir = settings::local_dir().join("relay");
+    std::fs::create_dir_all(&workdir).map_err(|e| e.to_string())?;
+
+    let mut cmd = tokio::process::Command::new(&exe);
+    cmd.args(args(request))
+        .current_dir(&workdir)
+        .env_remove("CLAUDECODE")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    // An npm install is a `#!/usr/bin/env node` script: its own folder first on
+    // PATH so it finds its Node, as codex_plan.rs does for Codex.
+    if let Some(dir) = exe.parent() {
+        let mut dirs = vec![dir.to_path_buf()];
+        if let Some(path) = std::env::var_os("PATH") {
+            dirs.extend(std::env::split_paths(&path));
+        }
+        if let Ok(joined) = std::env::join_paths(dirs) {
+            cmd.env("PATH", joined);
+        }
+    }
+    platform::no_console(cmd.as_std_mut());
+
+    let mut child = cmd.spawn().map_err(|e| tf("Could not start Claude Code: {error}", &[("error", &e.to_string())]))?;
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(request.prompt.as_bytes()).await.map_err(|e| e.to_string())?;
+    }
+    let output = tokio::time::timeout(request.timeout, child.wait_with_output())
+        .await
+        .map_err(|_| t("Claude Code took too long to answer."))?
+        .map_err(|e| e.to_string())?;
+    parse(&output.stdout).map_err(|err| {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        match stderr.trim() {
+            "" => err,
+            detail => format!("{err} ({})", detail.lines().last().unwrap_or(detail)),
+        }
+    })
+}
+
+fn args(request: &Request<'_>) -> Vec<OsString> {
+    let mut out: Vec<OsString> = [
+        "-p",
+        "--output-format",
+        "json",
+        "--model",
+        request.model,
+        "--system-prompt",
+        request.system,
+        "--tools",
+    ]
+    .iter()
+    .map(OsString::from)
+    .collect();
+    out.push(request.tools.join(",").into());
+    if !request.tools.is_empty() {
+        out.push("--allowedTools".into());
+        out.push(request.tools.join(",").into());
+    }
+    if let Some(dir) = request.read_dir {
+        out.push("--add-dir".into());
+        out.push(dir.as_os_str().to_owned());
+    }
+    for flag in ["--setting-sources", "", "--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands"] {
+        out.push(flag.into());
+    }
     out
 }
 
-fn capitalised(s: &str) -> String {
-    let mut c = s.chars();
-    c.next().map(|f| f.to_uppercase().chain(c).collect()).unwrap_or_default()
-}
-
-pub fn cancel() {
-    if let Some(tx) = CANCEL.lock().unwrap().take() {
-        let _ = tx.send(());
+/// The answer's text from `claude -p --output-format json`.
+fn parse(stdout: &[u8]) -> Result<String, String> {
+    let json: Value = serde_json::from_slice(stdout).map_err(|_| t("Claude Code gave no answer."))?;
+    let result = json.get("result").and_then(Value::as_str).unwrap_or("").trim();
+    if json.get("is_error").and_then(Value::as_bool).unwrap_or(false) {
+        let why = if result.is_empty() { t("Claude Code could not answer.") } else { result.to_string() };
+        return Err(why);
     }
+    if result.is_empty() {
+        return Err(t("No response text."));
+    }
+    Ok(result.to_string())
 }
 
-/// `claude` on PATH, or where its installers put it: a desktop launch often
-/// leaves ~/.local/bin out of PATH.
-fn binary() -> Option<PathBuf> {
-    let home = crate::platform::home_dir();
-    crate::platform::find_on_path("claude").or_else(|| {
-        [home.join(".local/bin/claude"), home.join(".claude/local/claude")].into_iter().find(|p| p.is_file())
-    })
-}
-
-/// The folder Claude Code works in: the one picked in Settings, else Coucou's own.
-fn work_dir(settings: &Settings) -> Result<PathBuf, String> {
-    let picked = settings.claude_code_dir.trim();
-    if !picked.is_empty() {
-        let dir = PathBuf::from(picked);
-        if dir.is_absolute() && dir.is_dir() {
-            return Ok(dir);
+/// One chat turn as a single prompt: the earlier plain turns, the context the
+/// first question carries, then the question.
+pub fn chat_prompt(history: &[Value], first: bool, context: Option<&ChatContext>, query: &str) -> String {
+    let mut out = String::new();
+    if !history.is_empty() {
+        out.push_str("The conversation so far:\n<conversation>\n");
+        for turn in history {
+            let role = turn.get("role").and_then(Value::as_str).unwrap_or("user");
+            let text = turn.get("content").and_then(Value::as_str).unwrap_or("");
+            out.push_str(&format!("<{role}>\n{text}\n</{role}>\n"));
         }
-        return Err(crate::i18n::tf("{path} is not a folder.", &[("path", picked)]));
-    }
-    let dir = crate::settings::local_dir().join("claude-chat");
-    crate::platform::ensure_private_dir(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    Ok(dir)
-}
-
-/// The arguments after `claude`. The question goes on stdin.
-fn args(model: &str, effort: &str, resume: Option<&str>, extra_dir: Option<&str>) -> Vec<String> {
-    let mut a: Vec<String> = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    a.extend(["--append-system-prompt".into(), chat::system_prompt(true)]);
-    if model != DEFAULT_MODEL && MODELS.contains(&model) {
-        a.extend(["--model".into(), model.into()]);
-    }
-    if EFFORTS.contains(&effort) {
-        a.extend(["--effort".into(), effort.into()]);
-    }
-    if let Some(id) = resume {
-        a.extend(["--resume".into(), id.into()]);
-    }
-    // A dropped file is in Coucou's inbox, outside the working folder.
-    if let Some(dir) = extra_dir {
-        a.extend(["--add-dir".into(), dir.into()]);
-    }
-    a
-}
-
-/// What one stream-json line means for the chat.
-#[derive(Debug, PartialEq)]
-enum Line {
-    Session(String),
-    /// Text to add to the answer.
-    Text(String),
-    /// A new text block after something else (a tool call): a paragraph break.
-    Block,
-    Done { error: Option<String>, result: String },
-    Other,
-}
-
-fn parse(line: &str) -> Line {
-    let Ok(v) = serde_json::from_str::<Value>(line) else { return Line::Other };
-    let s = |p: &str| v.pointer(p).and_then(Value::as_str);
-    match (s("/type"), s("/subtype")) {
-        (Some("system"), Some("init")) => s("/session_id").map(|id| Line::Session(id.into())).unwrap_or(Line::Other),
-        (Some("stream_event"), _) => match s("/event/type") {
-            Some("content_block_delta") if s("/event/delta/type") == Some("text_delta") => {
-                Line::Text(s("/event/delta/text").unwrap_or_default().into())
-            }
-            Some("content_block_start") if s("/event/content_block/type") == Some("text") => Line::Block,
-            _ => Line::Other,
-        },
-        (Some("result"), sub) => {
-            let result = s("/result").unwrap_or_default().to_string();
-            let failed = v.get("is_error").and_then(Value::as_bool).unwrap_or(false) || sub != Some("success");
-            let error = failed.then(|| if result.is_empty() { sub.unwrap_or("error").to_string() } else { result.clone() });
-            Line::Done { error, result }
-        }
-        _ => Line::Other,
-    }
-}
-
-/// The session the conversation continues: kept on Claude Code's answers.
-fn session_of(history: &[Value]) -> Option<String> {
-    history.iter().rev().find_map(|m| m.get("session_id").and_then(Value::as_str)).map(String::from)
-}
-
-/// The question, with what Claude Code does not know yet: the dropped file or
-/// window on the first turn, or the turns another provider answered before.
-fn question(first: bool, history: &[Value], context: Option<&ChatContext>, query: &str) -> String {
-    let mut text = String::new();
-    if !first && session_of(history).is_none() {
-        text.push_str("Earlier in this conversation:\n");
-        for m in history {
-            let who = if m["role"] == "user" { "User" } else { "Assistant" };
-            text.push_str(&format!("{who}: {}\n", m["content"].as_str().unwrap_or_default()));
-        }
-        text.push('\n');
+        out.push_str("</conversation>\n\nThe user's new message:\n");
     }
     match context.filter(|_| first) {
-        Some(ChatContext::File { name, path }) => text.push_str(&format!("File: {name} ({path})\n\n")),
+        Some(ChatContext::File { name, path }) => {
+            out.push_str(&format!("File: {name} (read it at {path})\n\n"));
+        }
         Some(ChatContext::Window { app_name, title, url }) => {
-            text.push_str(&format!("{}\n\n", chat::window_line(app_name, title, url.as_deref())))
+            out.push_str(&chat::window_line(app_name, title, url.as_deref()));
+            out.push_str("\n\n");
         }
         None => {}
     }
-    text.push_str(query);
-    text
-}
-
-pub async fn send(
-    app: &AppHandle,
-    chat: &Chat,
-    settings: &Settings,
-    model: &str,
-    query: String,
-    context: Option<ChatContext>,
-) -> Result<ChatReply, String> {
-    let exe = binary().ok_or_else(|| t("Claude Code isn't installed (no `claude` command found)."))?;
-    let dir = work_dir(settings)?;
-    let turn = chat.begin(ID, context.as_ref());
-    let resume = session_of(&turn.history);
-    let inbox = matches!(context, Some(ChatContext::File { .. }) if turn.attach)
-        .then(|| crate::files::inbox_dir().display().to_string());
-    let prompt = question(turn.first, &turn.history, context.as_ref(), &query);
-
-    let mut child = tokio::process::Command::new(&exe)
-        .args(args(model, &settings.claude_code_effort, resume.as_deref(), inbox.as_deref()))
-        .current_dir(&dir)
-        .env("COUCOU_CHAT", "1")
-        .env("COUCOU_WATCHED", "1")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|e| format!("{}: {e}", exe.display()))?;
-    let mut stdin = child.stdin.take().expect("piped");
-    let _ = stdin.write_all(prompt.as_bytes()).await;
-    drop(stdin);
-
-    let (tx, mut cancelled) = tokio::sync::oneshot::channel();
-    *CANCEL.lock().unwrap() = Some(tx);
-    let stderr = drain_tail(child.stderr.take().expect("piped"));
-    let mut lines = BufReader::new(child.stdout.take().expect("piped")).lines();
-    let (mut session, mut answer, mut done) = (resume, String::new(), None);
-    loop {
-        // The next line, or None once New chat cancelled the turn.
-        let mut next = Box::pin(lines.next_line());
-        let line = std::future::poll_fn(|cx| {
-            use std::future::Future;
-            if std::pin::Pin::new(&mut cancelled).poll(cx).is_ready() {
-                return std::task::Poll::Ready(None);
-            }
-            next.as_mut().poll(cx).map(Some)
-        })
-        .await;
-        drop(next);
-        let Some(line) = line else {
-            stop(&mut child);
-            return Err(t("Stopped."));
-        };
-        let Ok(Some(line)) = line else { break };
-        match parse(&line) {
-            Line::Session(id) => session = Some(id),
-            Line::Text(more) => {
-                answer.push_str(&more);
-                let _ = app.emit_to(WINDOW_LABEL, "chat-delta", answer.trim());
-            }
-            Line::Block if !answer.is_empty() => answer.push_str("\n\n"),
-            Line::Done { error, result } => done = Some((error, result)),
-            _ => {}
-        }
-    }
-    let _ = child.wait().await;
-
-    let answer = match done {
-        Some((Some(error), _)) => return Err(error),
-        Some((None, result)) if answer.trim().is_empty() => result,
-        Some(_) => answer.trim().to_string(),
-        None => {
-            // No result line: Claude Code's own words on stderr, as they are.
-            let err = stderr.await.unwrap_or_default();
-            let last = err.lines().rev().map(str::trim).find(|l| !l.is_empty()).unwrap_or_default().to_string();
-            return Err(if last.is_empty() { t("No response text.") } else { last });
-        }
-    };
-    if answer.is_empty() {
-        return Err(t("No response text."));
-    }
-    let plain = chat::plain_question(turn.attach, context.as_ref(), &query);
-    chat.commit(
-        &turn,
-        json!({ "role": "user", "content": plain }),
-        json!({ "role": "assistant", "content": answer, "session_id": session }),
-        &plain,
-        &answer,
-    );
-    Ok(ChatReply { text: answer })
-}
-
-/// What a turn keeps of stderr: its end, for the error message.
-const STDERR_KEPT: usize = 8 * 1024;
-
-/// Reads `stderr` as it comes, so a chatty one never fills the pipe and stalls the
-/// turn; keeps only its last `STDERR_KEPT` bytes.
-fn drain_tail<R>(mut stderr: R) -> tokio::task::JoinHandle<String>
-where
-    R: tokio::io::AsyncRead + Unpin + Send + 'static,
-{
-    tokio::spawn(async move {
-        let mut kept: Vec<u8> = Vec::new();
-        let mut buf = [0u8; 4096];
-        while let Ok(n) = stderr.read(&mut buf).await {
-            if n == 0 {
-                break;
-            }
-            kept.extend_from_slice(&buf[..n]);
-            if kept.len() > STDERR_KEPT {
-                kept.drain(..kept.len() - STDERR_KEPT);
-            }
-        }
-        String::from_utf8_lossy(&kept).into_owned()
-    })
-}
-
-/// Asks Claude Code to stop, so it can end its MCP servers; only its own PID.
-fn stop(child: &mut tokio::process::Child) {
-    #[cfg(target_os = "linux")]
-    if let Some(pid) = child.id() {
-        unsafe { libc::kill(pid as i32, libc::SIGTERM) };
-        return;
-    }
-    let _ = child.start_kill();
+    out.push_str(query);
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
-    #[cfg(unix)]
-    #[test]
-    fn a_chatty_stderr_does_not_stall_the_answer() {
-        let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
-        rt.block_on(async {
-            // More than a pipe buffer on stderr before the answer reaches stdout.
-            let mut child = tokio::process::Command::new("sh")
-                .args(["-c", "head -c 300000 /dev/zero | tr '\\0' x >&2; echo >&2; echo >&2 last words; echo answer"])
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .spawn()
-                .unwrap();
-            let tail = drain_tail(child.stderr.take().unwrap());
-            let mut out = String::new();
-            let mut stdout = child.stdout.take().unwrap();
-            let read = tokio::time::timeout(std::time::Duration::from_secs(5), stdout.read_to_string(&mut out)).await;
-            assert!(read.is_ok(), "stdout ended");
-            assert_eq!(out, "answer\n");
-            let err = tail.await.unwrap();
-            assert!(err.len() <= STDERR_KEPT);
-            assert!(err.trim_end().ends_with("last words"));
-        });
-    }
-
-    /// Lines as `claude -p --output-format stream-json --verbose
-    /// --include-partial-messages` 2.1.296 writes them, trimmed.
-    const SAMPLE: &[&str] = &[
-        r#"{"type":"system","subtype":"init","cwd":"/x","session_id":"ff0b3fc3-cf07-4a7d-8081-484fc71bedad","tools":["Bash"]}"#,
-        r#"{"type":"system","subtype":"status","status":"requesting","session_id":"ff0b3fc3-cf07-4a7d-8081-484fc71bedad"}"#,
-        r#"{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}},"session_id":"ff0b"}"#,
-        r#"{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi there"}},"session_id":"ff0b"}"#,
-        r#"{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"!"}},"session_id":"ff0b"}"#,
-        r#"{"type":"assistant","message":{"content":[{"type":"text","text":"Hi there!"}]},"session_id":"ff0b"}"#,
-        r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed"}}"#,
-        r#"{"type":"result","subtype":"success","is_error":false,"result":"Hi there!","session_id":"ff0b3fc3-cf07-4a7d-8081-484fc71bedad"}"#,
-    ];
-
-    #[test]
-    fn the_stream_gives_the_session_the_text_and_the_end() {
-        let parsed: Vec<Line> = SAMPLE.iter().map(|l| parse(l)).collect();
-        assert_eq!(parsed[0], Line::Session("ff0b3fc3-cf07-4a7d-8081-484fc71bedad".into()));
-        assert_eq!(parsed[2], Line::Block);
-        assert_eq!(parsed[3], Line::Text("Hi there".into()));
-        assert_eq!(parsed[4], Line::Text("!".into()));
-        assert_eq!(parsed[5], Line::Other);
-        assert_eq!(parsed[7], Line::Done { error: None, result: "Hi there!".into() });
-        assert_eq!(parse("not json"), Line::Other);
+    fn strings(args: &[OsString]) -> Vec<String> {
+        args.iter().map(|a| a.to_string_lossy().into_owned()).collect()
     }
 
     #[test]
-    fn a_failed_turn_says_why_in_claude_codes_words() {
-        let line = r#"{"type":"result","subtype":"success","is_error":true,"result":"Invalid API key · Please run /login"}"#;
-        assert_eq!(parse(line), Line::Done { error: Some("Invalid API key · Please run /login".into()), result: "Invalid API key · Please run /login".into() });
-        let line = r#"{"type":"result","subtype":"error_max_turns","is_error":false}"#;
-        assert!(matches!(parse(line), Line::Done { error: Some(e), .. } if e == "error_max_turns"));
+    fn a_run_loads_no_settings_and_only_the_tools_it_is_given() {
+        let request = Request {
+            model: "claude-x",
+            system: "sys",
+            prompt: "hi",
+            tools: &[],
+            read_dir: None,
+            timeout: Duration::from_secs(1),
+        };
+        let a = strings(&args(&request));
+        assert_eq!(&a[..8], ["-p", "--output-format", "json", "--model", "claude-x", "--system-prompt", "sys", "--tools"]);
+        assert_eq!(a[8], "");
+        assert!(!a.contains(&"--allowedTools".to_string()));
+        assert!(!a.contains(&"--add-dir".to_string()));
+        let sources = a.iter().position(|x| x == "--setting-sources").unwrap();
+        assert_eq!(a[sources + 1], "");
+        for flag in ["--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands"] {
+            assert!(a.contains(&flag.to_string()), "{flag}");
+        }
+
+        let inbox = PathBuf::from("/tmp/inbox");
+        let request = Request { tools: &["WebSearch", "Read"], read_dir: Some(&inbox), ..request };
+        let a = strings(&args(&request));
+        assert_eq!(a[8], "WebSearch,Read");
+        let allowed = a.iter().position(|x| x == "--allowedTools").unwrap();
+        assert_eq!(a[allowed + 1], "WebSearch,Read");
+        let dir = a.iter().position(|x| x == "--add-dir").unwrap();
+        assert_eq!(a[dir + 1], "/tmp/inbox");
     }
 
     #[test]
-    fn only_known_models_and_efforts_reach_the_command_line() {
-        let a = args("opus", "high", Some("abc"), None);
-        assert!(a.windows(2).any(|w| w == ["--model", "opus"]));
-        assert!(a.windows(2).any(|w| w == ["--effort", "high"]));
-        assert!(a.windows(2).any(|w| w == ["--resume", "abc"]));
-        let b = args(DEFAULT_MODEL, "", None, None);
-        assert!(!b.iter().any(|x| x == "--model" || x == "--effort" || x == "--resume"));
-        let c = args("--dangerously-skip-permissions", "--x", None, None);
-        assert!(!c.iter().any(|x| x.starts_with("--dangerously") || x == "--x"));
+    fn the_answer_or_the_error_comes_from_the_result_field() {
+        assert_eq!(parse(br#"{"type":"result","is_error":false,"result":" Hi "}"#).unwrap(), "Hi");
+        assert_eq!(parse(br#"{"is_error":true,"result":"Not logged in"}"#).unwrap_err(), "Not logged in");
+        assert_eq!(parse(br#"{"is_error":true}"#).unwrap_err(), "Claude Code could not answer.");
+        assert_eq!(parse(br#"{"is_error":false,"result":"  "}"#).unwrap_err(), "No response text.");
+        assert_eq!(parse(b"[claude-code:unrecognized_model]").unwrap_err(), "Claude Code gave no answer.");
     }
 
     #[test]
-    fn a_conversation_resumes_its_session_or_brings_earlier_turns_along() {
-        let ours = vec![json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a","session_id":"s1"})];
-        assert_eq!(session_of(&ours).as_deref(), Some("s1"));
-        assert_eq!(question(false, &ours, None, "next"), "next");
-        let other = vec![json!({"role":"user","content":"q"}), json!({"role":"assistant","content":"a"})];
-        assert_eq!(question(false, &other, None, "next"), "Earlier in this conversation:\nUser: q\nAssistant: a\n\nnext");
-        let file = ChatContext::File { name: "a.txt".into(), path: "/in/a.txt".into() };
-        assert_eq!(question(true, &[], Some(&file), "read it"), "File: a.txt (/in/a.txt)\n\nread it");
+    fn the_prompt_carries_the_history_then_the_context_then_the_question() {
+        assert_eq!(chat_prompt(&[], true, None, "q"), "q");
+        let history = vec![json!({"role":"user","content":"a"}), json!({"role":"assistant","content":"b"})];
+        let p = chat_prompt(&history, false, None, "c");
+        assert_eq!(
+            p,
+            "The conversation so far:\n<conversation>\n<user>\na\n</user>\n<assistant>\nb\n</assistant>\n</conversation>\n\nThe user's new message:\nc"
+        );
+        let file = ChatContext::File { name: "a.pdf".into(), path: "/inbox/a.pdf".into() };
+        assert_eq!(chat_prompt(&[], true, Some(&file), "why?"), "File: a.pdf (read it at /inbox/a.pdf)\n\nwhy?");
+        assert!(chat_prompt(&history, false, Some(&file), "why?").ends_with("message:\nwhy?"));
+        let win = ChatContext::Window { app_name: "Code".into(), title: "main.rs".into(), url: None };
+        assert_eq!(chat_prompt(&[], true, Some(&win), "q"), "Context — App: Code, Window: main.rs\n\nq");
+    }
+
+    #[test]
+    fn the_picker_offers_the_same_models_as_the_settings() {
+        let ids: Vec<String> = models().into_iter().map(|m| m.id).collect();
+        assert_eq!(ids, ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"]);
     }
 }

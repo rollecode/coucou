@@ -50,14 +50,18 @@ You can also [build it yourself](#build-it-yourself).
 
 | What you do | What happens |
 |---|---|
-| Move the mouse to the very top-centre of the screen | Mochi peeks out |
+| Look at the top-centre of the screen | The closed island: a small black island that stays there while Coucou runs, where a Mac has its notch. It shows Mochi, as on a Mac without a notch, or the time, the date and the time, your Claude usage or what's playing (**Settings → General → Closed island shows**). **Hide the island** keeps nothing there: move the pointer to the very top-centre of the screen instead |
+| Move the pointer onto the closed island | Mochi peeks out: the compact island |
 | Click the small island | It opens. With **Settings → General → Open on hover**, resting the pointer on it is enough, and it folds again shortly after the pointer leaves (click inside to keep it open) |
+| The **✕** at the top right of the open island | Folds it back to the compact island now, without waiting for the auto-close |
 | Click Mochi | It gets annoyed. Three times in a row and it goes dizzy |
 | Rest the pointer on Mochi for two seconds | Hearts |
 | Right-click Mochi | The wardrobe: rest the pointer on an outfit to try it on, click to keep it. **Auto** dresses him for the season (witch hat in October, Santa hat in December…) |
 | Drag Mochi out of the island | He moves onto your desktop and hangs out there, in his outfit, watching your cursor. Drop him back on the island to bring him home |
 | On the desktop: click / right-click / double-click Mochi | Poke him / the wardrobe / he flies home. Drag him to move him |
 | Drag a file onto the island | Mochi turns into a box, swallows it, then offers to answer questions about it |
+| Drag a file onto the island and let go on one of the sessions listed on the right ("Or into a session") | That session's terminal or editor comes forward and the file's path is pasted into Claude Code's prompt, as a drag onto the terminal would write it. When its window can't be found, the path is copied instead |
+| The terminal tab in the island's header | **New Claude Code session**: pick a project (the folders your sessions ran in, or **Choose a folder…**), type what Claude should do, and your terminal opens there running `claude` with it |
 | Click a file in the session ticker | Its diff opens in the island; ↗ opens the file in VS Code, ‹ or `Esc` goes back |
 | Click a Claude Code session's card (once it has edited a file or run a command) | The code view: the turn's phases, the last edit in place with a few lines of the file around it, the last command and its last lines of output; ‹ goes back |
 | `Esc` | Closes the island |
@@ -146,7 +150,7 @@ against its SHA-256, kept in Coucou's data folder under `Models`).
 | What you do | What happens |
 |---|---|
 | Hold **right Ctrl** anywhere, speak, let go | Your words are pasted where you type. Pick another key in Flow → Settings: right Alt, right Shift, Ctrl + Win (Ctrl + Super on Linux) |
-| Tap the key twice | Hands-free: speak as long as you like, tap once to paste. `Esc` cancels |
+| Tap the key twice (once with **Hands-free with one press** on, in Flow → Settings) | Hands-free: speak as long as you like, tap once to paste. `Esc` cancels |
 | Hover the pill at the bottom of the screen | Dictate, record a call, open Coucou. Put the pill on the left or right edge in Flow → Settings |
 | Click **Record a call** | Your microphone and what the computer plays, transcribed live, then written person by person with a summary and to-dos by Claude (your key). The audio is deleted once the transcript is written |
 | Say **« OK Coucou »**, then ask | Claude (your key) answers in the pill and out loud: pills, Spotify, your services' numbers, your agents, web search, open an app, an email prepared in your mail app. Turn it on in Notch → OK Coucou |
@@ -197,7 +201,7 @@ reset times. Both are off by default; turn them on in **Settings… → Plan usa
   `%USERPROFILE%\.claude\settings.json`, takes a dated backup and writes only
   after your click, with the same writer as the hooks: the status line becomes `coucou-hook --statusline`, which
   passes only the limits on (300 ms at most) and runs the status line you had
-  before — kept in `statusline-previous.json` next to the relay — with the same
+  before — kept in `statusline-previous.json` outside `bin` in Coucou's data folder — with the same
   input, printing what it prints. On Windows that one runs through Git Bash, as
   Claude Code runs it (`CLAUDE_CODE_GIT_BASH_PATH`, then the Git for Windows that
   `git.exe` on `PATH` belongs to, then the usual install folders); it gets 10 s
@@ -254,6 +258,21 @@ side (tray, errors) embeds the same two files.
 **Settings… → Claude** takes your Anthropic API key. Keys live in the **Windows
 Credential Manager**, never on disk and never in the interface — the island can
 only ask whether a key exists. Same for every integration key.
+
+**No key? Use your subscription.** **Settings… → Chat → Your AI
+subscriptions** has one switch per provider: on, the chat goes through the
+provider's official terminal tool, signed in with your own account — Claude
+Code (Claude plan), Antigravity CLI or Gemini CLI (Google AI plan), Codex CLI
+(ChatGPT plan), Cursor CLI and GitHub Copilot CLI (`cli_relay.rs`). Each row
+says whether the tool is installed (on PATH or in the usual install folders),
+links to its install page and gives the command to sign in once. Coucou reads
+no credential: the tool answers exactly as it does in a terminal. Each run is
+read-only (plan or ask modes, no shell, no edits), loads none of your hooks,
+MCP servers or extensions where the tool can turn them off, saves no session,
+and searches the web for the chat only; a dropped file is read with no web at
+all. Through npm's `.cmd` shims the prompt goes in on stdin. Flow's clean-up
+and the notes of a call use Claude Code when no Anthropic key is saved;
+« OK Coucou » still needs the key: its tools are Coucou's own.
 
 The chat also talks to **Google AI (Gemini)**, **OpenAI** and **OpenRouter**:
 add their keys in **Settings… → Chat providers**, then click the model name
@@ -322,6 +341,27 @@ the 24 h change and a 7-day curve from Coinbase's public prices. Balances are
 read every 2 minutes, and as soon as you open the card on data older than 30
 seconds; nothing is fetched while the pill is off or Coucou is paused.
 
+## Mail (classic Outlook, Windows)
+
+Turn the **Mail** pill on in Notch → Active pills. Coucou reads the Outlook already open on
+your PC — the classic Outlook of Microsoft 365, through its own COM objects — with no sign-in,
+no app to register at Microsoft and no admin consent. It never starts Outlook, and a closed
+Outlook costs nothing. The new Outlook for Windows has no COM objects, so it is not reached
+this way. Linux has no Outlook: the pill is Windows only.
+
+| What you do | What happens |
+|---|---|
+| Open the Mail pill | Your newest messages, unread ones tinted, a ⚑ on the flagged ones. The magnifier searches every inbox: free words, `from:anne`, `subject:"May quote"`. Filters: All, Unread, Important, Today |
+| Click a message | Its sender, subject and the start of its text. **Open in Outlook**, **Reply** (Outlook's own window: nothing is sent from Coucou), **Mark as read**, **Important**, **Junk**, and in ⋯ **Always important (VIP)** or **Always ignore this sender** |
+| Coucou → Mail → Overview | **Sort new messages automatically** (off by default): only what arrives after you turn it on, each message once. VIPs are flagged, banned words send to Junk, then the first rule that matches acts. A journal of every action, each with **Undo** |
+| Coucou → Mail → Rules, Banned words, VIP | "If the sender / domain / subject / text / account contains … then Junk / important / read / move to a folder". Banned words are whole words: "sale" does not catch "Salesforce". A VIP is an address or a whole domain (`@client.com`) |
+| Turn on **Mail** next to the model in the chat | The AI gets your 40 newest messages (text and attachments for the newest and for the ones you name) and may answer with a plan: sort, reply drafts, sends, a mail merge that gives each recipient their page of a PDF, saving attachments. The plan shows as a card: the mails to send, the ones that can't be sent in red, **Send me a test**, and **Run**, which waits 5 seconds (Cancel) before anything happens |
+
+Coucou never deletes a message, and never sends one without your click on Run. Your mail
+goes only to the chat's AI you picked (your key or your subscription), and only while the
+chat's Mail switch is on. On some company PCs, Outlook may ask whether to let a program use
+it: that is Outlook's own security prompt, set by your IT department.
+
 ## WhatsApp (experimental)
 
 The same as on the Mac. Your WhatsApp messages in the island, through a
@@ -376,8 +416,10 @@ API key), and change the port of Coucou's webhook (47823).
 
 - There is no macOS Focus to follow, so "Stay quiet during a Focus" is not
   offered.
-- The card's ↗ opens WhatsApp Web, as there is no WhatsApp app here to bring
-  forward.
+- The card's ↗ opens WhatsApp Desktop (the Microsoft Store app) at the
+  conversation open in the card, when it is a person's. Without an app for
+  `whatsapp:` links (on Linux, the default `x-scheme-handler/whatsapp`), it
+  opens WhatsApp Web in the browser, at the same chat.
 - You type the path to your own GOWA binary instead of picking it.
 
 ## New versions
@@ -502,9 +544,9 @@ Linux.
 | GitHub Copilot CLI | `.copilot\hooks\coucou.json` | Allow / Deny in the island |
 | Muse Code | `.config\muse\settings.json` | Allow / Deny in the island |
 | Gemini CLI | `.gemini\settings.json` | asked in Gemini CLI |
-| Antigravity | `.gemini\config\hooks.json` (a `coucou` hook group) | asked in Antigravity |
+| Antigravity | `.gemini\config\hooks.json` (a `coucou` hook group) | asked in Antigravity; or, with **Approve commands from the notch** on, Allow / Deny / Reply in terminal in the island for the shell commands none of its rules covers |
 | Cursor Agent | `.cursor\hooks.json` — Claude Code in Cursor's terminal also goes on the Cursor pill, through the Claude Code hooks | asked in Cursor |
-| Claude Desktop (Windows) | nothing to install: Claude Code sessions from the Claude app are tagged by the relay | asked in the Claude app |
+| Claude Desktop | nothing to install: Claude Code sessions from the Claude app are tagged by the relay | asked in the Claude app |
 | OpenCode | plugin `.config\opencode\plugins\coucou.js` | asked in OpenCode |
 | Amp | plugin `.config\amp\plugins\coucou.ts` | asked in Amp |
 | Hermes Agent | plugin `.hermes\plugins\coucou\` — then `hermes plugins enable coucou` once | asked in Hermes |
@@ -516,6 +558,19 @@ answers each agent the way it expects. It never lets anything through on its
 own: with no click it prints no decision at all (`{}` for the agents that need
 JSON, `"ask"` for Copilot, which is fail-closed), so the agent asks in its own
 terminal exactly as without Coucou — including when Coucou is closed.
+
+**Antigravity** has no permission request: it runs its `PreToolUse` hook before
+its own permission check and waits for the hook's decision. The relay answers
+`{"decision":"ask"}`, so Antigravity's rules and prompt decide — unless
+**Approve commands from the notch** is on (Settings → Agents → Antigravity, off
+by default, shown once the hooks are installed). Then a `run_command` that none
+of Antigravity's `command(...)` rules covers waits on the island's card, as on
+the Mac: **Allow** prints `{"decision":"allow"}`, **Deny**
+`{"decision":"deny","reason":"Denied from Coucou"}`, and **Reply in terminal**,
+no click within 110 s, a full card or Coucou closed print `{"decision":"ask"}`.
+Coucou reads those rules from the files the Mac reads, under `.gemini`. The
+`PreToolUse` hook is installed with a 120 s timeout: hooks written by an older
+Coucou (10 s) must be installed again, and Settings says so.
 
 The plugins start the relay directly, with no shell in between, and never wait
 for it. Amp's steps appear as each tool finishes: its "before" hook must return
@@ -534,8 +589,8 @@ the same check as Settings → Agents (for Claude Code: a SessionStart hook
 running Coucou's relay; the Cursor pill also counts Claude Code's hooks).
 Coucou only reads these files, each time the island opens. Permission requests
 get the island's card for Claude Code (in any terminal, and in Cursor's),
-Codex, Copilot CLI and Muse Code; other agents and Claude Desktop ask in their
-own window.
+Codex, Copilot CLI and Muse Code, and Antigravity's commands when that is turned
+on; other agents and Claude Desktop ask in their own window.
 
 ## What's different from the Mac version
 
@@ -573,11 +628,34 @@ own window.
   ancestor — conhost owns that window — so its folder opens in VS Code instead,
   as it does when `code` is on your `PATH` and nothing was found. Linux walks
   the same tree; what it can bring forward depends on the desktop (see Linux).
+- For a session in [herdr](https://herdr.dev), "Open terminal" also selects
+  the session's pane with `herdr agent focus`, and never falls back to VS
+  Code. The relay reads `HERDR_PANE_ID`, `HERDR_BIN_PATH` and, in WSL,
+  `WSL_DISTRO_NAME`. In WSL, a Windows program only sees the variables that
+  `WSLENV` names, so the hook command in the distro's
+  `~/.claude/settings.json` passes them on:
+  `WSLENV=$WSLENV:HERDR_PANE_ID:HERDR_BIN_PATH:WSL_DISTRO_NAME /mnt/c/Users/<you>/AppData/Local/Coucou/bin/coucou-hook.exe`.
 - Global keyboard shortcuts are hot keys on Windows, key grabs on Linux under
   X11, and go through the desktop's GlobalShortcuts portal under Wayland (see
   [Linux](#linux)). A waiting card is also folded with its **⌃** or `Esc` in
   the island, and reopened by clicking the island, Open in the tray or **Go to
   alert**.
+- **New Claude Code session** opens Windows Terminal (`wt.exe`) in the
+  project, or PowerShell in a console of its own without it; on Linux
+  `$TERMINAL`, `x-terminal-emulator`, GNOME Terminal, Ptyxis, Konsole, kitty,
+  Alacritty, WezTerm, foot or xterm, whichever is found first, with your login
+  shell. The prompt never goes into a command line: on Linux it is in
+  `COUCOU_PROMPT`, set on the terminal; on Windows it goes through a file in
+  your temp folder that PowerShell reads and deletes, since Windows Terminal
+  starts its tabs without wt.exe's environment. A double quote in it becomes a
+  single quote there (npm's `claude.cmd` would read it as the end of the
+  argument). **Choose a folder…** is the system's folder picker on Windows,
+  zenity or kdialog on Linux. There is no dictation button (the chat here
+  has none either) and no global shortcut yet: the header's terminal tab
+  opens it.
+- A file let go on a session in the drop card is pasted with `Ctrl+V` on
+  Windows and `Ctrl+Shift+V` on Linux, through Flow's paste (and its clipboard
+  restore), instead of the Mac's ⌘V with Accessibility.
 - Apple Music, the one pill from the Mac catalog with nothing behind it here,
   is left out.
 - **Spotify** (Settings → Integrations) is read from the system media
@@ -673,6 +751,12 @@ own window.
   move, which wakes him and gives the rest back to the desktop.
 
 ## Linux
+
+To check toolbar collapse even when WebKitGTK loses the pointer-leave event,
+run `python3 scripts/test-linux-pill-hover.py target/release/coucou` from
+`windows/` after building. This native regression test uses a separate Xvfb
+display and temporary preferences; it requires Xvfb, xdotool, xwd, a C compiler
+and GTK3 development headers. It leaves captures under `target/pill-hover-test/`.
 
 The same app builds for Linux: everything that differs lives in
 `src-tauri/src/platform/`, and the relay's transport in `hook/src/unix.rs`.
@@ -831,4 +915,5 @@ What changes on Linux:
   terminal first, so its key is known: Coucou never answers ssh's questions.
   The Mac app has the same section (Settings → Agents → Remote hosts, not in
   the App Store build); it copies its Python relay (`nb-hook.py`) instead.
-- No **Claude Desktop** pill: the Claude app has no Linux build.
+- The **Claude Desktop** pill opens Anthropic's Linux app (its `.deb`): through
+  its `claude-desktop.desktop` entry, else its binary, else the `claude://` link.

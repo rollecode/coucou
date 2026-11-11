@@ -47,7 +47,7 @@ export function buildDiffCard(diff: FileDiff, hooks: DiffCardHooks): HTMLElement
       : h(
           "button",
           { class: "icon-btn", title: tl(STRINGS.open), onclick: () => hooks.open(diff.path) },
-          svg(ICONS.arrowUpRight, 8),
+          svg(ICONS.arrowUpRight, 11),
         ),
   );
 
