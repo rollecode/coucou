@@ -641,6 +641,7 @@ pub fn make_non_activating(win: &WebviewWindow) {
     }
     remap_new_surfaces(&gw, |w| apply_input_region(w, *INPUT_REGION.lock().unwrap()));
     unpin_removed_monitors(&gw.display());
+    raise_under_pointer(&gw);
     LAYER_SURFACE.store(true, Ordering::Relaxed);
     crate::log::line("island is a layer-shell overlay");
 }
@@ -674,6 +675,45 @@ fn remap_new_surfaces(gw: &gtk::ApplicationWindow, reapply: fn(&gtk::Application
         });
         gtk::glib::Propagation::Proceed
     });
+}
+
+/// Hide in full screen is on: the island rests on the top layer.
+static FULL_SCREEN_TOP: AtomicBool = AtomicBool::new(false);
+
+/// A bar on the top layer can sit over the island there and take the header's
+/// clicks. The island goes over it while the pointer is on the island, and back
+/// to the top layer when the pointer leaves. A full-screen window covers the top
+/// layer, so the pointer never reaches the island then.
+fn raise_under_pointer(gw: &gtk::ApplicationWindow) {
+    gw.add_events(gtk::gdk::EventMask::ENTER_NOTIFY_MASK | gtk::gdk::EventMask::LEAVE_NOTIFY_MASK);
+    gw.connect_enter_notify_event(|w, _| {
+        if FULL_SCREEN_TOP.load(Ordering::Relaxed) {
+            unsafe { layer::gtk_layer_set_layer(gtk_window_ptr(w), layer::LAYER_OVERLAY) };
+        }
+        gtk::glib::Propagation::Proceed
+    });
+    // On a layer surface GTK sends spurious leaves while the pointer is still on
+    // the island: lower it only once the pointer is really somewhere else.
+    gw.connect_leave_notify_event(|w, _| {
+        if FULL_SCREEN_TOP.load(Ordering::Relaxed) {
+            let w = w.clone();
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(150), move || {
+                if FULL_SCREEN_TOP.load(Ordering::Relaxed) && !pointer_on(&w) {
+                    unsafe { layer::gtk_layer_set_layer(gtk_window_ptr(&w), layer::LAYER_TOP) };
+                }
+            });
+        }
+        gtk::glib::Propagation::Proceed
+    });
+}
+
+/// The pointer is over `gw`, as the compositor last told GDK.
+fn pointer_on(gw: &gtk::ApplicationWindow) -> bool {
+    let Some(ours) = gw.window() else { return false };
+    let Some(pointer) = gtk::gdk::Display::default().and_then(|d| d.default_seat()).and_then(|s| s.pointer()) else {
+        return false;
+    };
+    pointer.window_at_position().0.is_some_and(|under| under.toplevel() == ours.toplevel())
 }
 
 /// A monitor switched off goes away: a layer surface pinned to it would stay
@@ -780,6 +820,7 @@ pub fn hide_in_full_screen(app: &AppHandle, on: bool) {
     }
     let Some(win) = app.get_webview_window(crate::island::WINDOW_LABEL) else { return };
     let Ok(gw) = win.gtk_window() else { return };
+    FULL_SCREEN_TOP.store(on, Ordering::Relaxed);
     let layer = if on { layer::LAYER_TOP } else { layer::LAYER_OVERLAY };
     unsafe { layer::gtk_layer_set_layer(gtk_window_ptr(&gw), layer) };
 }
