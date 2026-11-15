@@ -722,7 +722,7 @@ struct IslandClockText: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             Text(verbatim: IslandClock.text(context.date, date: timeOnly ? .timeOnly : state.clockDate, hours: state.clockHours))
-                .font(.system(size: 12).monospacedDigit())
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .foregroundColor(.white.opacity(0.85))
                 .lineLimit(1)
                 .fixedSize()
