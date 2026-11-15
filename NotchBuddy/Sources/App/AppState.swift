@@ -500,6 +500,22 @@ final class AppState: ObservableObject {
     @Published var hideInFullScreen: Bool = false {
         didSet { UserDefaults.standard.set(hideInFullScreen, forKey: "hideInFullScreen") }
     }
+    /// The clock in the middle of the compact island on a screen without a notch — persisted, off by default.
+    @Published var showClock: Bool = false {
+        didSet { UserDefaults.standard.set(showClock, forKey: "showClock") }
+    }
+    /// The clock in the open island's header too — persisted, off by default.
+    @Published var clockExpanded: Bool = false {
+        didSet { UserDefaults.standard.set(clockExpanded, forKey: "clockExpanded") }
+    }
+    /// What goes before the time (IslandClock.swift) — persisted.
+    @Published var clockDate: ClockDate = .date {
+        didSet { UserDefaults.standard.set(clockDate.rawValue, forKey: "clockDate") }
+    }
+    /// 12 or 24 hours, or the language's — persisted.
+    @Published var clockHours: ClockHours = .auto {
+        didSet { UserDefaults.standard.set(clockHours.rawValue, forKey: "clockHours") }
+    }
     /// A pill other than the one shown finishes or fails: show its card for a moment (#683).
     @Published var alertsFromAllPills: Bool = false {
         didSet { UserDefaults.standard.set(alertsFromAllPills, forKey: "alertsFromAllPills") }
@@ -838,6 +854,10 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "quietOnScreenShare") as? Bool { quietOnScreenShare = v }
         if let v = ud.object(forKey: "compactAgentsWorkingOnly") as? Bool { compactAgentsWorkingOnly = v }
         if let v = ud.object(forKey: "hideInFullScreen") as? Bool { hideInFullScreen = v }
+        if let v = ud.object(forKey: "showClock") as? Bool { showClock = v }
+        if let v = ud.object(forKey: "clockExpanded") as? Bool { clockExpanded = v }
+        if let v = ud.string(forKey: "clockDate").flatMap(ClockDate.init) { clockDate = v }
+        if let v = ud.string(forKey: "clockHours").flatMap(ClockHours.init) { clockHours = v }
         if let v = ud.object(forKey: "alertsFromAllPills") as? Bool { alertsFromAllPills = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v

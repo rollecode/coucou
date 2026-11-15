@@ -153,6 +153,13 @@ pub struct Settings {
     pub portfolio_wallets: Vec<crate::portfolio::Wallet>,
     /// The date and time in the middle of the compact island. Off by default.
     pub show_clock: bool,
+    /// What the clock shows before the time: "date", "weekday" or "none". Kept as it comes,
+    /// like `closed_island`: the island reads what it doesn't know as "date".
+    pub clock_date: String,
+    /// "auto" (the language's), "24" or "12". The closed island's time follows it too.
+    pub clock_hours: String,
+    /// The clock in the open island's header too. Off by default.
+    pub clock_expanded: bool,
     /// What the closed island shows at the top of the screen, where the Mac
     /// has its notch: "mochi" (the Mac's island on a screen without a notch),
     /// "time", "datetime", "claude" (the plan's usage), "music" (what plays),
@@ -271,6 +278,9 @@ impl Default for Settings {
             quiet_on_screen_share: true,
             portfolio_wallets: Vec::new(),
             show_clock: false,
+            clock_date: "date".into(),
+            clock_hours: "auto".into(),
+            clock_expanded: false,
             closed_island: "mochi".into(),
             agy_approvals_enabled: false,
         }
@@ -599,6 +609,9 @@ mod tests {
   "quietOnScreenShare": false,
   "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }],
   "showClock": true,
+  "clockDate": "none",
+  "clockHours": "24",
+  "clockExpanded": true,
   "closedIsland": "music",
   "agyApprovalsEnabled": true
 }"##;
@@ -1142,6 +1155,9 @@ mod tests {
                 "quietOnScreenShare",
                 "portfolioWallets",
                 "showClock",
+                "clockDate",
+                "clockHours",
+                "clockExpanded",
                 "closedIsland",
                 "agyApprovalsEnabled",
             ]
