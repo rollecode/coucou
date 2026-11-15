@@ -516,6 +516,10 @@ final class AppState: ObservableObject {
     @Published var clockHours: ClockHours = .auto {
         didSet { UserDefaults.standard.set(clockHours.rawValue, forKey: "clockHours") }
     }
+    /// A click on an agent's pill brings its terminal or app forward too — persisted, off by default.
+    @Published var clickOpensWindow: Bool = false {
+        didSet { UserDefaults.standard.set(clickOpensWindow, forKey: "clickOpensWindow") }
+    }
     /// A pill other than the one shown finishes or fails: show its card for a moment (#683).
     @Published var alertsFromAllPills: Bool = false {
         didSet { UserDefaults.standard.set(alertsFromAllPills, forKey: "alertsFromAllPills") }
@@ -868,6 +872,7 @@ final class AppState: ObservableObject {
         if let v = ud.object(forKey: "clockExpanded") as? Bool { clockExpanded = v }
         if let v = ud.string(forKey: "clockDate").flatMap(ClockDate.init) { clockDate = v }
         if let v = ud.string(forKey: "clockHours").flatMap(ClockHours.init) { clockHours = v }
+        if let v = ud.object(forKey: "clickOpensWindow") as? Bool { clickOpensWindow = v }
         if let v = ud.object(forKey: "alertsFromAllPills") as? Bool { alertsFromAllPills = v }
         if let v = ud.object(forKey: "autoCloseInterval") as? Double {
             autoCloseInterval = (v == 60) ? 15 : v

@@ -162,6 +162,8 @@ pub struct Settings {
     pub clock_expanded: bool,
     /// The compact island's width in px; the island clamps it to 200–480.
     pub compact_width: f64,
+    /// A click on an agent's pill brings its terminal or editor forward too. Off by default.
+    pub click_opens_window: bool,
     /// What the closed island shows at the top of the screen, where the Mac
     /// has its notch: "mochi" (the Mac's island on a screen without a notch),
     /// "time", "datetime", "claude" (the plan's usage), "music" (what plays),
@@ -284,6 +286,7 @@ impl Default for Settings {
             clock_hours: "auto".into(),
             clock_expanded: false,
             compact_width: 288.0,
+            click_opens_window: false,
             closed_island: "mochi".into(),
             agy_approvals_enabled: false,
         }
@@ -616,6 +619,7 @@ mod tests {
   "clockHours": "24",
   "clockExpanded": true,
   "compactWidth": 320.0,
+  "clickOpensWindow": true,
   "closedIsland": "music",
   "agyApprovalsEnabled": true
 }"##;
@@ -1163,6 +1167,7 @@ mod tests {
                 "clockHours",
                 "clockExpanded",
                 "compactWidth",
+                "clickOpensWindow",
                 "closedIsland",
                 "agyApprovalsEnabled",
             ]

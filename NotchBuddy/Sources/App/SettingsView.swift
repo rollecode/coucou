@@ -438,6 +438,8 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                         .monospacedDigit()
                 }
+                Toggle("Clicking an agent opens its window", isOn: $state.clickOpensWindow)
+                    .help("A click on a session's pill brings its terminal or editor forward, as Open terminal does.")
                 HStack(spacing: 8) {
                     Text("Close after")
                     TextField("60", value: $state.autoCloseInterval, format: .number)

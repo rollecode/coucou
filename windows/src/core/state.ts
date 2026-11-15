@@ -130,6 +130,8 @@ export interface Settings {
   clockExpanded: boolean;
   /** The compact island's width in px (core/layout.ts compactWidth). */
   compactWidth: number;
+  /** A click on an agent's pill brings its terminal or editor forward too. */
+  clickOpensWindow: boolean;
   /** What the closed island shows at the top of the screen (see core/closed.ts). */
   closedIsland: string;
   absenceInterval: number;
@@ -235,6 +237,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clockHours: "auto",
   clockExpanded: false,
   compactWidth: 288,
+  clickOpensWindow: false,
   closedIsland: "mochi",
   absenceInterval: 180,
   activeIntegrations: [
