@@ -128,6 +128,8 @@ export interface Settings {
   clockHours: string;
   /** The clock in the open island's header too. */
   clockExpanded: boolean;
+  /** The compact island's width in px (core/layout.ts compactWidth). */
+  compactWidth: number;
   /** What the closed island shows at the top of the screen (see core/closed.ts). */
   closedIsland: string;
   absenceInterval: number;
@@ -232,6 +234,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clockDate: "date",
   clockHours: "auto",
   clockExpanded: false,
+  compactWidth: 288,
   closedIsland: "mochi",
   absenceInterval: 180,
   activeIntegrations: [

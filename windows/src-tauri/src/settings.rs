@@ -160,6 +160,8 @@ pub struct Settings {
     pub clock_hours: String,
     /// The clock in the open island's header too. Off by default.
     pub clock_expanded: bool,
+    /// The compact island's width in px; the island clamps it to 200–480.
+    pub compact_width: f64,
     /// What the closed island shows at the top of the screen, where the Mac
     /// has its notch: "mochi" (the Mac's island on a screen without a notch),
     /// "time", "datetime", "claude" (the plan's usage), "music" (what plays),
@@ -281,6 +283,7 @@ impl Default for Settings {
             clock_date: "date".into(),
             clock_hours: "auto".into(),
             clock_expanded: false,
+            compact_width: 288.0,
             closed_island: "mochi".into(),
             agy_approvals_enabled: false,
         }
@@ -612,6 +615,7 @@ mod tests {
   "clockDate": "none",
   "clockHours": "24",
   "clockExpanded": true,
+  "compactWidth": 320,
   "closedIsland": "music",
   "agyApprovalsEnabled": true
 }"##;
@@ -1158,6 +1162,7 @@ mod tests {
                 "clockDate",
                 "clockHours",
                 "clockExpanded",
+                "compactWidth",
                 "closedIsland",
                 "agyApprovalsEnabled",
             ]

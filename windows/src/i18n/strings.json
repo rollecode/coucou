@@ -4532,6 +4532,21 @@
    "ko": "Flow 받아쓰기",
    "ja": "Flow 口述"
   },
+  "Folded island width": {
+   "zh-Hans": "收起的岛宽度",
+   "hi": "बंद आइलैंड की चौड़ाई",
+   "es": "Ancho de la isla plegada",
+   "ar": "عرض الجزيرة المطوية",
+   "fr": "Largeur de l'îlot replié",
+   "bn": "ভাঁজ করা আইল্যান্ডের প্রস্থ",
+   "pt-BR": "Largura da ilha recolhida",
+   "ru": "Ширина свёрнутого острова",
+   "id": "Lebar pulau yang terlipat",
+   "de": "Breite der eingeklappten Insel",
+   "tr": "Katlanmış adanın genişliği",
+   "ko": "접힌 아일랜드 너비",
+   "ja": "折りたたんだアイランドの幅"
+  },
   "Follow edits live": {
    "zh-Hans": "实时跟随编辑",
    "hi": "बदलाव लाइव देखें",

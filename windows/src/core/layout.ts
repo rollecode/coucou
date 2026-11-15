@@ -63,6 +63,15 @@ export const PANEL_H = 320;
 export const NOTCH_W = 184;
 export const NOTCH_H = 32;
 export const COMPACT_W = 288; // NOTCH_W + 104
+/** Settings → General → Folded island width: from just Mochi and the mini grid to a wide bar. */
+export const COMPACT_MIN_W = 200;
+export const COMPACT_MAX_W = 480;
+
+/** A width out of range, or none, reads as the default. */
+export function compactWidth(value: unknown): number {
+  const w = Number(value);
+  return Number.isFinite(w) ? Math.round(Math.max(COMPACT_MIN_W, Math.min(COMPACT_MAX_W, w))) : COMPACT_W;
+}
 export const EXPANDED_W = 640;
 
 /**
@@ -148,6 +157,7 @@ export function islandSize(
   chatCount = 0,
   pad: CompactPadding = COMPACT_PADDING,
   compactMinW = 0,
+  compactW = COMPACT_W,
 ): { w: number; h: number } {
   switch (mode) {
     case "hidden":
@@ -155,7 +165,7 @@ export function islandSize(
       // slides into the top edge of the screen instead of sitting there as a bar.
       return { w: NOTCH_W, h: 0 };
     case "compact":
-      return { w: Math.max(COMPACT_W, compactMinW), h: pad.top + COMPACT_ROW + pad.bottom };
+      return { w: Math.max(compactW, compactMinW), h: pad.top + COMPACT_ROW + pad.bottom };
     case "expanded": {
       const h = view === "prompt" ? chatPromptHeight(chatCount) : VIEW_LAYOUTS[view].height;
       return { w: EXPANDED_W, h };

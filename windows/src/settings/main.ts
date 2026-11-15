@@ -17,6 +17,7 @@ import { SOUND_NAMES, SOUND_VOLUME_MAX } from "../core/sound";
 import { closedIsland } from "../core/closed";
 import { clockDate, clockHours } from "../core/clock";
 import type { UpdateStatus } from "../core/update";
+import { COMPACT_MAX_W, COMPACT_MIN_W, compactWidth } from "../core/layout";
 import {
   PILL_CATEGORIES, availablePills, chooseMainPill, isComingSoon, mainPillChoices,
   sanitizeDeclared, toggleDeclared, type PillDefinition,
@@ -1259,6 +1260,17 @@ function whatsappSections(): HTMLElement[] {
 let generalSync: (() => void) | null = null;
 
 function generalSection(): HTMLElement {
+  const widthValue = h("span", { class: "hint", text: `${compactWidth(settings.compactWidth)} px` });
+  const width = h("input", {
+    type: "range", min: String(COMPACT_MIN_W), max: String(COMPACT_MAX_W), step: "4",
+    value: String(compactWidth(settings.compactWidth)),
+  }) as HTMLInputElement;
+  width.addEventListener("input", () => {
+    settings.compactWidth = compactWidth(width.value);
+    widthValue.textContent = `${settings.compactWidth} px`;
+    void save();
+  });
+
   const volume = h("input", {
     type: "range", min: "0", max: String(SOUND_VOLUME_MAX), step: "0.005",
     value: String(settings.soundVolume),
@@ -1472,6 +1484,11 @@ function generalSection(): HTMLElement {
       toggle(settings.alertsFromAllPills, (v) => { settings.alertsFromAllPills = v; void save(); }),
     ),
     h("div", { class: "hint", text: t("When a pill other than the one shown finishes or hits an error, the notch shows it for a moment, then the pill you had comes back.") }),
+    h("div", { class: "row" },
+      h("label", { text: t("Folded island width") }),
+      width,
+      widthValue,
+    ),
     h("div", { class: "row" },
       h("label", { text: t("Show clock in the island") }),
       toggle(settings.showClock, (v) => { settings.showClock = v; void save(); }),
