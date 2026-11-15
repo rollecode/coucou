@@ -676,6 +676,11 @@ export class Island {
     window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
   }
 
+  /** No click comes with a keyboard shortcut, so the island takes the keyboard outright. */
+  grabKeyboard() {
+    void Bridge.grabKeyboard();
+  }
+
   /** The desktop shortcut needs a desktop Mochi: none on GNOME's Wayland. */
   canLeaveIsland(): boolean {
     return this.desktop.supported;

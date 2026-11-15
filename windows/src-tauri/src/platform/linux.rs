@@ -543,6 +543,7 @@ mod layer {
     pub const EDGE_TOP: c_int = 2;
     pub const EDGE_BOTTOM: c_int = 3;
     pub const KEYBOARD_NONE: c_int = 0;
+    pub const KEYBOARD_EXCLUSIVE: c_int = 1;
     pub const KEYBOARD_ON_DEMAND: c_int = 2;
 
     #[link(name = "gtk-layer-shell")]
@@ -852,9 +853,13 @@ pub fn pin_to_monitor(win: &WebviewWindow, x: i32, y: i32) {
 /// Temporarily allow keyboard focus so a text field inside the island can be
 /// typed in.
 pub fn set_activating(win: &WebviewWindow, activating: bool) {
+    // A grab outlasts the clicks that follow it: on-demand would hand the keyboard back.
+    if activating && KEYBOARD_GRABBED.load(Ordering::Relaxed) {
+        return;
+    }
+    KEYBOARD_GRABBED.store(false, Ordering::Relaxed);
     // Setting the same keyboard mode again stalls WebKit's repaints after a fold.
-    static ACTIVATING: AtomicBool = AtomicBool::new(false);
-    if ACTIVATING.swap(activating, Ordering::Relaxed) == activating {
+    if KEYBOARD_ACTIVE.swap(activating, Ordering::Relaxed) == activating {
         return;
     }
     let Ok(gw) = win.gtk_window() else { return };
@@ -864,6 +869,22 @@ pub fn set_activating(win: &WebviewWindow, activating: bool) {
     if LAYER_SURFACE.load(Ordering::Relaxed) {
         let mode = if activating { layer::KEYBOARD_ON_DEMAND } else { layer::KEYBOARD_NONE };
         unsafe { layer::gtk_layer_set_keyboard_mode(gtk_window_ptr(&gw), mode) };
+    }
+}
+
+static KEYBOARD_GRABBED: AtomicBool = AtomicBool::new(false);
+static KEYBOARD_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+/// A keyboard shortcut opened the island. A compositor gives an on-demand layer
+/// surface the keyboard only on a click, so the island takes it outright until
+/// it folds (`set_activating(false)`).
+pub fn grab_keyboard(win: &WebviewWindow) {
+    let Ok(gw) = win.gtk_window() else { return };
+    gw.set_accept_focus(true);
+    if LAYER_SURFACE.load(Ordering::Relaxed) {
+        KEYBOARD_GRABBED.store(true, Ordering::Relaxed);
+        KEYBOARD_ACTIVE.store(true, Ordering::Relaxed);
+        unsafe { layer::gtk_layer_set_keyboard_mode(gtk_window_ptr(&gw), layer::KEYBOARD_EXCLUSIVE) };
     }
 }
 

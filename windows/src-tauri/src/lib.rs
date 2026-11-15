@@ -236,6 +236,17 @@ fn focus_window(app: AppHandle, focused: bool) {
     });
 }
 
+/// A keyboard shortcut opened the island: it keeps the keyboard until it folds.
+#[tauri::command]
+fn grab_keyboard(app: AppHandle) {
+    let Some(win) = island::window(&app) else { return };
+    // Raw GTK FFI: main thread only, as in focus_window.
+    let _ = app.run_on_main_thread(move || {
+        platform::grab_keyboard(&win);
+        let _ = win.set_focus();
+    });
+}
+
 #[tauri::command]
 fn reposition(app: AppHandle) {
     place_island(&app);
@@ -1088,6 +1099,7 @@ pub fn run() {
             set_collapsed,
             set_island_rect,
             focus_window,
+            grab_keyboard,
             reposition,
             fit_zoom,
             hub_shown,

@@ -24,7 +24,7 @@ export interface ShortcutHost {
   emote(name: BotEmoteName): void;
   setPinned(on: boolean): void;
   /** Gives the island the keyboard, so the in-island keys work (Mac: makeKey). */
-  takeKeyboard(): void;
+  grabKeyboard(): void;
   /** The chat field takes the typing, once the island has the keyboard. */
   focusChat(): void;
   /** The wardrobe from any state, or back if it is open (Island.wardrobeAnywhere). */
@@ -59,14 +59,14 @@ export function runGlobalShortcut(host: ShortcutHost, action: string, resume: ()
         resume();
         // A waiting card is what the island opens on (State.defaultView).
         host.alert(State.defaultView());
-        host.takeKeyboard();
+        host.grabKeyboard();
       }
       break;
 
     case "openChat":
       resume();
       host.alert("prompt");
-      host.takeKeyboard();
+      host.grabKeyboard();
       host.focusChat();
       break;
 
@@ -79,12 +79,12 @@ export function runGlobalShortcut(host: ShortcutHost, action: string, resume: ()
         resume();
         State.setFocus(pending.pillId);
         host.alert(pending.questions ? "question" : "approval");
-        host.takeKeyboard();
+        host.grabKeyboard();
       } else if (asking) {
         resume();
         State.setFocus(asking.id);
         host.alert("question");
-        host.takeKeyboard();
+        host.grabKeyboard();
       } else {
         // Nothing is waiting: Mochi says so.
         host.emote("annoyed");
