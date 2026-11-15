@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 — Unreleased
+## 0.6.0 — November 12, 2026
 
 - **Start a Claude Code session from the notch** *(GitHub build)* — the terminal tab in the island's header, or ⌃⌥N: pick the project (the folders your sessions ran in, or any folder), type or dictate what Claude should do, and your terminal opens there with Claude Code and your words. Terminal, iTerm2, Ghostty, kitty, WezTerm and Alacritty; the prompt is never written into a command line
 - **Drop a file on a session** *(GitHub build)* — drag a file over the notch (a ⌘⇧2 thumbnail, a capture, anything from Finder) and let go on one of the sessions listed on the right of the drop card: its terminal comes forward and the file lands in its prompt, as if dropped on the terminal itself
@@ -31,9 +31,11 @@ Fixes:
 - **Start a Claude Code session from the island** — the terminal tab in the island's header: pick the project (the folders your sessions ran in, or any folder), say what Claude should do, and your terminal opens there with Claude Code and your words. Windows Terminal or PowerShell on Windows; your own terminal on Linux. The prompt is never written into a command line
 - **Drop a file on a session** — drag a file over the island and let go on one of the sessions listed on the right of the drop card: its window comes forward and the file's path lands in its prompt
 - **Approve Antigravity commands from the island** *(optional)* — the Mac's setting comes to Windows and Linux: turn on Settings → Agents → Antigravity → **Approve commands from the notch**, and a shell command that none of your Antigravity rules covers waits for you on the approval card: **Allow**, **Deny**, or **Reply in terminal** for Antigravity's own prompt. Commands your rules allow or deny are left to Antigravity, and with no answer in 2 min, or Coucou closed, Antigravity asks in its terminal as before. Reinstall the Antigravity hooks once, then restart Antigravity: its command hook now waits up to 2 min
+- **Relay settings for testers** — the *Away from home Wi-Fi* block in Settings → Android phone stays hidden until a relay is ready for everyone, but now shows when Coucou starts with `COUCOU_RELAY_SETTINGS=1` (or when a relay is already on), so the Android relay link can be tested; how in [docs/RELAY_DEPLOY.md](docs/RELAY_DEPLOY.md)
 - **Approve OpenCode from the island** — OpenCode's permission requests get Allow and Deny on the island; with no click, OpenCode asks as usual (#442 by @ValentinoMartz)
 - **A card answered in the terminal goes away** — allow or deny in the terminal (or Claude's app) and the island's card closes by itself (#740 by @arnavaggarwal-dev)
 - **Flow: one press starts hands-free** (#1063 by @Brezinben)
+- **Flow: hide the pill until you dictate** *(optional, off by default)* — Flow → Settings → **Hide the pill until I dictate**: the pill shows only while you dictate, record a call or get a message, and the dictation key still works (by @Rhytam23)
 - **« OK Coucou » with a Brazilian or a Spanish accent** (#828 by @afpruivo, #791 by @alexisrja)
 - **Cal.com bookings in detail** — month, day, then the booking (#1006 by @lazarevtill); **notes exported where you choose** *(Windows)* (#1007 by @lazarevtill)
 - **WhatsApp's ↗ opens WhatsApp Desktop** at the open chat, else WhatsApp Web (#1070 by @Joshuabarradas234)
@@ -49,7 +51,17 @@ Fixes:
 - **Instant page switches in Settings** *(Linux)* (#906 by @RomainBrocheton)
 - **The finished card goes away when a new prompt comes** (#587) and **the GitHub week strip is graded against its own week** (#611), by @rollecode
 
-## Android 0.4.0 — Unreleased
+## Android 0.5.0 — November 13, 2026
+
+- **Coucou for Android 0.5.0**, by @Rhytam23 (versionCode 5)
+  - **A steadier link through your own relay** — the connection no longer drops after a quiet moment (from #554 by @rollecode), and the phone reconnects at once when the computer comes back instead of waiting on a dead connection (from #1041 by @lazarevtill). The relay settings are still hidden on Windows and Linux, so this is for testers for now (see Windows and Linux 0.6.0)
+  - **Swipe the island up to put it away** — it goes back into the camera hole and stays there while the same thing goes on (the same agent working, the same request); anything new brings it back down. TalkBack has a *Dismiss the island* action for it
+  - **Nothing is lost with the swipe** — a finish, an error, a usage limit or a question becomes a quiet notification, and a permission request keeps its own notification with Deny and Allow
+  - **Hide the island in Do Not Disturb** *(optional, off by default)* — Settings → **Hide the island in Do Not Disturb**: while the phone is in Do Not Disturb, nothing drops from the top of the screen; requests still arrive as notifications, which Android handles by its own Do Not Disturb rules
+  - **The island fits again** when the phone is rotated or the screen resolution or font size changes while it is open
+  - **Six more languages** — German, Japanese, Korean, Traditional Chinese and Thai (from #1043 to #1047 by @Ohualtex) and Italian (from #974 by @roccordx); the app now has 16 translations
+
+## Android 0.4.0 — November 3, 2026
 
 - **The island sits in the middle again** when the screen resolution is set below the panel's (#900 by @pfTheTrial)
 - **Coucou for Android 0.4.0** — works with a Mac as well as with Windows and Linux: pair it the same way (Settings → Android phone on the Mac, then scan the QR code). The app itself does not change for this; the Mac speaks the same link as the PC. Needs the Mac release that carries the Android phone link
