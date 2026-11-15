@@ -615,7 +615,7 @@ mod tests {
   "clockDate": "none",
   "clockHours": "24",
   "clockExpanded": true,
-  "compactWidth": 320,
+  "compactWidth": 320.0,
   "closedIsland": "music",
   "agyApprovalsEnabled": true
 }"##;
