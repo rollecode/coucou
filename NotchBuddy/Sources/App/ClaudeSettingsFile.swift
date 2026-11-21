@@ -58,13 +58,19 @@ enum ClaudeSettingsFile {
         guard FileManager.default.fileExists(atPath: url.path) else { return ([:], nil) }
         let name = url.lastPathComponent
         guard let bytes = try? Data(contentsOf: url) else { throw Failure.unreadable(name) }
+        return (try parse(bytes, name: name), bytes)
+    }
+
+    /// The settings object in `bytes` (a file read here, or over SSH). Whitespace
+    /// only is an empty object; anything that is not a JSON object throws.
+    static func parse(_ bytes: Data, name: String) throws -> [String: Any] {
         if bytes.allSatisfy({ $0 == 0x20 || $0 == 0x09 || $0 == 0x0A || $0 == 0x0D }) {
-            return ([:], bytes)
+            return [:]
         }
         guard let object = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any] else {
             throw Failure.invalid(name)
         }
-        return (object, bytes)
+        return object
     }
 
     /// Replaces the file with `data`, after a dated backup.
@@ -106,11 +112,15 @@ enum ClaudeSettingsFile {
 
         // Written beside the target and renamed over it: a crash or a full disk
         // leaves the original intact rather than half a file.
+        // A fresh name, created exclusively: never written through a file or symlink planted there first.
         let temp = target.deletingLastPathComponent()
-            .appendingPathComponent("\(target.lastPathComponent).coucou-\(ProcessInfo.processInfo.processIdentifier)")
-        try? fm.removeItem(at: temp)
-        guard fm.createFile(atPath: temp.path, contents: data,
-                            attributes: [.posixPermissions: NSNumber(value: 0o600)]) else {
+            .appendingPathComponent("\(target.lastPathComponent).coucou-\(UUID().uuidString)")
+        let fd = open(temp.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0o600)
+        guard fd >= 0 else { throw Failure.writeFailed(name) }
+        let written = data.withUnsafeBytes { Darwin.write(fd, $0.baseAddress, data.count) }
+        close(fd)
+        guard written == data.count else {
+            try? fm.removeItem(at: temp)
             throw Failure.writeFailed(name)
         }
         do {

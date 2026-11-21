@@ -1,5 +1,6 @@
 // Integration pollers — the Rust side of StripePoller / GithubPoller /
-// VercelPoller / N8nPoller / ResendPoller / NotionPoller / CalcomPoller.
+// VercelPoller / N8nPoller / ResendPoller / NotionPoller / CalcomPoller /
+// LinearPoller / TimelyPoller (SlackPoller is in slack.rs).
 //
 // Same endpoints, same first-run delays and intervals as the Swift pollers. Each
 // one emits an `integration` event; the island owns the badge, the sound and the
@@ -20,6 +21,7 @@ use tokio::sync::Notify;
 use crate::github::{self, CiState, ContributionDay, GitHubActivity, GitHubPr, GitHubPulse, GitHubRepoCi, ReviewState};
 use crate::island::WINDOW_LABEL;
 use crate::log;
+use crate::portfolio;
 use crate::secrets;
 
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -47,7 +49,7 @@ pub(crate) fn emit(app: &AppHandle, update: IntegrationUpdate) {
     let _ = app.emit_to(WINDOW_LABEL, "integration", update);
 }
 
-fn client() -> reqwest::Client {
+pub(crate) fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(TIMEOUT)
         .build()
@@ -73,7 +75,13 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_gitea", 7, 300, poll_gitea);
     spawn_github_loops(app.clone());
     spawn(app.clone(), "integration_calcom", 8, 300, crate::calcom::poll);
-    spawn(app, "integration_notion", 9, 300, poll_notion);
+    spawn(app.clone(), "integration_notion", 9, 300, poll_notion);
+    spawn(app.clone(), "integration_linear", 11, 60, poll_linear);
+    spawn(app.clone(), "integration_betterstack", 10, 60, poll_betterstack);
+    spawn(app.clone(), "integration_slack", 10, 60, crate::slack::poll);
+    spawn(app.clone(), TIMELY, 9, 60, poll_timely);
+    spawn(app.clone(), "integration_calendar", 10, 300, poll_calendar);
+    spawn(app, portfolio::PILL_ID, 4, 120, poll_portfolio);
 }
 
 /// True when the user has this integration switched on in settings.
@@ -124,6 +132,12 @@ pub async fn poll_once(app: AppHandle, id: &str) {
         "integration_resend" => poll_resend(app).await,
         "integration_notion" => poll_notion(app).await,
         "integration_calcom" => crate::calcom::poll(app).await,
+        "integration_calendar" => poll_calendar(app).await,
+        TIMELY => poll_timely(app).await,
+        "integration_slack" => crate::slack::poll(app).await,
+        "integration_betterstack" => poll_betterstack(app).await,
+        "integration_linear" => poll_linear(app).await,
+        portfolio::PILL_ID => poll_portfolio(app).await,
         _ => {}
     }
 }
@@ -908,6 +922,10 @@ pub fn github_token_changed(app: &AppHandle) {
 /// Switching the pill off forgets the pulse, so switching it back on starts
 /// silent instead of alerting on everything that changed in between.
 pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
+    let portfolio_on = active_integrations.iter().any(|id| id == portfolio::PILL_ID);
+    if PORTFOLIO_ON.swap(portfolio_on, Ordering::SeqCst) != portfolio_on {
+        portfolio_changed(app);
+    }
     if active_integrations.iter().any(|id| id == GITHUB_ID) {
         return;
     }
@@ -920,6 +938,29 @@ pub fn settings_saved(app: &AppHandle, active_integrations: &[String]) {
     };
     if had_data {
         emit_github(app);
+    }
+}
+
+// ── Portfolio (PortfolioController.swift) ────────────────────────────────────
+
+/// Whether the pill was on at the last settings save, to start over when it changes.
+static PORTFOLIO_ON: AtomicBool = AtomicBool::new(false);
+
+async fn poll_portfolio(app: AppHandle) {
+    let wallets = app
+        .try_state::<crate::Shared>()
+        .map(|shared| shared.settings.lock().unwrap().portfolio_wallets.clone())
+        .unwrap_or_default();
+    let Some(data) = portfolio::fetch(wallets).await else { return };
+    emit(&app, IntegrationUpdate { id: portfolio::PILL_ID, data, error: None, event: None });
+}
+
+/// Accounts were added or removed, or the pill was switched: the card starts
+/// over from "Loading…" and fetches at once while the pill is on.
+pub fn portfolio_changed(app: &AppHandle) {
+    emit(app, IntegrationUpdate { id: portfolio::PILL_ID, data: json!({}), error: None, event: None });
+    if !PAUSED.load(Ordering::Relaxed) && enabled(app, portfolio::PILL_ID) {
+        tauri::async_runtime::spawn(poll_portfolio(app.clone()));
     }
 }
 
@@ -990,6 +1031,80 @@ async fn poll_vercel(app: AppHandle) {
     emit(&app, IntegrationUpdate {
         id: "integration_vercel",
         data: json!({ "deployments": deployments }),
+        error: None,
+        event,
+    });
+}
+
+// ── Better Stack ──────────────────────────────────────────────────────────────
+
+/// Open incidents seen on the last poll (id → name); None until the first one.
+static BETTERSTACK_SEEN: Mutex<Option<std::collections::HashMap<String, String>>> = Mutex::new(None);
+
+/// A new token is a new account: alert on none of its existing incidents.
+pub fn reset_betterstack() {
+    *BETTERSTACK_SEEN.lock().unwrap() = None;
+}
+
+async fn poll_betterstack(app: AppHandle) {
+    use crate::betterstack::{self, Change};
+
+    let Some(token) = secrets::get("betterstack-token") else { return };
+    let http = client();
+    let auth = format!("Bearer {token}");
+    let get = |url: &'static str| {
+        http.get(url)
+            .header("Authorization", &auth)
+            .header("Accept", "application/json")
+            .send()
+    };
+    let Ok(incidents) = get(betterstack::INCIDENTS_URL).await else { return };
+    if !incidents.status().is_success() {
+        emit(&app, IntegrationUpdate {
+            id: "integration_betterstack",
+            data: json!({}),
+            error: Some(status_error(incidents.status().as_u16(), &crate::i18n::t("Token lacks access"))),
+            event: None,
+        });
+        return;
+    }
+    let body: Value = incidents.json().await.unwrap_or(json!({}));
+    let Some(open) = betterstack::incidents(&body) else { return };
+
+    // Monitors are extra: without them the card still lists the incidents.
+    let down = match get(betterstack::MONITORS_URL).await {
+        Ok(r) if r.status().is_success() => {
+            let body: Value = r.json().await.unwrap_or(json!({}));
+            betterstack::down_monitors(&body).unwrap_or_default()
+        }
+        _ => Vec::new(),
+    };
+
+    let change = {
+        let mut seen = BETTERSTACK_SEEN.lock().unwrap();
+        let change = betterstack::change(seen.as_ref(), &open);
+        *seen = Some(betterstack::seen(&open));
+        change
+    };
+    let event = match change {
+        Change::None => None,
+        Change::Opened { name, cause } => Some(IntegrationEvent { success: false, label: name, detail: cause }),
+        // Only all-clear is good news; one of two incidents resolving isn't.
+        Change::Resolved { name } if open.is_empty() => Some(IntegrationEvent {
+            success: true,
+            label: name,
+            detail: Some(crate::i18n::t("Resolved")),
+        }),
+        Change::Resolved { .. } => None,
+    };
+
+    emit(&app, IntegrationUpdate {
+        id: "integration_betterstack",
+        data: json!({
+            "incidents": open,
+            "down": down,
+            "team": secrets::get("betterstack-team").and_then(|raw| betterstack::team(&raw)),
+        }),
         error: None,
         event,
     });
@@ -1146,13 +1261,310 @@ fn parse_notion_page(obj: &Value) -> Option<Value> {
 
 // ── Cal.com ───────────────────────────────────────────────────────────────────
 
+// ── Calendar ──────────────────────────────────────────────────────────────────
+//
+// The secret iCal address (Google Calendar or any other) stays here; the island
+// gets the feed's text and reads it itself (src/core/calendar.ts), where Intl
+// knows every time zone.
+
+/// The feed address as pasted: `webcal://` (iCloud, Outlook) is https.
+fn calendar_url(raw: &str) -> Option<reqwest::Url> {
+    let raw = raw.trim();
+    let raw = match raw.strip_prefix("webcal://") {
+        Some(rest) => format!("https://{rest}"),
+        None => raw.to_string(),
+    };
+    let url = reqwest::Url::parse(&raw).ok()?;
+    // The address is the key to the calendar: https only.
+    (url.scheme() == "https" && url.host_str().is_some_and(|h| !h.is_empty())).then_some(url)
+}
+
+async fn poll_calendar(app: AppHandle) {
+    let Some(raw) = secrets::get("calendar-ical-url") else { return };
+    let fail = |error: String| {
+        emit(&app, IntegrationUpdate { id: "integration_calendar", data: json!({}), error: Some(error), event: None });
+    };
+    let Some(url) = calendar_url(&raw) else {
+        fail(crate::i18n::t("The calendar address must start with https:// or webcal://."));
+        return;
+    };
+    let Ok(response) = client().get(url).send().await else { return };
+    if !response.status().is_success() {
+        fail(status_error(response.status().as_u16(), &crate::i18n::t("Key lacks access")));
+        return;
+    }
+    let body = match crate::net::read_capped(response, crate::net::MAX_BODY).await {
+        Ok(body) => body,
+        Err(error) => return fail(error),
+    };
+    emit(&app, IntegrationUpdate {
+        id: "integration_calendar",
+        data: json!({ "ics": String::from_utf8_lossy(&body) }),
+        error: None,
+        event: None,
+    });
+}
+
+// ── Timely ────────────────────────────────────────────────────────────────────
+
+const TIMELY: &str = "integration_timely";
+
+/// Account and user, looked up once per token; the daily capacity, once per day.
+#[derive(Default)]
+struct TimelyCache {
+    ids: Option<(i64, i64)>,
+    capacity: Option<(String, Option<f64>)>,
+}
+
+static TIMELY_CACHE: std::sync::LazyLock<Mutex<TimelyCache>> =
+    std::sync::LazyLock::new(|| Mutex::new(TimelyCache::default()));
+
+fn timely_forget() {
+    *TIMELY_CACHE.lock().unwrap() = TimelyCache::default();
+}
+
+fn store_timely_tokens(tokens: &crate::timely::Tokens) {
+    let _ = secrets::set("timely-access-token", &tokens.access);
+    if let Some(refresh) = &tokens.refresh {
+        let _ = secrets::set("timely-refresh-token", refresh);
+    }
+}
+
+async fn timely_token_request(body: Value, old_refresh: Option<&str>) -> Option<crate::timely::Tokens> {
+    let response = client()
+        .post(format!("{}/oauth/token", crate::timely::BASE))
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
+    if !response.status().is_success() {
+        log::line(format!("timely token HTTP {}", response.status()));
+        return None;
+    }
+    let json: Value = response.json().await.ok()?;
+    crate::timely::parse_tokens(&json, old_refresh)
+}
+
+async fn timely_refresh() -> Option<String> {
+    let (id, secret, refresh) = (
+        secrets::get("timely-client-id")?,
+        secrets::get("timely-client-secret")?,
+        secrets::get("timely-refresh-token")?,
+    );
+    let tokens = timely_token_request(crate::timely::refresh_body(&id, &secret, &refresh), Some(&refresh)).await?;
+    store_timely_tokens(&tokens);
+    Some(tokens.access)
+}
+
+/// Settings → Timely → Save: trades the pasted code for tokens.
+pub async fn timely_connect(app: AppHandle, code: &str) -> Result<(), String> {
+    let (Some(id), Some(secret)) = (secrets::get("timely-client-id"), secrets::get("timely-client-secret")) else {
+        return Err("missing client".into());
+    };
+    let tokens = timely_token_request(crate::timely::code_body(&id, &secret, code.trim()), None)
+        .await
+        .ok_or_else(|| "refused".to_string())?;
+    store_timely_tokens(&tokens);
+    timely_forget();
+    if enabled(&app, TIMELY) {
+        poll_timely(app).await;
+    }
+    Ok(())
+}
+
+pub fn timely_disconnect(app: &AppHandle) {
+    let _ = secrets::clear("timely-access-token");
+    let _ = secrets::clear("timely-refresh-token");
+    timely_forget();
+    emit(app, IntegrationUpdate { id: TIMELY, data: json!({}), error: None, event: None });
+}
+
+async fn timely_get(path: &str) -> (u16, Option<Value>) {
+    let Some(access) = secrets::get("timely-access-token") else {
+        return (crate::timely::HTTP_UNAUTHORIZED, None);
+    };
+    let url = format!("{}{path}", crate::timely::BASE);
+    let http = client();
+    crate::timely::with_refresh(
+        access,
+        |token: String| {
+            let request = http.get(&url).bearer_auth(token).header("Accept", "application/json");
+            async move {
+                match request.send().await {
+                    Ok(r) => {
+                        let status = r.status().as_u16();
+                        (status, r.json::<Value>().await.ok())
+                    }
+                    Err(_) => (0, None),
+                }
+            }
+        },
+        timely_refresh,
+    )
+    .await
+}
+
+async fn timely_ids() -> Result<(i64, i64), u16> {
+    if let Some(ids) = TIMELY_CACHE.lock().unwrap().ids {
+        return Ok(ids);
+    }
+    let (status, accounts) = timely_get("/accounts").await;
+    let account = accounts.as_ref().and_then(crate::timely::first_account_id).ok_or(status)?;
+    let (status, me) = timely_get(&format!("/{account}/users/current")).await;
+    let user = me.as_ref().and_then(crate::timely::user_id).ok_or(status)?;
+    TIMELY_CACHE.lock().unwrap().ids = Some((account, user));
+    Ok((account, user))
+}
+
+/// No answer at all (status 0) is left alone, as the other pollers do: the card keeps its last data.
+fn timely_error(app: &AppHandle, status: u16) {
+    if status == 0 {
+        return;
+    }
+    let error = status_error(status, &crate::i18n::t("Key lacks access"));
+    emit(app, IntegrationUpdate { id: TIMELY, data: json!({}), error: Some(error), event: None });
+}
+
+async fn poll_timely(app: AppHandle) {
+    if !secrets::present("timely-access-token") {
+        return;
+    }
+    let (account, user) = match timely_ids().await {
+        Ok(ids) => ids,
+        Err(status) => return timely_error(&app, status),
+    };
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let today = crate::timely::utc_day(now);
+    let cached = TIMELY_CACHE.lock().unwrap().capacity.clone().filter(|(day, _)| *day == today);
+    let capacity = match cached {
+        Some((_, hours)) => hours,
+        None => {
+            let (_, caps) = timely_get(&format!("/{account}/users/{user}/capacities")).await;
+            let hours = caps.as_ref().and_then(crate::timely::daily_capacity);
+            TIMELY_CACHE.lock().unwrap().capacity = Some((today, hours));
+            hours
+        }
+    };
+
+    let (since, upto) = crate::timely::day_window(now);
+    let (status, events) = timely_get(&format!("/{account}/users/{user}/events?since={since}&upto={upto}")).await;
+    let Some(entries) = events.as_ref().and_then(crate::timely::parse_entries) else {
+        return timely_error(&app, status);
+    };
+    emit(&app, IntegrationUpdate {
+        id: TIMELY,
+        data: json!({ "entries": entries, "capacityHours": capacity }),
+        error: None,
+        event: None,
+    });
+}
+
+// ── Linear ────────────────────────────────────────────────────────────────────
+
+/// Inbox ids the last poll saw unread; None until the first poll, which is silent.
+static LINEAR_SEEN: Mutex<Option<std::collections::HashSet<String>>> = Mutex::new(None);
+
+/// A new key starts silently, like the first poll.
+pub fn forget_linear() {
+    *LINEAR_SEEN.lock().unwrap() = None;
+}
+
+async fn poll_linear(app: AppHandle) {
+    let Some(key) = secrets::get("linear-api-key") else { return };
+    // Personal API keys go in the header as-is, without "Bearer".
+    let response = client()
+        .post(crate::linear::ENDPOINT)
+        .header("Authorization", key)
+        .json(&crate::linear::request_body())
+        .send()
+        .await;
+    let Ok(response) = response else { return };
+    let code = response.status().as_u16();
+    let json: Value = response.json().await.unwrap_or(json!({}));
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let Some(inbox) = (code == 200).then(|| crate::linear::parse(&json, now)).flatten() else {
+        let error = match code {
+            200 => crate::i18n::t("Unexpected response"),
+            _ => status_error(code, &crate::i18n::t("Key lacks access")),
+        };
+        emit(&app, IntegrationUpdate { id: "integration_linear", data: json!({}), error: Some(error), event: None });
+        return;
+    };
+
+    let unread = inbox["unread"].as_array().cloned().unwrap_or_default();
+    let event = {
+        let mut seen = LINEAR_SEEN.lock().unwrap();
+        let newest = crate::linear::fresh(&unread, seen.as_ref()).first().map(|n| IntegrationEvent {
+            success: true,
+            label: [n["key"].as_str(), n["title"].as_str()].into_iter().flatten().collect::<Vec<_>>().join(" "),
+            detail: None,
+        });
+        *seen = Some(unread.iter().filter_map(|n| n["id"].as_str().map(str::to_string)).collect());
+        newest
+    };
+
+    emit(&app, IntegrationUpdate { id: "integration_linear", data: inbox, error: None, event });
+}
+
 // ── n8n ───────────────────────────────────────────────────────────────────────
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct N8nExecution {
+    id: String,
+    workflow: String,
+    status: String,
+    detail: Option<String>,
+}
+
+static N8N_LAST: std::sync::LazyLock<Mutex<Option<N8nExecution>>> =
+    std::sync::LazyLock::new(|| Mutex::new(None));
+
+/// An n8n URL or API key changed: forget the previously seen execution so the
+/// next poll runs immediately with the new credentials.
+pub fn n8n_credentials_changed(app: &AppHandle) {
+    SEEN.0.lock().unwrap().remove("n8n");
+    *N8N_LAST.lock().unwrap() = None;
+    emit(app, IntegrationUpdate { id: "integration_n8n", data: json!({}), error: None, event: None });
+    if !PAUSED.load(Ordering::Relaxed) && enabled(app, "integration_n8n") {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            poll_n8n(app).await;
+        });
+    }
+}
+
+fn extract_n8n_workflow_name(json: &Value) -> Option<String> {
+    json.get("workflowData")
+        .and_then(|w| w.get("name"))
+        .and_then(Value::as_str)
+        .or_else(|| json.get("workflowName").and_then(Value::as_str))
+        .or_else(|| json.get("name").and_then(Value::as_str))
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
 async fn poll_n8n(app: AppHandle) {
+    if PAUSED.load(Ordering::Relaxed) || !enabled(&app, "integration_n8n") {
+        return;
+    }
     let (Some(key), Some(raw_base)) = (secrets::get("n8n-api-key"), secrets::get("n8n-url")) else {
         return;
     };
     let base = raw_base.trim_end_matches('/').to_string();
+    // The API key rides every request: only https, or a server on this computer
+    // — the same rule the chat providers' keys follow (local_chat.rs).
+    let Ok(base_url) = reqwest::Url::parse(&base) else { return };
+    if base_url.scheme() != "https" && !crate::net::is_loopback_url(&base_url) {
+        log::line("n8n skipped — the key would travel cleartext on a non-https URL");
+        return;
+    }
     let http = client();
 
     // Same two shapes as the Swift poller: the public API first, then /rest.
@@ -1162,14 +1574,21 @@ async fn poll_n8n(app: AppHandle) {
     ];
 
     let mut items: Option<Vec<Value>> = None;
+    let mut last_status: Option<u16> = None;
+    let mut last_err: Option<String> = None;
     for url in &list_urls {
-        let Ok(response) = http.get(url).header("X-N8N-API-KEY", &key).header("Accept", "application/json").send().await
-        else {
-            continue;
+        let response = http.get(url).header("X-N8N-API-KEY", &key).header("Accept", "application/json").send().await;
+        let response = match response {
+            Ok(r) => r,
+            Err(e) => {
+                last_err = Some(e.to_string());
+                continue;
+            }
         };
         if !response.status().is_success() {
             // Only the status: a self-hosted base URL can carry credentials.
             log::line(format!("n8n list HTTP {}", response.status()));
+            last_status = Some(response.status().as_u16());
             continue;
         }
         let Ok(json) = response.json::<Value>().await else { continue };
@@ -1183,49 +1602,75 @@ async fn poll_n8n(app: AppHandle) {
         }
     }
 
-    let Some(first) = items.as_deref().and_then(find_terminal_execution) else { return };
+    let Some(list) = items else {
+        let error = match (last_status, last_err) {
+            (Some(code), _) => status_error(code, &crate::i18n::t("Key lacks access")),
+            (None, Some(err)) => crate::i18n::tf("No connection: {error}", &[("error", &err)]),
+            (None, None) => crate::i18n::tf("API error {code}", &[("code", "?")]),
+        };
+        emit(&app, IntegrationUpdate { id: "integration_n8n", data: json!({}), error: Some(error), event: None });
+        return;
+    };
+
+    let Some(first) = find_terminal_execution(&list) else {
+        // Seed SEEN so the first future execution is not treated as the initial load.
+        let _ = is_new("n8n", "");
+        *N8N_LAST.lock().unwrap() = None;
+        emit(&app, IntegrationUpdate { id: "integration_n8n", data: json!({}), error: None, event: None });
+        return;
+    };
     let Some(id) = parse_execution_id(first) else { return };
 
     let status = first.get("status").and_then(Value::as_str).unwrap_or("");
-    if !is_new("n8n", &id) {
-        return;
-    }
+    let fresh = is_new("n8n", &id);
     let success = status == "success";
 
-    let detail_urls = [
-        format!("{base}/api/v1/executions/{id}?includeData=true"),
-        format!("{base}/api/v1/executions/{id}"),
-        format!("{base}/rest/executions/{id}?includeData=true"),
-        format!("{base}/rest/executions/{id}"),
-    ];
-    let mut name = crate::i18n::t("Workflow");
-    let mut detail = None;
-    for url in &detail_urls {
-        let Ok(response) = http.get(url).header("X-N8N-API-KEY", &key).header("Accept", "application/json").send().await
-        else {
-            continue;
-        };
-        if !response.status().is_success() {
-            continue;
-        }
-        let Ok(json) = response.json::<Value>().await else { continue };
-        name = json
-            .get("workflowData")
-            .and_then(|w| w.get("name"))
-            .and_then(Value::as_str)
-            .or_else(|| json.get("name").and_then(Value::as_str))
-            .map(str::to_string)
-            .unwrap_or_else(|| crate::i18n::t("Workflow"));
-        detail = n8n_detail(&json, success);
-        break;
-    }
+    let cached = {
+        let guard = N8N_LAST.lock().unwrap();
+        guard.as_ref().filter(|prev| prev.id == id && prev.status == status).cloned()
+    };
 
-    log::line(format!("n8n execution {id} {status} · {name}"));
+    let (name, detail) = if let Some(prev) = cached.filter(|_| !fresh) {
+        (prev.workflow, prev.detail)
+    } else {
+        let detail_urls = [
+            format!("{base}/api/v1/executions/{id}?includeData=true"),
+            format!("{base}/api/v1/executions/{id}"),
+            format!("{base}/rest/executions/{id}?includeData=true"),
+            format!("{base}/rest/executions/{id}"),
+        ];
+        let mut name = extract_n8n_workflow_name(first).unwrap_or_else(|| crate::i18n::t("Workflow"));
+        let mut detail = None;
+        for url in &detail_urls {
+            let Ok(response) = http.get(url).header("X-N8N-API-KEY", &key).header("Accept", "application/json").send().await
+            else {
+                continue;
+            };
+            if !response.status().is_success() {
+                continue;
+            }
+            let Ok(json) = response.json::<Value>().await else { continue };
+            name = extract_n8n_workflow_name(&json).unwrap_or_else(|| name.clone());
+            detail = n8n_detail(&json, success);
+            break;
+        }
+        *N8N_LAST.lock().unwrap() = Some(N8nExecution {
+            id: id.clone(),
+            workflow: name.clone(),
+            status: status.to_string(),
+            detail: detail.clone(),
+        });
+        (name, detail)
+    };
+
+    if fresh {
+        log::line(format!("n8n execution {id} {status} · {name}"));
+    }
     emit(&app, IntegrationUpdate {
         id: "integration_n8n",
-        data: json!({ "workflow": name, "status": status }),
+        data: json!({ "id": id, "workflow": name, "status": status, "detail": detail }),
         error: None,
-        event: Some(IntegrationEvent { success, label: name, detail }),
+        event: fresh.then(|| IntegrationEvent { success, label: name, detail }),
     });
 }
 
@@ -1393,6 +1838,20 @@ mod tests {
     }
 
     #[test]
+    fn calendar_url_takes_https_and_webcal_only() {
+        let google = "https://calendar.google.com/calendar/ical/x%40gmail.com/private-abc/basic.ics";
+        assert_eq!(calendar_url(google).unwrap().as_str(), google);
+        assert_eq!(
+            calendar_url(" webcal://p01-caldav.icloud.com/published/2/abc ").unwrap().as_str(),
+            "https://p01-caldav.icloud.com/published/2/abc"
+        );
+        assert!(calendar_url("file:///etc/passwd").is_none());
+        assert!(calendar_url("not a url").is_none());
+        // The address is the key: never in cleartext.
+        assert!(calendar_url("http://calendar.google.com/calendar/ical/x/private-abc/basic.ics").is_none());
+    }
+
+    #[test]
     fn stripe_balance_does_not_mix_different_currencies() {
         let payload = json!({
             "available": [
@@ -1449,5 +1908,33 @@ mod tests {
         assert_eq!(parse_execution_id(&json!({ "id": "abc-123" })), Some("abc-123".to_string()));
         assert_eq!(parse_execution_id(&json!({ "id": 42 })), Some("42".to_string()));
         assert_eq!(parse_execution_id(&json!({ "foo": "bar" })), None);
+    }
+
+    #[test]
+    fn extract_n8n_workflow_name_reads_workflow_data_or_fallbacks() {
+        assert_eq!(
+            extract_n8n_workflow_name(&json!({ "workflowData": { "name": "Deploy" } })),
+            Some("Deploy".to_string())
+        );
+        assert_eq!(
+            extract_n8n_workflow_name(&json!({ "workflowName": "Sync" })),
+            Some("Sync".to_string())
+        );
+        assert_eq!(
+            extract_n8n_workflow_name(&json!({ "name": "Backup" })),
+            Some("Backup".to_string())
+        );
+        assert_eq!(extract_n8n_workflow_name(&json!({ "name": "" })), None);
+    }
+
+    #[test]
+    fn is_new_after_empty_seed_marks_first_execution_as_new() {
+        let key = "test_n8n_empty_seed";
+        SEEN.0.lock().unwrap().remove(key);
+        assert_eq!(is_new(key, ""), false);
+        assert_eq!(is_new(key, "101"), true);
+        assert_eq!(is_new(key, "101"), false);
+        assert_eq!(is_new(key, "102"), true);
+        SEEN.0.lock().unwrap().remove(key);
     }
 }

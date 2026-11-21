@@ -29,7 +29,7 @@ DEFAULT_SOCKETS = {
 
 def swift_literal(source, name):
     """The text of `private let <name> = \"\"\" … \"\"\"` (the relay literals only escape backslashes)."""
-    match = re.search(rf'^private let {name} = """\n(.*?)^"""$', source, re.S | re.M)
+    match = re.search(rf'^(?:private )?let {name} = """\n(.*?)^"""$', source, re.S | re.M)
     if not match:
         sys.exit(f"{name} not found in {SOURCE.name}")
     body = match.group(1)
@@ -157,7 +157,7 @@ def main():
             check(coucou.next().get("term_program") == "iTerm.app", "a real TERM_PROGRAM is kept")
             run(hook_dir, event, env=dict(vscode, __CFBundleIdentifier="com.todesktop.230313mzl4w4u92"))
             check(coucou.next().get("term_program") == "", "an editor with a bundle ID is left to it")
-            run(hook_dir, event, env=dict(env, CLAUDE_CODE_ENTRYPOINT="sdk-ts"))
+            run(hook_dir, event, env=dict(env, CLAUDE_CODE_ENTRYPOINT="cli"))
             check(coucou.next().get("term_program") == "", "other entrypoints are not taken for VS Code")
             coucou.close()
 

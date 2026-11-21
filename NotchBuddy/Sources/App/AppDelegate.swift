@@ -341,7 +341,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         islandController?.fsm.launch()
         HookServer.shared.start()
         #if !APPSTORE
+        RemoteHosts.shared.start()
         _ = VoiceEngine.shared  // registers system observers; starts mic only if the user enabled voice
+        CallWatcher.shared.start()
         FlowDictation.shared.start()  // watches the dictation key only if Flow dictation is on
         #endif
         N8nPoller.shared.start()
@@ -350,7 +352,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         GithubPoller.shared.start()
         StripePoller.shared.start()
         CalcomPoller.shared.start()
+        CalendarWatcher.shared.start()
         NotionPoller.shared.start()
+        TimelyPoller.shared.start()
+        SlackPoller.shared.start()
+        BetterStackPoller.shared.start()
+        LinearPoller.shared.start()
         NotificationCenter.default.addObserver(self, selector: #selector(openSettingsFromNotification(_:)),
                                                name: .openFullSettings, object: nil)
         // After the greeting ends, fly Mochi back to the desktop if it was there at last quit

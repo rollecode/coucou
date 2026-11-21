@@ -74,7 +74,7 @@ class RecapController {
   }
 
   private quiet(): boolean {
-    if (State.paused || State.pendingApproval) return false;
+    if (State.paused || State.inCall || State.pendingApproval) return false;
     return State.mode !== "expanded" || QUIET_VIEWS.has(State.view);
   }
 

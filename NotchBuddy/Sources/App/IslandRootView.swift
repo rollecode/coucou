@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Top-level SwiftUI view rendered inside the 720×320 transparent panel.
@@ -222,8 +223,20 @@ struct IslandContainer: View {
                 if state.mode == .compact && !state.islandPlacement.isCorner {
                     CompactMiniGrid(state: state)
                         .scaleEffect(IslandRestingLayout(width: islandWidth, height: islandHeight).miniGridScale)
-                        .position(x: islandWidth - 40, y: islandHeight / 2)
+                        .position(x: islandWidth - state.compactPadding.right - IslandConst.miniGridHalf,
+                                  y: compactRowCenterY(islandH: islandHeight, pad: state.compactPadding))
                         .transition(.opacity)
+                    CompactStats(state: state)
+                        .frame(width: islandWidth)
+                        .position(x: islandWidth / 2,
+                                  y: compactRowCenterY(islandH: islandHeight, pad: state.compactPadding))
+                        .transition(.opacity)
+                    // A notch hides the middle: the clock only where there is none, as on a PC.
+                    if state.showClock && !state.hasNotch {
+                        IslandClockText(state: state)
+                            .position(x: islandWidth / 2, y: islandHeight / 2)
+                            .transition(.opacity)
+                    }
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: state.mode == .compact)
@@ -234,7 +247,7 @@ struct IslandContainer: View {
             let anim = shrinking ? closeEase : openSpring
             let (w, h) = islandSize(mode: newMode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             let cr  = islandCorner(newMode)
             // In a corner the island floats: its top corners are rounded too.
             let tr: CGFloat = state.islandPlacement.isCorner ? cr : 0
@@ -254,20 +267,31 @@ struct IslandContainer: View {
             }
             let (w, h) = islandSize(mode: .expanded, view: newView,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding)
             withAnimation(openSpring) {
                 islandWidth  = w
                 islandHeight = newView == .prompt ? chatPromptHeight : h
             }
         }
+        .onChange(of: state.compactStatsWidth) { _, minWidth in
+            guard state.mode == .compact else { return }
+            let (w, _) = islandSize(mode: .compact, view: state.view,
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: minWidth)
+            withAnimation(openSpring) { islandWidth = w }
+        }
         .onChange(of: state.chatHistory.count) { _, _ in
             guard state.mode == .expanded, state.view == .prompt else { return }
             withAnimation(openSpring) { islandHeight = chatPromptHeight }
         }
+        .onChange(of: state.compactWidthExtra) { _, _ in
+            guard state.mode == .compact else { return }
+            let (w, _) = islandSize(mode: .compact, view: state.view, nw: state.notchWidth, nh: state.notchHeight)
+            withAnimation(openSpring) { islandWidth = w }
+        }
         .onAppear {
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             islandWidth      = w
             islandHeight     = state.view == .prompt ? chatPromptHeight : h
             cornerRadius     = islandCorner(state.mode)
@@ -290,7 +314,7 @@ struct IslandContainer: View {
             // New screen, new resting size (notch ↔ bar): snap without animation.
             let (w, h) = islandSize(mode: state.mode, view: state.view,
                                     progress: state.uploadProgress,
-                                    nw: state.notchWidth, nh: state.notchHeight)
+                                    nw: state.notchWidth, nh: state.notchHeight, pad: state.compactPadding, compactMinWidth: state.compactStatsWidth)
             islandWidth  = w
             islandHeight = (state.mode == .expanded && state.view == .prompt) ? chatPromptHeight : h
             // The notch ↔ a corner: flat or rounded top, a round tile at rest.
@@ -403,7 +427,7 @@ struct BotPlacement: View {
     var damping: Double = 0.72
 
     var body: some View {
-        let (rawCx, rawCy, diameter, rawOpacity) = botPosition(mode: state.mode, view: state.view, islandW: islandW, islandH: islandH, uploadProgress: state.uploadProgress, hasNotch: state.hasNotch)
+        let (rawCx, rawCy, diameter, rawOpacity) = botPosition(mode: state.mode, view: state.view, islandW: islandW, islandH: islandH, uploadProgress: state.uploadProgress, hasNotch: state.hasNotch, compactPadding: state.compactPadding)
         let cx = rawCx - shift.width, cy = rawCy - shift.height
         // Swapping places in a corner: CornerArcView draws him on his way.
         let opacity = state.cornerSwapping ? 0 : rawOpacity
@@ -497,7 +521,12 @@ struct BotPlacement: View {
     }
 }
 
-func botPosition(mode: IslandMode, view: IslandView, islandW: CGFloat, islandH: CGFloat, uploadProgress: Double, hasNotch: Bool = true) -> (CGFloat, CGFloat, CGFloat, Double) {
+/// The compact content row sits centred between the top and bottom padding.
+func compactRowCenterY(islandH: CGFloat, pad: CompactPadding) -> CGFloat {
+    pad.top + (islandH - pad.top - pad.bottom) / 2
+}
+
+func botPosition(mode: IslandMode, view: IslandView, islandW: CGFloat, islandH: CGFloat, uploadProgress: Double, hasNotch: Bool = true, compactPadding: CompactPadding = .standard) -> (CGFloat, CGFloat, CGFloat, Double) {
     let resting = IslandRestingLayout(width: islandW, height: islandH)
     let placement = IslandPlacement.current
     if placement.isCorner {
@@ -521,7 +550,9 @@ func botPosition(mode: IslandMode, view: IslandView, islandW: CGFloat, islandH: 
     case .hidden:
         return hasNotch ? (46, 16, 6, 0)
             : (islandW / 2, resting.botCenterY, resting.botDiameter, 1)
-    case .compact: return (40, resting.botCenterY, resting.botDiameter, 1)
+    case .compact:
+        return (compactPadding.left + IslandConst.compactBotHalf,
+                compactRowCenterY(islandH: islandH, pad: compactPadding), resting.botDiameter, 1)
     case .expanded:
         let layout = IslandConst.viewLayouts[view]!
         let diameter = layout.botDiameter
@@ -681,6 +712,25 @@ struct IslandContentView: View {
     }
 }
 
+// MARK: - Clock (Settings → General → Show clock in the island)
+
+struct IslandClockText: View {
+    @ObservedObject var state: AppState
+    /// Beside a notch there is room for the time only.
+    var timeOnly = false
+
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            Text(verbatim: IslandClock.text(context.date, date: timeOnly ? .timeOnly : state.clockDate, hours: state.clockHours))
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .foregroundColor(.white.opacity(0.85))
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 // MARK: - Island header (tabs + icons)
 
 struct IslandHeader: View {
@@ -712,6 +762,11 @@ struct IslandHeader: View {
                 #endif
             }
             .padding(.leading, 14)
+
+            if state.clockExpanded {
+                IslandClockText(state: state, timeOnly: state.hasNotch)
+                    .padding(.leading, 12)
+            }
 
             Spacer()
 
@@ -894,5 +949,131 @@ struct CompactMiniGrid: View {
             }
         }
         .frame(width: 28, height: 28)
+    }
+}
+
+// MARK: - Compact stats (agents beside Mochi or with the plan, plan usage before the mini grid)
+
+struct CompactStat {
+    let label: String
+    let value: String
+    let color: String
+}
+
+struct CompactStats: View {
+    @ObservedObject var state: AppState
+
+    var body: some View {
+        let sides = state.compactStatSides
+        ZStack {
+            column(sides.left, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, state.compactBotTaken)
+            column(sides.right, alignment: .trailing)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, state.compactGridTaken)
+        }
+        .font(.system(size: 9, weight: .semibold).monospacedDigit())
+        .lineLimit(1)
+        .allowsHitTesting(false)
+        .onAppear { refreshCodex() }
+    }
+
+    private func column(_ rows: [[CompactStat]], alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            ForEach(rows.indices, id: \.self) { i in
+                row(rows[i])
+            }
+        }
+        .fixedSize()
+    }
+
+    private func row(_ items: [CompactStat]) -> some View {
+        HStack(spacing: 0) {
+            ForEach(items.indices, id: \.self) { i in
+                if i > 0 {
+                    Text(verbatim: " · ").foregroundColor(Color(hex: "#454850"))
+                }
+                if !items[i].label.isEmpty {
+                    Text(verbatim: items[i].label + " ").foregroundColor(Color(hex: "#8E939C"))
+                }
+                Text(verbatim: items[i].value).fontWeight(.bold).foregroundColor(Color(hex: items[i].color))
+            }
+        }
+    }
+
+    private func refreshCodex() {
+        #if !APPSTORE
+        if state.showCodexPlanInNotch { state.refreshCodexPlanUsage() }
+        #endif
+    }
+}
+
+extension AppState {
+    /// Agents and workspaces; services and chat providers are .n8n.
+    private var compactAgentStat: CompactStat? {
+        let agents = tasks.filter { $0.source != .n8n && (!compactAgentsWorkingOnly || $0.state != .idle) }.count
+        guard compactShowAgents, agents > 0 else { return nil }
+        let label = compactAgentsNumberOnly ? "" : String(localized: "Agents")
+        return CompactStat(label: label, value: "\(agents)", color: "#F5F6F8")
+    }
+
+    /// The plan's 5-hour and week windows: Claude's when its pill is on and has numbers, else Codex's.
+    private var compactPlanStats: [CompactStat] {
+        #if !APPSTORE
+        guard compactShowPlan else { return [] }
+        let plans: [PlanUsage?] = [
+            showPlanInNotch && planRelayInstalled ? (demoPlanUsageOverride ?? claudePlanUsage) : nil,
+            showCodexPlanInNotch ? codexPlanUsage?.planUsage : nil,
+        ]
+        guard let u = plans.compactMap({ $0 }).first(where: { $0.fiveHour != nil || $0.sevenDay != nil }) else { return [] }
+        let windows: [(String, PlanWindow?)] = [
+            (String(localized: "plan.5hours"), u.fiveHour),
+            (String(localized: "plan.week"), u.sevenDay),
+        ]
+        return windows.compactMap { (label, window) -> CompactStat? in
+            guard let window else { return nil }
+            let pct = ClaudePlanGauge.effectivePct(window)
+            return CompactStat(label: label, value: "\(Int(pct.rounded()))%", color: ClaudePlanGauge.color(for: pct))
+        }
+        #else
+        return []
+        #endif
+    }
+
+    /// Rows beside Mochi and rows before the mini grid. A notch splits the island in two ears,
+    /// so the agents go beside Mochi and the plan windows stack, to keep each ear narrow.
+    var compactStatSides: (left: [[CompactStat]], right: [[CompactStat]]) {
+        let agents = compactAgentStat.map { [[$0]] } ?? []
+        let plan = compactPlanStats
+        if hasNotch {
+            return (agents, plan.map { [$0] })
+        }
+        return ([], agents + (plan.isEmpty ? [] : [plan]))
+    }
+
+    /// Mochi and its gap to the stats, wherever the padding puts it.
+    var compactBotTaken: CGFloat { compactPadding.left + 2 * IslandConst.compactBotHalf + 8 }
+
+    /// The mini grid and its gap to the stats, wherever the padding puts it.
+    var compactGridTaken: CGFloat { compactPadding.right + 2 * IslandConst.miniGridHalf + 10 }
+
+    /// Narrowest compact island that keeps the stats clear of the notch and Mochi; 0 without stats.
+    var compactStatsWidth: CGFloat {
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold)
+        func widest(_ rows: [[CompactStat]]) -> CGFloat {
+            var most: CGFloat = 0
+            for row in rows {
+                let text: String = row.map { (s: CompactStat) -> String in s.label.isEmpty ? s.value : s.label + " " + s.value }.joined(separator: " · ")
+                most = max(most, ceil((text as NSString).size(withAttributes: [.font: font]).width) + 4)
+            }
+            return most
+        }
+        let sides = compactStatSides
+        if sides.left.isEmpty && sides.right.isEmpty { return 0 }
+        let left = widest(sides.left) + compactBotTaken
+        let right = widest(sides.right) + compactGridTaken
+        // With a notch each side holds its own stats; without one the text may cross the middle.
+        return hasNotch ? notchWidth + 2 * max(left, right) : left + right
     }
 }

@@ -459,6 +459,8 @@ const NOT_TEXT = new Set([
   "unknown", // a CI state
   "Resend", // the service's name (the Mac's "Resend" is a button: send again)
   "Stop", // Claude Code's hook event (the Mac's "Stop" is a button)
+  "Edit", // Claude Code's tool name in the code view
+  "failed", // a command's status in the code view
   "running", // the phase of a mail plan (src/views/mailplan.ts)
 ]);
 

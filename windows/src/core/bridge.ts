@@ -8,6 +8,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
+import type { ExchangeId, PortfolioStatus, WalletKind } from "./portfolio";
 import type { UpdateStatus } from "./update";
 import type { WaIslandView, WaSettingsView, WaTestResult } from "./whatsapp";
 
@@ -22,6 +23,16 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T |
     console.error(`[coucou] ${cmd} failed`, err);
     return null;
   }
+}
+
+/** The lines around an edit, read from the file itself (see snippet.rs). */
+export interface Snippet {
+  /** Line number (1-based) of `lines[0]`. */
+  start: number;
+  lines: string[];
+  /** Where the edited block begins in `lines`, and how many lines it spans. */
+  at: number;
+  len: number;
 }
 
 export interface BootInfo {
@@ -226,6 +237,8 @@ export const Bridge = {
 
   /** Give the window keyboard focus (chat field) and take it away again. */
   focusWindow: (focused: boolean) => call<void>("focus_window", { focused }),
+  /** A keyboard shortcut opened the island: it keeps the keyboard until it folds. */
+  grabKeyboard: () => call<void>("grab_keyboard"),
 
   reposition: () => call<void>("reposition"),
   fitZoom: (dpr: number) => call<boolean>("fit_zoom", { dpr }),
@@ -258,6 +271,10 @@ export const Bridge = {
    */
   openSession: (sessionId: string | null, path: string | null) =>
     call<boolean>("open_session", { sessionId, path }),
+
+  /** The lines around an edit, read from the file (null: unreadable, outside the session folder, not found). */
+  fileSnippet: (cwd: string, path: string, find: string, context: number) =>
+    call<Snippet>("file_snippet", { cwd, path, find, context }),
 
   /** The Claude desktop app, for the Claude Desktop pill (Windows only). */
   openClaudeDesktop: () => call<boolean>("open_claude_desktop"),
@@ -300,6 +317,15 @@ export const Bridge = {
    */
   hooksApply: (install: boolean, fingerprint: string) =>
     callOrThrow<string>("hooks_apply", { install, fingerprint }),
+
+  // ── Remote hosts (Claude Code over SSH, Linux) ────────────────────────────
+  remoteStatus: () => call<RemoteStatus[]>("remote_status"),
+  /** Same rules as hooksPreview, for ~/.claude/settings.json on `host`. */
+  remotePreview: (host: string, install: boolean) =>
+    callOrThrow<HookPreview>("remote_preview", { host, install }),
+  /** Same rules as hooksApply; installing also puts the relay on the host. */
+  remoteApply: (host: string, install: boolean, fingerprint: string) =>
+    callOrThrow<string>("remote_apply", { host, install, fingerprint }),
 
   // ── Other agents (Gemini CLI, Codex, Cursor…) ─────────────────────────────
   agentHooksList: () => call<AgentHookStatus[]>("agent_hooks_list"),
@@ -387,9 +413,11 @@ export const Bridge = {
 
   // ── Chat, files, secrets ──────────────────────────────────────────────────
   /** One chat turn. The API key and any file bytes never leave Rust. */
-  chatSend: (query: string, context: ChatContext | null, mail = false) =>
-    callOrThrow<{ text: string }>("chat_send", { query, context, mail }),
+  chatSend: (query: string, context: ChatContext | null, variables: Record<string, string> = {}, mail = false) =>
+    callOrThrow<{ text: string }>("chat_send", { query, context, variables, mail }),
   chatReset: () => call<void>("chat_reset"),
+  /** The Claude Code sessions running now (Linux), for their pills before any event. */
+  claudeSessions: () => call<{ pid: number; cwd: string; name: string }[]>("claude_sessions"),
   /**
    * The models a provider offers, for the picker in the chat view. Rust asks
    * the provider only when it has a key (or a server address).
@@ -397,10 +425,11 @@ export const Bridge = {
   chatModels: (provider: string) => callOrThrow<ModelInfo[]>("chat_models", { provider }),
   claudeApiModels: () => callOrThrow<ModelInfo[]>("claude_api_models"),
   /** Settings → Local models → Connect: does the server answer, and with which models? */
-  /** The custom server's key, bound to the address it is entered for. */
-  localSetKey: (url: string, key: string) => call<void>("local_set_key", { url, key }),
+  /** A server's key (custom, Open WebUI), bound to the address it is entered for. */
+  localSetKey: (provider: "custom" | "openwebui", url: string, key: string) =>
+    call<void>("local_set_key", { provider, url, key }),
 
-  localConnect: (provider: "ollama" | "lmstudio" | "custom", url: string) =>
+  localConnect: (provider: "ollama" | "lmstudio" | "custom" | "openwebui", url: string) =>
     callOrThrow<LocalServer>("local_connect", { provider, url }),
   /** Copies a dropped file into the inbox. */
   ingestFile: (path: string) => callOrThrow<DroppedFile>("ingest_file", { path }),
@@ -425,9 +454,20 @@ export const Bridge = {
   githubRefresh: (section: "pulse" | "activity") => call<void>("github_refresh", { section }),
   /** Opens the configured n8n instance in the browser. */
   openN8n: () => call<void>("open_n8n"),
+  /** Opens Timely's consent page; false when no client ID is stored. */
+  timelyAuthorize: () => call<boolean>("timely_authorize"),
+  /** Trades the code Timely showed for tokens. */
+  timelyConnect: (code: string) => callOrThrow<void>("timely_connect", { code }),
+  timelyDisconnect: () => call<void>("timely_disconnect"),
+  /** A Slack conversation in the Slack app, else in the browser. */
+  slackOpen: (channel: string, permalink: string | null) => call<void>("slack_open", { channel, permalink }),
+  /** The Slack app, else the workspace in the browser. */
+  slackOpenWorkspace: () => call<void>("slack_open_workspace"),
 
   /** Tray → Pause. Stops the integration pollers, not just the island. */
   setPaused: (paused: boolean) => call<void>("set_paused", { paused }),
+  /** `cam`, `mic`, `scr` held by another app (calls.rs); updates come as "call-sensors". */
+  callSensors: () => call<string[]>("call_sensors"),
 
   // ── Global shortcuts ──────────────────────────────────────────────────────
   /** How each global shortcut went when Rust last registered them. */
@@ -480,6 +520,19 @@ export const Bridge = {
   /** Whether there is a Spotify to launch (Settings). */
   spotifyInstalled: () => call<boolean>("spotify_installed"),
 
+  // ── Portfolio (src-tauri/src/portfolio.rs) ────────────────────────────────
+  portfolioStatus: () => call<PortfolioStatus>("portfolio_status"),
+  portfolioAddressPlausible: (kind: WalletKind, address: string) =>
+    call<boolean>("portfolio_address_plausible", { kind, address }),
+  /** Test & Save: rejects with the exchange's error; the keys are kept only when the test went through. */
+  portfolioAddExchange: (exchange: ExchangeId, key: string, secret: string, passphrase: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_exchange", { exchange, key, secret, passphrase }),
+  portfolioRemoveExchange: (exchange: ExchangeId) =>
+    callOrThrow<PortfolioStatus>("portfolio_remove_exchange", { exchange }),
+  /** Verify & Save: the address is kept once its balance could be read. */
+  portfolioAddWallet: (kind: WalletKind, address: string, label: string) =>
+    callOrThrow<PortfolioStatus>("portfolio_add_wallet", { kind, address, label }),
+  portfolioRemoveWallet: (address: string) => callOrThrow<PortfolioStatus>("portfolio_remove_wallet", { address }),
   // ── WhatsApp (src-tauri/src/whatsapp) ─────────────────────────────────────
   /** The island's copy, asked once at start (then the "whatsapp" event). Island only. */
   whatsappIsland: () => call<WaIslandView>("whatsapp_island"),
@@ -577,6 +630,8 @@ export type ChatContext =
 export interface ModelInfo {
   id: string;
   label: string;
+  /** The picker's section (Open WebUI): its most used models, its workspace models. */
+  group?: "used" | "custom";
 }
 
 /** One row of Settings → Chat → Your AI subscriptions (cli_relay.rs `Status`). */
@@ -613,6 +668,7 @@ export interface HookStatus {
   settingsPath: string;
   hookPath: string;
   hookReady: boolean;
+  relayError?: string | null;
 }
 
 /** One agent other than Claude Code, as agents.rs reports it. */
@@ -644,6 +700,13 @@ export interface AgentHookPlan {
   fingerprint: string;
 }
 
+export interface RemoteStatus {
+  host: string;
+  state: "connecting" | "connected" | "error";
+  /** ssh's own words when it failed. */
+  error: string;
+}
+
 export interface HookPreview {
   diff: string;
   backup: string;
@@ -662,7 +725,8 @@ export type BridgeEvent =
   | { name: "cursor"; payload: { x: number; y: number } }
   | { name: "tray"; payload: string }
   | { name: "hook"; payload: Record<string, unknown> }
-  | { name: "screen-changed"; payload: null };
+  | { name: "screen-changed"; payload: null }
+  | { name: "blur"; payload: null };
 
 export interface DragDropPayload {
   type: "enter" | "over" | "drop" | "leave";

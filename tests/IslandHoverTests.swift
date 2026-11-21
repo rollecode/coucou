@@ -55,7 +55,58 @@ enum IslandHoverTests {
         try await Task.sleep(for: .milliseconds(600))
         precondition(alert.state == .home)
 
-        print("Island open on hover: 6 cases passed")
+        // Auto-hide (on by default): the compact island hides after petitToHiddenDelay.
+        let hides = IslandStateMachine()
+        hides.petitToHiddenDelay = 0.2
+        hides.reveal()
+        try await waitFor(.hidden, hides, timeout: 5)
+
+        // Auto-hide off: it stays compact.
+        let stays = IslandStateMachine()
+        stays.petitToHiddenDelay = 0.2
+        stays.autoHide = false
+        stays.reveal()
+        stays.mouseEntered()
+        stays.mouseLeft()
+        try await Task.sleep(for: .milliseconds(600))
+        precondition(stays.state == .petit)
+
+
+        // The folded island hides only where there is a notch to hide behind.
+        let bar = IslandStateMachine()
+        bar.petitToHiddenDelay = 0.05
+        bar.canHide = { false }
+        bar.mouseEntered()
+        bar.mouseLeft()
+        try await Task.sleep(for: .milliseconds(300))
+        precondition(bar.state == .petit)
+        let notch = IslandStateMachine()
+        notch.petitToHiddenDelay = 0.05
+        notch.canHide = { true }
+        notch.mouseEntered()
+        notch.mouseLeft()
+        try await waitFor(.hidden, notch, timeout: 5)
+
+        // A call: nothing reveals, hover and click do nothing, until it ends.
+        let call = machine()
+        call.paused = true
+        call.reveal()
+        call.mouseEntered()
+        call.click()
+        precondition(call.state == .hidden)
+        call.paused = false
+        call.reveal()
+        precondition(call.state == .petit)
+
+        // A call starting mid-way takes the open island down at once.
+        let mid = machine()
+        mid.mouseEntered()
+        precondition(mid.state == .home)
+        mid.paused = true
+        mid.forceHidden()
+        precondition(mid.state == .hidden && !mid.openedByHover)
+
+        print("Island open on hover, auto-hide, notchless screens and calls: 12 cases passed")
     }
 
     @MainActor

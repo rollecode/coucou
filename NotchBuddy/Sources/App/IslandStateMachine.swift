@@ -20,6 +20,9 @@ final class IslandStateMachine {
 
     /// When non-nil and returns true, timers and mouse-leave never auto-collapse or hide the island.
     var isHeldOpen: (() -> Bool)?
+    /// When non-nil and returns false, the folded island stays instead of hiding: on a
+    /// screen without a notch there is nothing to hide behind, only Mochi alone in a bar.
+    var canHide: (() -> Bool)?
 
     /// home → petit delay (seconds), kept in sync with the auto-close preference.
     var homeToPetitDelay: TimeInterval = 15 {
@@ -37,6 +40,8 @@ final class IslandStateMachine {
             schedulePetitHide()
         }
     }
+    /// Settings → General → Behavior → Auto-hide. Off: the compact island stays on screen.
+    var autoHide = true
     /// coucou → petit delay after greeting animation ends (no hover). ~0.6s syncs with canvas collapse.
     var greetAutoCollapseDelay: TimeInterval = 0.6
     /// coucou → petit delay when mouse is hovering over the greeting.
@@ -45,6 +50,8 @@ final class IslandStateMachine {
     /// Opt-in (Settings → General → Behavior): hovering the island opens it, and an island
     /// opened that way folds shortly after the pointer leaves. Off: hover only peeks (petit).
     var openOnHover = false
+    /// A call is on (Settings → General → Calls): nothing reveals, hover and click do nothing.
+    var paused = false
     /// Grace period after the pointer leaves a hover-opened island (no flicker at the edge).
     var hoverCloseDelay: TimeInterval = 0.6
     /// True while the island is open because of a hover, until the user clicks inside it.
@@ -65,6 +72,7 @@ final class IslandStateMachine {
 
     /// Mouse entered the island notch area
     func mouseEntered() {
+        guard !paused else { return }
         if openOnHover, state == .hidden || state == .petit, isHeldOpen?() != true {
             cancelTimers()
             openedByHover = true
@@ -126,6 +134,7 @@ final class IslandStateMachine {
     /// Also accepts `.listening`: the user can open the island while voice is active; voice
     /// continues uninterrupted and the island expands to the overview.
     func click() {
+        guard !paused else { return }
         openedByHover = false
         guard state == .petit || state == .hidden || state == .listening else { return }
         cancelTimers()
@@ -138,6 +147,13 @@ final class IslandStateMachine {
     func hiddenExternally() {
         guard state == .petit else { return }
         cancelTimers()
+        state = .hidden
+    }
+
+    /// A call started: the island is gone whatever it was doing, timers off.
+    func forceHidden() {
+        cancelTimers()
+        openedByHover = false
         state = .hidden
     }
 
@@ -201,7 +217,7 @@ final class IslandStateMachine {
 
     /// Non-alert work event: show compact from hidden (HookServer reveal)
     func reveal() {
-        guard state == .hidden else { return }
+        guard state == .hidden, !paused else { return }
         cancelTimers()
         transition(to: .petit)
         schedulePetitHide()
@@ -211,8 +227,11 @@ final class IslandStateMachine {
 
     private func schedulePetitHide() {
         petitHideWork?.cancel()
+        petitHideWork = nil
+        guard autoHide else { return }
         let item = DispatchWorkItem { [weak self] in
-            guard let self, self.state == .petit, !(self.isHeldOpen?() ?? false) else { return }
+            guard let self, self.state == .petit, !(self.isHeldOpen?() ?? false),
+                  self.canHide?() ?? true else { return }
             self.transition(to: .hidden)
         }
         petitHideWork = item

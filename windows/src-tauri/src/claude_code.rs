@@ -53,7 +53,7 @@ pub fn available() -> bool {
 
 /// The models offered in the picker when Claude Code answers.
 pub fn models() -> Vec<ModelInfo> {
-    MODELS.iter().map(|(id, label)| ModelInfo { id: (*id).into(), label: (*label).into() }).collect()
+    MODELS.iter().map(|(id, label)| ModelInfo { id: (*id).into(), label: (*label).into(), group: None }).collect()
 }
 
 /// Runs `claude -p` once and returns the text of its answer, or why there is none.

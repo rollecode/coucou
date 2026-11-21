@@ -12,6 +12,7 @@ import type { BotEmoteName, IslandViewName } from "../core/layout";
 import { cyclePill, islandKeyAction, navigate, pillByNumber, type IslandKeyAction } from "../core/shortcuts";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
+import { startNewChat } from "../views/chat";
 
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
 
@@ -23,7 +24,9 @@ export interface ShortcutHost {
   emote(name: BotEmoteName): void;
   setPinned(on: boolean): void;
   /** Gives the island the keyboard, so the in-island keys work (Mac: makeKey). */
-  takeKeyboard(): void;
+  grabKeyboard(): void;
+  /** The chat field takes the typing, once the island has the keyboard. */
+  focusChat(): void;
   /** The wardrobe from any state, or back if it is open (Island.wardrobeAnywhere). */
   wardrobeAnywhere(): void;
   /** False where Mochi can't leave the island (GNOME on Wayland). */
@@ -56,13 +59,15 @@ export function runGlobalShortcut(host: ShortcutHost, action: string, resume: ()
         resume();
         // A waiting card is what the island opens on (State.defaultView).
         host.alert(State.defaultView());
-        host.takeKeyboard();
+        host.grabKeyboard();
       }
       break;
 
     case "openChat":
       resume();
       host.alert("prompt");
+      host.grabKeyboard();
+      host.focusChat();
       break;
 
     case "goToAlert": {
@@ -74,12 +79,12 @@ export function runGlobalShortcut(host: ShortcutHost, action: string, resume: ()
         resume();
         State.setFocus(pending.pillId);
         host.alert(pending.questions ? "question" : "approval");
-        host.takeKeyboard();
+        host.grabKeyboard();
       } else if (asking) {
         resume();
         State.setFocus(asking.id);
         host.alert("question");
-        host.takeKeyboard();
+        host.grabKeyboard();
       } else {
         // Nothing is waiting: Mochi says so.
         host.emote("annoyed");
@@ -163,13 +168,7 @@ export function runIslandKey(host: ShortcutHost, action: IslandKeyAction) {
       host.viewCommand("toggleDiff");
       break;
     case "newChat":
-      // Not while an answer is on its way: it would land in the new chat.
-      if (State.stateOverride === "thinking") return;
-      State.chatHistory = [];
-      State.droppedFile = null;
-      State.promptContext = null;
-      void Bridge.chatReset();
-      Sound.play("blip");
+      if (!startNewChat()) return;
       host.setView("prompt");
       break;
     case "settings":

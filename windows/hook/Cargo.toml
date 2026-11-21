@@ -10,7 +10,7 @@ name = "coucou-hook"
 path = "src/main.rs"
 
 [dependencies]
-serde_json = "1"
+serde_json = "1.0.123"
 
 # Just enough Win32 to know our own SID, to check who is serving the pipe, and
 # to notice the process that ran us going away (ToolHelp finds it).

@@ -1,11 +1,20 @@
 // SoundEngine — port of SoundEngine.swift.
 // The 29 WAVs are the macOS app's own files (see SOUNDS_DIR in vite.config.ts);
-// they are served at /sounds/<name>.wav. Default volume 0.12, slider range 0–0.2,
-// exactly like the Mac player, and several sounds may overlap.
+// they are served at /sounds/<name>.wav. Default volume 0.12, slider range
+// 0–SOUND_VOLUME_MAX, exactly like the Mac player, and several sounds may overlap.
 // A file of the user's own in the sounds folder (src-tauri/src/sounds.rs)
 // replaces a sound; one that doesn't decode falls back to the built-in one.
 
 import { Bridge } from "./bridge";
+
+export const SOUND_VOLUME_MAX = 1;
+
+/**
+ * On Linux every resume opens a new PipeWire stream, a few milliseconds long
+ * one first, and a shell can take that churn for a volume change (the DMS
+ * volume OSD): the output stays open there.
+ */
+const SUSPENDS_WHEN_IDLE = navigator.userAgent.includes("Windows");
 
 export const SOUND_NAMES = [
   "peek", "open", "close", "hover", "blip", "slap", "annoyed", "dizzy", "greet",
@@ -101,7 +110,7 @@ class SoundEngine {
    * would clip it — and `play()` resumes the context on its own.
    */
   idle() {
-    if (!this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
+    if (!SUSPENDS_WHEN_IDLE || !this.ctx || this.ctx.state !== "running" || this.idleTimer != null) return;
     this.idleTimer = window.setTimeout(() => {
       this.idleTimer = null;
       void this.ctx?.suspend();
@@ -109,16 +118,19 @@ class SoundEngine {
   }
 
   setVolume(v: number) {
-    this.volume = Math.max(0, Math.min(0.2, v));
+    this.volume = Math.max(0, Math.min(SOUND_VOLUME_MAX, v));
     if (this.master) this.master.gain.value = this.volume;
   }
+
+  /** A call is on: no sound at all until it ends. */
+  quiet = false;
 
   setEnabled(on: boolean) {
     this.enabled = on;
   }
 
   play(name: SoundName | string) {
-    if (!this.enabled) return;
+    if (!this.enabled || this.quiet) return;
     const ctx = this.ctx;
     const master = this.master;
     const buf = this.buffers.get(name);

@@ -8,6 +8,7 @@ import { Island } from "./island/island";
 import { registerHookHandlers } from "./island/hooks";
 import { registerPhoneLink } from "./island/phone-link";
 import { registerIntegrationHandlers, refreshConfigured } from "./island/integrations";
+import { registerCalendar } from "./island/calendar";
 import { registerShortcutHandlers } from "./island/shortcuts";
 import { registerVoiceHandlers } from "./island/voice";
 import { applySpotify, registerSpotifyHandlers } from "./island/spotify";
@@ -62,6 +63,7 @@ async function main() {
   await island.desktop.init();
 
   await onEvent<{ x: number; y: number }>("cursor", ({ x, y }) => island.onCursor(x, y));
+  await onEvent<{ x: number; y: number }>("pointer-global", ({ x, y }) => island.onGlobalPointer(x, y));
   await onEvent<boolean>("pointer-inside", (inside) => island.setPointerInside(inside));
   await onEvent<null>("closed-hover", () => island.wakeFromClosed());
 
@@ -102,6 +104,14 @@ async function main() {
         break;
     }
   });
+
+  // A call on another app: the island stays away and quiet (calls.rs).
+  const onCallSensors = (held: string[] | null) => {
+    State.callSensors = new Set(held ?? []);
+    island.syncCall();
+  };
+  await onEvent<string[]>("call-sensors", onCallSensors);
+  void Bridge.callSensors().then(onCallSensors).catch(() => {});
 
   const checkZoom = async () => {
     const dpr = window.devicePixelRatio || 1;
@@ -145,6 +155,9 @@ async function main() {
   await onEvent<null>("sounds-changed", () => {
     void Sound.reload().then(() => Sound.play("pop"));
   });
+  // Clicking anywhere else on the desktop closes the island, the same way
+  // Escape already does.
+  await onEvent<null>("blur", () => island.onBlur());
 
   // The settings window writes preferences; apply them here without a restart.
   await onEvent<Settings>("settings-changed", (s) => {
@@ -161,6 +174,7 @@ async function main() {
   registerHookHandlers(island);
   registerPhoneLink(island);
   registerIntegrationHandlers(island);
+  registerCalendar(island);
   registerShortcutHandlers(island, () => setPaused(false));
   registerVoiceHandlers();
   registerSpotifyHandlers(island);

@@ -19,6 +19,24 @@ pub struct Settings {
     /// Hovering the island opens it all the way, and it folds again shortly
     /// after the pointer leaves (the Mac's "Open on hover"). Off by default.
     pub open_on_hover: bool,
+    /// Space between the folded island's edges and Mochi or the pills, in
+    /// logical px.
+    pub compact_padding: CompactPadding,
+    /// The compact island hides a minute after the last activity (the shipped
+    /// behaviour). Off: it stays on screen.
+    pub auto_hide: bool,
+    /// Each Claude Code file edit opens the island on its diff as it happens.
+    /// Off by default.
+    pub follow_edits: bool,
+    /// The alerts that open the island instead of peeking (src/core/alerts.ts):
+    /// "agentFinished", "agentError" or a pill ID, as the Mac's "expandOnAlert". None by default.
+    pub expand_on_alert: Vec<String>,
+    /// The card follows the agent that did something last ("Follow the latest activity").
+    pub follow_activity: bool,
+    /// While following, new activity opens the island on that agent's card.
+    pub expand_on_activity: bool,
+    /// The island steps aside while a full-screen app fills its display. Off by default.
+    pub hide_in_full_screen: bool,
     pub alerts_from_all_pills: bool,
     pub absence_interval: f64,
     pub active_integrations: Vec<String>,
@@ -41,6 +59,11 @@ pub struct Settings {
     /// Show the Codex plan pill (5 h / weekly limits from `codex app-server`).
     /// Off by default; nothing is installed for it.
     pub show_codex_plan_in_notch: bool,
+    /// The folded island's agent count, and whether it drops the "Agents" label.
+    pub compact_show_agents: bool,
+    pub compact_agents_number_only: bool,
+    /// The folded island's plan usage, beside the mini grid.
+    pub compact_show_plan: bool,
     /// Who the chat talks to: "anthropic", a cloud provider of
     /// openai_compat.rs ("openai", "google", "openrouter"), or a model server
     /// of local_chat.rs ("ollama", "lmstudio", "custom"). Picked in the chat view.
@@ -57,6 +80,11 @@ pub struct Settings {
     pub lmstudio_url: String,
     /// Any other OpenAI-compatible server; its key, if any, is in the keychain.
     pub custom_url: String,
+    /// Open WebUI, whose chats keep the conversation; its key is in the keychain.
+    pub open_webui_url: String,
+    /// Ask Open WebUI to search the web for each question, where its admin
+    /// has web search on. On by default.
+    pub open_webui_web_search: bool,
     /// Global shortcuts the user changed, by action id; the others keep their
     /// default (see shortcuts.rs).
     pub shortcuts: crate::shortcuts::Bindings,
@@ -76,6 +104,17 @@ pub struct Settings {
     /// Mochi on the desktop: whether he lives there, and his spot. Owned by
     /// the Rust side (desktop.rs) — what a webview sends back is ignored.
     pub desktop_mochi: DesktopMochiPref,
+    /// SSH destinations whose Claude Code sessions show in the island, as typed
+    /// for `ssh` (an alias from ~/.ssh/config or user@host). See remote.rs.
+    pub remote_hosts: Vec<String>,
+    /// Claude Code in the chat (claude_code.rs): its effort level, "" for
+    /// Claude Code's own; its model is in `chat_models`.
+    pub claude_code_effort: String,
+    /// The folder it works in; "" is Coucou's own, so nothing lands in $HOME.
+    pub claude_code_dir: String,
+    /// This install's id on remote hosts: its socket and hook entries there carry
+    /// it (remote.rs). Made once, owned by the Rust side.
+    pub remote_client_id: String,
     /// The phone link (phone_link/) is on: a TLS server for the Android app on
     /// the local network. Off until the user turns it on in Settings → Phone;
     /// owned by the Rust side, so what a webview sends back is ignored.
@@ -106,8 +145,25 @@ pub struct Settings {
     pub phone_relay: bool,
     /// The relay's address (`wss://…`), empty until the user enters it. Not a secret. Owned by Rust.
     pub phone_relay_url: String,
+    /// Settings → General → Calls: the island hides and goes silent while one of these is in use. On by default.
+    pub quiet_on_camera: bool,
+    pub quiet_on_mic: bool,
+    pub quiet_on_screen_share: bool,
+    /// The Portfolio pill's self-custody wallets: public addresses, not secrets. Owned by Rust (portfolio.rs).
+    pub portfolio_wallets: Vec<crate::portfolio::Wallet>,
     /// The date and time in the middle of the compact island. Off by default.
     pub show_clock: bool,
+    /// What the clock shows before the time: "date", "weekday" or "none". Kept as it comes,
+    /// like `closed_island`: the island reads what it doesn't know as "date".
+    pub clock_date: String,
+    /// "auto" (the language's), "24" or "12". The closed island's time follows it too.
+    pub clock_hours: String,
+    /// The clock in the open island's header too. Off by default.
+    pub clock_expanded: bool,
+    /// The compact island's width in px; the island clamps it to 200–480.
+    pub compact_width: f64,
+    /// A click on an agent's pill brings its terminal or editor forward too. Off by default.
+    pub click_opens_window: bool,
     /// What the closed island shows at the top of the screen, where the Mac
     /// has its notch: "mochi" (the Mac's island on a screen without a notch),
     /// "time", "datetime", "claude" (the plan's usage), "music" (what plays),
@@ -120,6 +176,22 @@ pub struct Settings {
     /// (agy_approvals.rs). Off by default; owned by the Rust side like `phone_link`, so
     /// what a webview sends back is ignored. The Mac's key is the same.
     pub agy_approvals_enabled: bool,
+}
+
+/// Defaults keep the shipped 32 px compact island (src/core/layout.ts).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CompactPadding {
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64,
+    pub left: f64,
+}
+
+impl Default for CompactPadding {
+    fn default() -> Self {
+        Self { top: 6.0, right: 25.5, bottom: 6.0, left: 30.0 }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -150,6 +222,13 @@ impl Default for Settings {
             sound_volume: 0.12,
             auto_close_interval: 15.0,
             open_on_hover: false,
+            compact_padding: CompactPadding::default(),
+            auto_hide: true,
+            follow_edits: false,
+            expand_on_alert: Vec::new(),
+            follow_activity: false,
+            expand_on_activity: false,
+            hide_in_full_screen: false,
             alerts_from_all_pills: false,
             absence_interval: 180.0,
             active_integrations: vec![
@@ -167,17 +246,26 @@ impl Default for Settings {
             show_plan_in_compact_island: false,
             plan_relay_installed: false,
             show_codex_plan_in_notch: false,
+            compact_show_agents: true,
+            compact_agents_number_only: false,
+            compact_show_plan: true,
             chat_provider: crate::chat::ANTHROPIC.into(),
             chat_models: BTreeMap::new(),
             chat_subscriptions: BTreeMap::new(),
             ollama_url: String::new(),
             lmstudio_url: String::new(),
             custom_url: String::new(),
+            open_webui_url: String::new(),
+            open_webui_web_search: true,
             shortcuts: Default::default(),
             mochi_outfit: "auto".into(),
             pill_colors: BTreeMap::new(),
             language: String::new(),
             desktop_mochi: DesktopMochiPref::default(),
+            remote_hosts: Vec::new(),
+            claude_code_effort: String::new(),
+            claude_code_dir: String::new(),
+            remote_client_id: String::new(),
             phone_link: false,
             phone_chat: false,
             phone_chat_models: Vec::new(),
@@ -189,7 +277,16 @@ impl Default for Settings {
             phone_services: Vec::new(),
             phone_relay: false,
             phone_relay_url: String::new(),
+            quiet_on_camera: true,
+            quiet_on_mic: true,
+            quiet_on_screen_share: true,
+            portfolio_wallets: Vec::new(),
             show_clock: false,
+            clock_date: "date".into(),
+            clock_hours: "auto".into(),
+            clock_expanded: false,
+            compact_width: 288.0,
+            click_opens_window: false,
             closed_island: "mochi".into(),
             agy_approvals_enabled: false,
         }
@@ -207,7 +304,12 @@ fn settings_path() -> PathBuf {
 }
 
 pub fn load() -> Settings {
-    load_from(&settings_path())
+    let mut settings = load_from(&settings_path());
+    if !crate::remote::valid_client_id(&settings.remote_client_id) {
+        settings.remote_client_id = crate::remote::new_client_id();
+        let _ = save(&settings);
+    }
+    settings
 }
 
 pub fn save(settings: &Settings) -> std::io::Result<()> {
@@ -435,10 +537,10 @@ fn save_to(path: &Path, settings: &Settings) -> std::io::Result<()> {
     let path = resolved.as_path();
 
     // Write beside the target and rename over it: a crash, a full disk or a
-    // power cut leaves the previous settings.json intact rather than half a file.
+    // power cut leaves the previous settings.json intact rather than half a
+    // file. write_like keeps the original's permissions and starts ours 0600.
     let temp = path.with_extension(format!("json.coucou-{}", std::process::id()));
-    let written = std::fs::File::create(&temp)
-        .and_then(|mut file| write_whole(&mut file, &json))
+    let written = crate::config_file::write_like(&temp, path, &json)
         .and_then(|()| std::fs::rename(&temp, path));
     if written.is_err() {
         let _ = std::fs::remove_file(&temp);
@@ -458,6 +560,13 @@ mod tests {
   "soundVolume": 0.5,
   "autoCloseInterval": 30.0,
   "openOnHover": true,
+  "compactPadding": { "top": 2.0, "right": 6.0, "bottom": 4.0, "left": 6.0 },
+  "autoHide": false,
+  "followEdits": true,
+  "expandOnAlert": ["agentFinished", "integration_vercel"],
+  "followActivity": true,
+  "expandOnActivity": true,
+  "hideInFullScreen": true,
   "alertsFromAllPills": true,
   "absenceInterval": 60.0,
   "activeIntegrations": ["integration_notion"],
@@ -470,17 +579,26 @@ mod tests {
   "showPlanInCompactIsland": true,
   "planRelayInstalled": true,
   "showCodexPlanInNotch": true,
+  "compactShowAgents": false,
+  "compactAgentsNumberOnly": true,
+  "compactShowPlan": false,
   "chatProvider": "ollama",
   "chatModels": { "ollama": "llama3.2", "openai": "gpt-x" },
   "chatSubscriptions": { "google": true, "anthropic": false },
   "ollamaUrl": "http://127.0.0.1:11434",
   "lmstudioUrl": "http://127.0.0.1:1234",
   "customUrl": "https://llm.example.com",
+  "openWebuiUrl": "http://127.0.0.1:8080",
+  "openWebuiWebSearch": false,
   "shortcuts": { "openChat": { "keys": "Ctrl+Shift+K", "enabled": false } },
   "mochiOutfit": "witchHat",
   "pillColors": { "integration_claude": "#2DD4BF" },
   "language": "pt-BR",
   "desktopMochi": { "onDesktop": true, "spot": { "x": 1500.5, "y": -300.0, "space": "screen" } },
+  "remoteHosts": ["devbox", "me@build.example.org"],
+  "claudeCodeEffort": "high",
+  "claudeCodeDir": "/home/me/projects/site",
+  "remoteClientId": "0a1b2c3d",
   "phoneLink": true,
   "phoneChat": true,
   "phoneChatModels": ["openai/gpt-x"],
@@ -492,7 +610,16 @@ mod tests {
   "phoneServices": ["integration_stripe"],
   "phoneRelay": true,
   "phoneRelayUrl": "wss://relay.example.workers.dev",
+  "quietOnCamera": false,
+  "quietOnMic": false,
+  "quietOnScreenShare": false,
+  "portfolioWallets": [{ "kind": "bnbChain", "address": "0x00000000000000000000000000000000000000ab", "label": "Cold" }],
   "showClock": true,
+  "clockDate": "none",
+  "clockHours": "24",
+  "clockExpanded": true,
+  "compactWidth": 320.0,
+  "clickOpensWindow": true,
   "closedIsland": "music",
   "agyApprovalsEnabled": true
 }"##;
@@ -981,6 +1108,13 @@ mod tests {
                 "soundVolume",
                 "autoCloseInterval",
                 "openOnHover",
+                "compactPadding",
+                "autoHide",
+                "followEdits",
+                "expandOnAlert",
+                "followActivity",
+                "expandOnActivity",
+                "hideInFullScreen",
                 "alertsFromAllPills",
                 "absenceInterval",
                 "activeIntegrations",
@@ -993,17 +1127,26 @@ mod tests {
                 "showPlanInCompactIsland",
                 "planRelayInstalled",
                 "showCodexPlanInNotch",
+                "compactShowAgents",
+                "compactAgentsNumberOnly",
+                "compactShowPlan",
                 "chatProvider",
                 "chatModels",
                 "chatSubscriptions",
                 "ollamaUrl",
                 "lmstudioUrl",
                 "customUrl",
+                "openWebuiUrl",
+                "openWebuiWebSearch",
                 "shortcuts",
                 "mochiOutfit",
                 "pillColors",
                 "language",
                 "desktopMochi",
+                "remoteHosts",
+                "claudeCodeEffort",
+                "claudeCodeDir",
+                "remoteClientId",
                 "phoneLink",
                 "phoneChat",
                 "phoneChatModels",
@@ -1015,7 +1158,16 @@ mod tests {
                 "phoneServices",
                 "phoneRelay",
                 "phoneRelayUrl",
+                "quietOnCamera",
+                "quietOnMic",
+                "quietOnScreenShare",
+                "portfolioWallets",
                 "showClock",
+                "clockDate",
+                "clockHours",
+                "clockExpanded",
+                "compactWidth",
+                "clickOpensWindow",
                 "closedIsland",
                 "agyApprovalsEnabled",
             ]

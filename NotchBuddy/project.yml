@@ -140,8 +140,8 @@ targets:
         CFBundleName: Coucou
         CFBundleDisplayName: Coucou
         CFBundleIdentifier: fr.louisraille.NotchBuddy
-        CFBundleVersion: "26"
-        CFBundleShortVersionString: "0.6.0"
+        CFBundleVersion: "27"
+        CFBundleShortVersionString: "0.6.1"
         CFBundlePackageType: APPL
         LSUIElement: YES
         NSHighResolutionCapable: YES
@@ -152,6 +152,7 @@ targets:
         NSSpeechRecognitionUsageDescription: "Coucou turns your voice into the text of a chat message."
         NSAccessibilityUsageDescription: "Pour lire le titre de la fenêtre active et l'attacher comme contexte."
         NSContactsUsageDescription: "Coucou looks up an email address when you ask it, by voice, to prepare an email."
+        NSCalendarsFullAccessUsageDescription: "Coucou shows your next meeting in the notch and reminds you 5 minutes before it starts."
         NSFocusStatusUsageDescription: "Coucou stays quiet about new WhatsApp messages while a Focus is on."
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -241,6 +242,7 @@ targets:
         NSSupportsAutomaticGraphicsSwitching: YES
         LSApplicationCategoryType: public.app-category.developer-tools
         ITSAppUsesNonExemptEncryption: NO
+        NSCalendarsFullAccessUsageDescription: "Coucou shows your next meeting in the notch and reminds you 5 minutes before it starts."
         NSMicrophoneUsageDescription: "Coucou uses the microphone when you dictate a chat message."
         NSSpeechRecognitionUsageDescription: "Coucou turns your voice into the text of a chat message."
         NSAppTransportSecurity:

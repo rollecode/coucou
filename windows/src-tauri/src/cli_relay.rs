@@ -187,7 +187,7 @@ pub fn models(provider: &str) -> Vec<ModelInfo> {
         return claude_code::models();
     }
     let tool = installed(provider).map(|(cli, _)| cli).unwrap_or(clis_for(provider)[0]);
-    vec![ModelInfo { id: String::new(), label: tf("The model chosen in {tool}", &[("tool", tool.name())]) }]
+    vec![ModelInfo { id: String::new(), label: tf("The model chosen in {tool}", &[("tool", tool.name())]), group: None }]
 }
 
 // ── One run ───────────────────────────────────────────────────────────────────
@@ -492,7 +492,7 @@ pub async fn send(
             &[("tool", tool)],
         ));
     };
-    let turn = chat.begin(&format!("subscription:{provider}"));
+    let turn = chat.begin(&format!("subscription:{provider}"), context.as_ref());
     let reads_file = turn.first && matches!(context, Some(ChatContext::File { .. }));
     let system = chat::system_prompt(!reads_file);
     let text = if cli == Cli::Claude {

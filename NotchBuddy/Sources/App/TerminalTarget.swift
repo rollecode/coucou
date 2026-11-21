@@ -22,4 +22,126 @@ enum TerminalTarget {
     static func pick(sessionBundleId: String?, running: Set<String>) -> String? {
         candidates(sessionBundleId: sessionBundleId).first { running.contains($0) }
     }
+
+    /// AppleScript that raises the tab on `tty` (checked by ClaudeHost.isTTY), true when found.
+    /// nil for terminals whose tabs don't expose a tty.
+    static func tabScript(bundleId: String, tty: String) -> String? {
+        switch bundleId {
+        case "com.apple.Terminal":
+            return """
+            tell application id "com.apple.Terminal"
+                repeat with w in windows
+                    repeat with t in tabs of w
+                        if tty of t is "\(tty)" then
+                            set selected tab of w to t
+                            set index of w to 1
+                            return true
+                        end if
+                    end repeat
+                end repeat
+            end tell
+            return false
+            """
+        case "com.googlecode.iterm2":
+            return """
+            tell application id "com.googlecode.iterm2"
+                repeat with w in windows
+                    repeat with t in tabs of w
+                        repeat with s in sessions of t
+                            if tty of s is "\(tty)" then
+                                select w
+                                select t
+                                select s
+                                return true
+                            end if
+                        end repeat
+                    end repeat
+                end repeat
+            end tell
+            return false
+            """
+        default:
+            return nil
+        }
+    }
+
+    /// The ttys whose tab holds the session: in tmux the session's tty is a pane's, so that pane is
+    /// selected and the tabs are those of the clients attached to its session.
+    static func tabTTYs(for tty: String) -> [String] {
+        guard let tmux = ["/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/opt/local/bin/tmux", "/usr/bin/tmux"]
+                .first(where: { FileManager.default.isExecutableFile(atPath: $0) }),
+              let found = tmuxPane(tty: tty, listing: run(tmux, ["list-panes", "-a", "-F", "#{pane_tty} #{pane_id} #{session_id}"]))
+        else { return [tty] }
+        _ = run(tmux, ["select-window", "-t", found.pane])
+        _ = run(tmux, ["select-pane", "-t", found.pane])
+        // ponytail: only clients already on the pane's session; switch-client if needed later
+        return run(tmux, ["list-clients", "-t", found.session, "-F", "#{client_tty}"])
+            .split(separator: "\n").map(String.init)
+    }
+
+    /// The tmux pane on `tty` and its session id, from
+    /// `tmux list-panes -a -F '#{pane_tty} #{pane_id} #{session_id}'`.
+    static func tmuxPane(tty: String, listing: String) -> (pane: String, session: String)? {
+        for line in listing.split(separator: "\n") {
+            let f = line.split(separator: " ")
+            if f.count == 3, f[0] == tty { return (String(f[1]), String(f[2])) }
+        }
+        return nil
+    }
+
+    static let weztermId = "com.github.wez.wezterm"
+
+    /// Every WezTerm pane's title by its tty, from `wezterm cli list --format json`.
+    static func weztermTitles(listing: String) -> [String: String] {
+        guard let panes = try? JSONSerialization.jsonObject(with: Data(listing.utf8)) as? [[String: Any]] else { return [:] }
+        var titles: [String: String] = [:]
+        for pane in panes {
+            if let tty = pane["tty_name"] as? String, let title = pane["title"] as? String { titles[tty] = title }
+        }
+        return titles
+    }
+
+    static func weztermTitles(cli: String) -> [String: String] {
+        guard FileManager.default.isExecutableFile(atPath: cli) else { return [:] }
+        return weztermTitles(listing: run(cli, ["cli", "list", "--format", "json"]))
+    }
+
+    /// The WezTerm pane on `tty` and its title, from `wezterm cli list --format json`.
+    static func weztermPane(tty: String, listing: String) -> (id: Int, title: String)? {
+        guard let panes = try? JSONSerialization.jsonObject(with: Data(listing.utf8)) as? [[String: Any]],
+              let pane = panes.first(where: { $0["tty_name"] as? String == tty }),
+              let id = pane["pane_id"] as? Int else { return nil }
+        return (id, pane["title"] as? String ?? "")
+    }
+
+    /// Makes the pane on `tty` the active one in its WezTerm window, which the CLI does not raise,
+    /// and titles the pane `marker` so its window can be told from others with the same title.
+    /// Returns the title to put back once the window is up.
+    static func activateWezTermPane(tty: String, cli: String, marker: String) -> String? {
+        guard FileManager.default.isExecutableFile(atPath: cli),
+              let pane = weztermPane(tty: tty, listing: run(cli, ["cli", "list", "--format", "json"])) else { return nil }
+        _ = run(cli, ["cli", "activate-pane", "--pane-id", String(pane.id)])
+        setTitle(marker, tty: tty)
+        return pane.title
+    }
+
+    /// OSC 2 on the pane's own tty: the terminal shows it as the pane's title.
+    static func setTitle(_ title: String, tty: String) {
+        guard let handle = FileHandle(forWritingAtPath: tty) else { return }
+        handle.write(Data("\u{1B}]2;\(title)\u{07}".utf8))
+        try? handle.close()
+    }
+
+    private static func run(_ exe: String, _ args: [String]) -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: exe)
+        process.arguments = args
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return "" }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self)
+    }
 }

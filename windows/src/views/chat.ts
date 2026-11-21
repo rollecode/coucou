@@ -10,8 +10,9 @@ import { h, svg, clear } from "./dom";
 import { ICONS } from "./icons";
 import { renderMarkdown } from "./markdown";
 import { Bridge, onEvent, type ChatContext, type ModelInfo } from "../core/bridge";
-import {
-  activeModel, pickModel, providerDef, visibleProviders, withModel, type ProviderDef,
+import { promptVariables,
+  CLAUDE_CODE_EFFORTS, activeModel, claudeCodeLabel, pickModel, providerDef, visibleProviders, withModel,
+  type ProviderDef,
 } from "../core/providers";
 import { Sound } from "../core/sound";
 import { chipLabel, loadSubscriptions, subscribedProviders, subscription } from "../core/subscriptions";
@@ -27,13 +28,25 @@ const STRINGS = {
   placeholderNext: N_("Continue…"),
   send: N_("Send"),
   switchModel: N_("Switch provider or model"),
+  newChat: N_("New chat"),
+  newChatHint: N_("New conversation"),
   noModel: N_("Choose a model"),
   loading: N_("Loading models…"),
+  mostUsed: N_("Most used"),
+  workspaceModels: N_("Workspace models"),
+  allModels: N_("All models"),
+  searchModels: N_("Search models"),
+  noMatch: N_("No model matches."),
   noKey: N_("No API key — add it in Settings."),
+  noAnswer: N_("No answer came within two minutes. Try again."),
   openSettings: N_("Open Settings"),
+  effort: N_("Effort"),
+  effortDefault: N_("Default"),
 };
 
 let nextId = 1;
+/** How long the island waits for an answer that does not move. */
+const NO_ANSWER_MS = 120_000;
 
 function bubble(message: ChatMessage): HTMLElement {
   if (message.role === "user") {
@@ -79,11 +92,28 @@ interface Picker {
   readonly isOpen: boolean;
 }
 
+function sectionTitle(group: ModelInfo["group"]): string {
+  if (group === "used") return STRINGS.mostUsed;
+  if (group === "custom") return STRINGS.workspaceModels;
+  return STRINGS.allModels;
+}
+/** A list longer than this gets a search field. */
+const SEARCH_FROM = 10;
+
 /** Provider chips, then the chosen provider's models — ModelPickerView. */
 function buildPicker(onChange: () => void): Picker {
   const chips = h("div", { class: "picker-chips" });
   const list = h("div", { class: "picker-list" });
-  const el = h("div", { class: "picker" }, chips, h("div", { class: "picker-rule" }), list);
+  const search = h("input", {
+    type: "text",
+    class: "picker-search",
+    placeholder: t(STRINGS.searchModels),
+    spellcheck: "false",
+    autocomplete: "off",
+  }) as HTMLInputElement;
+  const el = h("div", { class: "picker" }, chips, h("div", { class: "picker-rule" }), search, list);
+  /** What the list shows, so typing in the search field can filter it. */
+  let shown: { p: ProviderDef; models: ModelInfo[] } | null = null;
 
   /** Models already asked for, by provider; a model server is asked again each time. */
   const cache = new Map<string, ModelInfo[]>();
@@ -129,11 +159,26 @@ function buildPicker(onChange: () => void): Picker {
   }
 
   function drawModels(p: ProviderDef, models: ModelInfo[]) {
+    shown = { p, models };
+    const searchable = models.length > SEARCH_FROM;
+    search.style.display = searchable ? "" : "none";
+    if (searchable && document.activeElement !== search) search.focus();
+    const query = search.value.trim().toLowerCase();
+    const matching = query
+      ? models.filter((m) => m.label.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
+      : models;
     clear(list);
+    if (matching.length === 0) list.append(h("div", { class: "picker-status", text: t(STRINGS.noMatch) }));
     // Through a subscription, a tool other than Claude Code uses its own model ("").
     const ownModel = subscription(p.id)?.on && p.id !== "anthropic";
     const current = ownModel ? "" : activeModel(State.settings);
-    for (const m of models) {
+    const grouped = models.some((m) => m.group);
+    let section: string | undefined | null = null;
+    for (const m of matching) {
+      if (grouped && m.group !== section) {
+        section = m.group;
+        list.append(h("div", { class: "picker-section", text: t(sectionTitle(m.group)) }));
+      }
       const on = m.id === current;
       const row = h(
         "button",
@@ -150,7 +195,37 @@ function buildPicker(onChange: () => void): Picker {
       });
       list.append(row);
     }
-    list.querySelector(".picker-model.on")?.scrollIntoView({ block: "nearest" });
+    if (p.id === "claudecode") list.append(effortRow(p, models));
+    // The chosen model in view, with its section's title when it leads one.
+    const on = list.querySelector(".picker-model.on");
+    const before = on?.previousElementSibling;
+    (before?.classList.contains("picker-section") ? before : on)?.scrollIntoView({ block: "nearest" });
+  }
+
+  /** Claude Code's effort level, under its models. */
+  function effortRow(p: ProviderDef, models: ModelInfo[]): HTMLElement {
+    const row = h(
+      "div",
+      { class: "picker-chips", style: "margin-top:8px;align-items:center" },
+      h("span", { class: "picker-status", text: t(STRINGS.effort) }),
+    );
+    for (const effort of ["", ...CLAUDE_CODE_EFFORTS]) {
+      const on = effort === State.settings.claudeCodeEffort;
+      const chip = h(
+        "button",
+        { class: on ? "picker-chip on" : "picker-chip", style: `--accent:${p.accent}` },
+        h("span", { text: effort || t(STRINGS.effortDefault) }),
+      );
+      chip.addEventListener("click", () => {
+        State.settings = { ...State.settings, claudeCodeEffort: effort };
+        saveSettings();
+        Sound.play("blip");
+        drawModels(p, models);
+        onChange();
+      });
+      row.append(chip);
+    }
+    return row;
   }
 
   async function loadModels() {
@@ -186,7 +261,17 @@ function buildPicker(onChange: () => void): Picker {
     }
   }
 
+  search.addEventListener("input", () => {
+    if (shown) drawModels(shown.p, shown.models);
+  });
+  search.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    (list.querySelector(".picker-model") as HTMLElement | null)?.click();
+  });
+
   function open() {
+    search.value = "";
+    shown = null;
     isOpen = true;
     el.classList.add("on");
     drawChips();
@@ -217,6 +302,22 @@ function buildPicker(onChange: () => void): Picker {
   };
 }
 
+/**
+ * Starts over: empties the thread and drops the attached file, so the next
+ * question is not answered with the previous context. Not while an answer is
+ * on its way: it would land in the new chat.
+ */
+export function startNewChat(): boolean {
+  if (State.stateOverride === "thinking") return false;
+  State.resetChat();
+  State.droppedFile = null;
+  State.promptContext = null;
+  void Bridge.chatReset();
+  Sound.play("blip");
+  State.notify();
+  return true;
+}
+
 // ── View ──────────────────────────────────────────────────────────────────────
 
 export function buildPrompt(onHeightChange: () => void): ViewHost {
@@ -240,6 +341,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName,
     svg(ICONS.chevronUpDown, 9, { stroke: 2 }),
   );
+  const newBtn = h("button", { class: "model-btn new-chat-btn", title: tl(STRINGS.newChatHint) }, h("span", { text: t(STRINGS.newChat) }));
   // The Mail switch (classic Outlook, Windows): on, the AI sees the latest messages and may
   // prepare actions on them, which run only after a click on the plan's card.
   const mailBtn = h("button", { class: "mail-toggle", title: tl("Lets the AI see your latest messages and prepare actions on them. Nothing happens until you click Run.") },
@@ -248,13 +350,17 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     MailChat.on = !MailChat.on;
     mailBtn.classList.toggle("on", MailChat.on);
   });
-  const modelRow = h("div", { class: "model-row" }, modelBtn);
+  const modelRow = h("div", { class: "model-row" }, modelBtn, newBtn);
   if (HOST_OS === "windows") modelRow.prepend(mailBtn);
 
   const body = h("div", { class: "chat-body" });
   const picker = buildPicker(() => {
     body.classList.toggle("picking", picker.isOpen);
     drawModelButton();
+    if (State.modelPickerOpen !== picker.isOpen) {
+      State.modelPickerOpen = picker.isOpen;
+      onHeightChange();
+    }
   });
   body.append(chipRow, log, picker.el, modelRow, bar);
   void loadSubscriptions().then(() => drawModelButton());
@@ -263,17 +369,32 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   (el.querySelector(".card") as HTMLElement).style.setProperty("--wash", "rgba(99,102,241,0.5)");
 
   let sending = false;
-  let renderedCount = -1;
+  /** When the answer last moved: a streaming model that is still talking is not stuck. */
+  let lastActivity = 0;
+  /** chatEpoch the log was last fully rendered for; -1 forces a rebuild. */
+  let renderedEpoch = -1;
+  /** Bubbles in the log (the typing dots do not count). */
+  let renderedCount = 0;
+  let dotsUp = false;
   // A local model answers token by token: where its text so far is shown.
   let live: HTMLElement | null = null;
 
   function drawModelButton() {
     const p = providerDef(State.settings.chatProvider);
     modelDot.style.background = p.accent;
-    modelName.textContent = chipLabel(State.settings, activeModel(State.settings)) || t(STRINGS.noModel);
+    modelName.textContent =
+      p.id === "claudecode" ? claudeCodeLabel(State.settings) : chipLabel(State.settings, activeModel(State.settings)) || t(STRINGS.noModel);
     modelBtn.classList.toggle("open", picker.isOpen);
     modelBtn.disabled = sending;
+    newBtn.hidden = State.chatHistory.length === 0 && !State.droppedFile;
+    newBtn.disabled = sending;
   }
+
+  newBtn.addEventListener("click", () => {
+    if (!startNewChat()) return;
+    input.value = "";
+    input.focus();
+  });
 
   modelBtn.addEventListener("click", () => {
     if (sending) return;
@@ -283,6 +404,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
 
   void onEvent<string>("chat-delta", (text) => {
     if (!sending || !text) return; // nothing visible yet: the dots stay
+    lastActivity = performance.now();
     if (!live) {
       live = h("div", { class: "reply" });
       log.querySelector(".typing")?.parentElement?.remove();
@@ -291,6 +413,17 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     renderMarkdown(live, splitPlan(text).prose);
     log.scrollTop = log.scrollHeight;
   });
+
+  /** Rejects once the answer has not moved for NO_ANSWER_MS; settles silently when the send ends. */
+  function stalled(): Promise<never> {
+    return new Promise((_, reject) => {
+      const timer = window.setInterval(() => {
+        if (sending && performance.now() - lastActivity < NO_ANSWER_MS) return;
+        window.clearInterval(timer);
+        if (sending) reject(new Error(t(STRINGS.noAnswer)));
+      }, 1000);
+    });
+  }
 
   async function submit() {
     const query = input.value.trim();
@@ -301,18 +434,25 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     drawModelButton();
     Sound.play("send");
 
-    State.chatHistory.push({ id: nextId++, role: "user", content: query });
+    State.addChat({ id: nextId++, role: "user", content: query });
     State.stateOverride = "thinking";
     State.notify();
     onHeightChange();
 
     const file = State.droppedFile;
-    const context: ChatContext | null =
-      State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
+    // Rust decides whether the model already has this file (chat.rs, Chat::begin).
+    const context: ChatContext | null = file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
-      const reply = await Bridge.chatSend(query, context, MailChat.on && HOST_OS === "windows");
-      State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text });
+      // A provider that never answers must not latch the input: the island
+      // cannot cancel the call, so it stops waiting instead. Claude Code works
+      // as long as its turn needs (tools run silently); New chat stops it.
+      lastActivity = performance.now();
+      const answer = Bridge.chatSend(query, context, promptVariables(), MailChat.on && HOST_OS === "windows");
+      const reply = await (State.settings.chatProvider === "claudecode"
+        ? answer
+        : Promise.race([answer, stalled()]));
+      State.addChat({ id: nextId++, role: "assistant", content: reply.text });
       State.stateOverride = null;
       Sound.play("finish");
     } catch (err) {
@@ -323,7 +463,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     } finally {
       sending = false;
       live = null;
-      renderedCount = -1; // the finished answer replaces the streamed one
+      renderedEpoch = -1; // the finished answer replaces the streamed one
       drawModelButton();
       State.notify();
       onHeightChange();
@@ -362,13 +502,25 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       }
 
       const thinking = State.stateOverride === "thinking";
-      const count = State.chatHistory.length + (thinking ? 0.5 : 0);
-      if (count !== renderedCount && !live) {
-        renderedCount = count;
-        clear(log);
-        for (const m of State.chatHistory) log.append(bubble(m));
-        if (thinking) log.append(typingDots());
-        log.scrollTop = log.scrollHeight;
+      if (!live) {
+        // Append only the new bubbles: clearing and re-rendering the whole log
+        // on every send re-parsed each code block again and grew quadratically.
+        if (State.chatEpoch !== renderedEpoch || State.chatHistory.length < renderedCount) {
+          renderedEpoch = State.chatEpoch;
+          renderedCount = 0;
+          dotsUp = false;
+          clear(log);
+        }
+        while (renderedCount < State.chatHistory.length) {
+          log.append(bubble(State.chatHistory[renderedCount]));
+          renderedCount++;
+        }
+        if (thinking !== dotsUp) {
+          log.querySelector(".typing")?.parentElement?.remove();
+          if (thinking) log.append(typingDots());
+          dotsUp = thinking;
+        }
+        if (renderedCount > 0 || thinking) log.scrollTop = log.scrollHeight;
       }
 
       // Leaving the chat folds the picker away.

@@ -2,14 +2,19 @@
 // IntegrationCardView and friends from IslandViewContent.swift.
 
 import { calendarDetail } from "./calendar";
-import { h, svg, clear, dot } from "./dom";
+import { h, svg, clear, dot, hexColor } from "./dom";
 import { ICONS } from "./icons";
 import { State, type AgentTask } from "../core/state";
 import { Bridge } from "../core/bridge";
 import { isComingSoon, pillDefinition } from "../core/pills";
 import { refreshHookPills } from "../island/integrations";
+import { calendarAgenda } from "../island/calendar";
+import { isAfterToday, minutesUntil, type CalendarEvent } from "../core/calendar";
 import { readActivity, readPulse, readStats } from "../core/github";
 import { githubDetail, githubPulseCard, type ForgeCardOptions } from "./github";
+import { entrySeconds, hm, loggedSeconds, readTimelyDay } from "../core/timely";
+import { portfolioCard } from "./portfolio";
+import { PORTFOLIO_ID } from "../core/portfolio";
 import { N_, language, t } from "../i18n/i18n";
 
 /** Same shape as the Swift `timeAgo` computed properties. */
@@ -54,12 +59,15 @@ const OPEN_URLS: Record<string, string> = {
   integration_stripe: "https://dashboard.stripe.com/payments",
   integration_notion: "https://notion.so",
   integration_calcom: "https://app.cal.com/bookings",
+  integration_calendar: "https://calendar.google.com",
+  integration_timely: "https://app.timelyapp.com",
+  integration_betterstack: "https://uptime.betterstack.com/incidents",
 };
 
 /** IntegrationCardView.statusLabel on macOS. */
 export function idleStatus(
   id: string,
-  info: { configured: boolean; error: string | null } | undefined,
+  info: { configured: boolean; error: string | null; loaded?: boolean } | undefined,
   chatModel: string,
 ): { label: string; color: string } {
   if (isComingSoon(id)) return { label: t("Coming soon"), color: "#6B7079" };
@@ -77,14 +85,18 @@ export function idleStatus(
     if (!configured) return missing(t("Key not configured"));
     return ok(id === "ai_anthropic" ? t("Key configured · {model}", { model: chatModel }) : t("Key configured"));
   }
-  return configured ? ok(t("Connected · loading…")) : missing(t("Key not configured"));
+  if (!configured) return missing(t("Key not configured"));
+  return ok(info?.loaded ? t("Connected") : t("Connected · loading…"));
 }
 
 function idleCard(task: AgentTask, openSettings: () => void): HTMLElement {
   const info = State.integrations[task.id];
   const configured = info?.configured ?? false;
   const def = pillDefinition(task.id);
-  const status = idleStatus(task.id, info, State.settings.model);
+  // A session found running that has sent nothing since Coucou started: its key is still `pid-<pid>`.
+  const status = task.sessionId?.startsWith("pid-")
+    ? { label: t("No activity since Coucou started"), color: "#6B7079" }
+    : idleStatus(task.id, info, State.settings.model);
 
   const actions = h("div", { class: "int-actions" });
   if (task.id === "integration_claude") {
@@ -94,6 +106,15 @@ function idleCard(task: AgentTask, openSettings: () => void): HTMLElement {
         style: `color:${task.color}b3`,
         text: t("Open Visual Studio Code"),
         onclick: () => void Bridge.openInVSCode(task.sessionCwd ?? null),
+      }),
+    );
+  } else if (task.id === "workspace_claude") {
+    actions.append(
+      h("button", {
+        class: "link-btn",
+        style: `color:${task.color}b3`,
+        text: t("Open terminal"),
+        onclick: () => void Bridge.openSession(task.sessionId ?? null, task.sessionCwd ?? null),
       }),
     );
   } else if (task.id === "agent_claude-desktop") {
@@ -112,6 +133,24 @@ function idleCard(task: AgentTask, openSettings: () => void): HTMLElement {
         style: `color:${task.color}d9`,
         text: t("Open {name}", { name: "n8n" }),
         onclick: () => void Bridge.openN8n(),
+      }),
+    );
+  } else if (task.id === "integration_slack") {
+    actions.append(
+      h("button", {
+        class: "link-btn",
+        style: `color:${task.color}d9`,
+        text: t("Open {name}", { name: "Slack" }),
+        onclick: () => void Bridge.slackOpenWorkspace(),
+      }),
+    );
+  } else if (task.id === "integration_linear") {
+    actions.append(
+      h("button", {
+        class: "link-btn",
+        style: `color:${task.color}d9`,
+        text: t("Open {name}", { name: task.name }),
+        onclick: () => void Bridge.openUrl(linearInboxUrl()),
       }),
     );
   } else if (OPEN_URLS[task.id]) {
@@ -343,6 +382,93 @@ function notionCard(): HTMLElement {
   return h("div", { class: "int-card" }, header("#E8E8E8", "Notion", t("Recent")), rows);
 }
 
+// ── Slack ─────────────────────────────────────────────────────────────────────
+
+function slackCount(icon: Node, value: unknown): HTMLElement {
+  const n = Number(value ?? 0);
+  const count = h("span", { class: "int-total" }, icon, h("span", { text: String(n) }));
+  count.style.color = n > 0 ? "#E01E5A" : "#4B5563";
+  return count;
+}
+
+function slackCard(): HTMLElement {
+  const d = get("integration_slack");
+  const counts = h(
+    "span",
+    { class: "int-total" },
+    slackCount(svg(ICONS.bubble, 9), d.unreadDms),
+    slackCount(h("b", { text: "@" }), d.mentions),
+  );
+  const rows = h("div", { class: "int-rows tight" });
+  const messages = arr("integration_slack", "messages");
+  if (messages.length === 0) {
+    rows.append(h("div", { class: "int-empty", text: t("No new messages") }));
+  }
+  for (const m of messages.slice(0, 3)) {
+    const dm = m.kind === "dm";
+    const author = String(m.author ?? "");
+    const place = dm ? author : `${author} · #${String(m.channelName ?? "")}`;
+    rows.append(
+      h(
+        "button",
+        {
+          class: "int-page",
+          onclick: () => {
+            if (typeof m.channelId !== "string") return;
+            void Bridge.slackOpen(m.channelId, typeof m.permalink === "string" ? m.permalink : null);
+          },
+        },
+        dot(dm ? "#E01E5A" : "#ECB22E", 5),
+        h("span", { class: "int-name", text: place }),
+        h("span", { class: "int-sub", text: String(m.text ?? "") }),
+        h("span", { class: "int-ago", text: timeAgo(m.date) }),
+      ),
+    );
+  }
+  return h("div", { class: "int-card" }, header("#E01E5A", "Slack", t("Messages"), counts), rows);
+}
+
+// ── Linear ────────────────────────────────────────────────────────────────────
+
+const LINEAR = "#5E6AD2";
+const LINEAR_ROWS = 3;
+
+function linearRow(url: unknown, glyph: string, key: unknown, title: unknown, when: unknown, tip: unknown) {
+  const row = h(
+    "button",
+    {
+      class: "int-page",
+      onclick: () => {
+        if (typeof url === "string") void Bridge.openUrl(url);
+      },
+    },
+    h("i", { class: "int-emoji" }, dot(glyph, 5)),
+  );
+  if (typeof tip === "string") row.title = tip;
+  if (typeof key === "string") row.append(h("span", { class: "int-key", text: key }));
+  row.append(
+    h("span", { class: "int-name", text: String(title ?? "") }),
+    h("span", { class: "int-ago", text: timeAgo(when) }),
+  );
+  return row;
+}
+
+/** LinearCardView: the newest unread inbox entries. */
+function linearCard(): HTMLElement {
+  const unread = arr("integration_linear", "unread");
+  const rows = h("div", { class: "int-rows tight" });
+  for (const n of unread.slice(0, LINEAR_ROWS)) {
+    rows.append(linearRow(n.url, LINEAR, n.key, n.title, n.createdAt, n.actor));
+  }
+  return h("div", { class: "int-card" }, header(LINEAR, "Linear", t("{0} unread", { 0: unread.length })), rows);
+}
+
+/** The workspace's inbox once the first poll knows the workspace. */
+export function linearInboxUrl(): string {
+  const url = get("integration_linear").inboxUrl;
+  return typeof url === "string" ? url : "https://linear.app";
+}
+
 // ── Cal.com ───────────────────────────────────────────────────────────────────
 
 function calcomCard(openDetail: () => void): HTMLElement {
@@ -371,13 +497,167 @@ function calcomCard(openDetail: () => void): HTMLElement {
     h("div", { class: "int-actions" }, h("button", { class: "link-btn", text: t("Details"), onclick: openDetail })));
 }
 
+// ── Calendar ──────────────────────────────────────────────────────────────────
+
+const CALENDAR_COLOR = "#4F9DF7";
+const CALENDAR_ROWS = 3;
+
+function clockTime(ms: number): string {
+  return new Date(ms).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
+}
+
+/** "Now", "in 12 min", "in 2 h 5" or "Tomorrow": the next meeting's countdown. */
+export function countdownLabel(e: CalendarEvent, now: number): string {
+  if (e.start <= now) return t("Now");
+  if (isAfterToday(e, now)) return t("Tomorrow");
+  const m = minutesUntil(e, now);
+  return m < 60 ? t("in {m} min", { m }) : t("in {h} h {m}", { h: Math.floor(m / 60), m: m % 60 });
+}
+
+function calendarCard(): HTMLElement {
+  const now = Date.now();
+  const a = calendarAgenda(now);
+  const rows = h("div", { class: "int-rows tight" });
+  const time = (text: string) => h("span", { class: "int-time", style: `color:${CALENDAR_COLOR}`, text });
+
+  const next = a?.next;
+  if (next) {
+    const cells: Node[] = [
+      time(clockTime(next.start)),
+      h("span", { class: "int-name", text: next.title || t("Meeting") }),
+      h("span", { class: "int-ago", text: countdownLabel(next, now) }),
+    ];
+    const join = next.joinUrl;
+    if (join) {
+      cells.push(h("button", {
+        class: "link-btn",
+        style: `color:${CALENDAR_COLOR}d9`,
+        text: t("Join"),
+        onclick: (ev: Event) => {
+          ev.stopPropagation();
+          void Bridge.openUrl(join);
+        },
+      }));
+    }
+    rows.append(listRow(CALENDAR_COLOR, true, ...cells));
+  }
+  const rest = [
+    ...(a?.later ?? []).map((e) => [clockTime(e.start), e.title] as const),
+    ...(a?.allDay ?? []).map((e) => [t("All day"), e.title] as const),
+  ];
+  for (const [when, title] of rest.slice(0, CALENDAR_ROWS - rows.childElementCount)) {
+    rows.append(listRow(CALENDAR_COLOR, false, time(when), h("span", { class: "int-name", text: title || t("Meeting") })));
+  }
+  if (rows.childElementCount === 0) {
+    rows.append(h("div", { class: "int-empty", text: t("No more meetings today") }));
+  }
+  return h("div", { class: "int-card" }, header(CALENDAR_COLOR, "Calendar", t("Today")), rows);
+}
+
+// ── Timely ────────────────────────────────────────────────────────────────────
+
+function timelyCard(color: string): HTMLElement {
+  const now = new Date();
+  const day = readTimelyDay(get("integration_timely"), now);
+  const logged = hm(day ? loggedSeconds(day, now) : 0);
+  const total = day?.capacityHours != null ? `${logged} / ${hm(day.capacityHours * 3600)}` : logged;
+  const rows = h("div", { class: "int-rows" });
+
+  if (day?.running) {
+    const r = day.running;
+    const cells: Node[] = [h("span", { class: "int-name", text: r.project })];
+    if (r.note) cells.push(h("span", { class: "int-sub", text: r.note }));
+    cells.push(h("span", { class: "int-ago", text: hm(entrySeconds(r, now)) }));
+    rows.append(listRow(hexColor(r.color, color), true, ...cells));
+  } else {
+    rows.append(h("div", { class: "int-empty", text: t("No timer running") }));
+  }
+  const others = (day?.entries ?? []).filter((e) => e.timerStartedOn == null).slice(-2).reverse();
+  for (const e of others) {
+    rows.append(
+      listRow(hexColor(e.color, color), false, h("span", { class: "int-name", text: e.project }), h("span", { class: "int-ago", text: hm(e.loggedSeconds) })),
+    );
+  }
+
+  const extra = h("span", { class: "int-total" }, h("span", { text: total }));
+  return h("div", { class: "int-card" }, header(color, "Timely", t("Today"), extra), rows);
+}
+
+// ── Better Stack ──────────────────────────────────────────────────────────────
+
+/** Incidents first; then down monitors that no open incident already names. */
+function betterstackCard(): HTMLElement {
+  const incidents = arr("integration_betterstack", "incidents");
+  const team = String(get("integration_betterstack").team ?? "");
+  // Without the team, a page link is a 404: the incident list instead.
+  const page = (path: string) =>
+    team ? `https://incidents.betterstack.com/team/${encodeURIComponent(team)}/${path}` : OPEN_URLS.integration_betterstack;
+  const named = new Set(incidents.map((i) => String(i.name ?? "")));
+  const items = [
+    ...incidents.map((i) => ({
+      accent: i.acknowledged ? "#F29B38" : "#F4505E",
+      name: String(i.name ?? ""),
+      detail: i.acknowledged ? t("Acknowledged") : String(i.cause ?? ""),
+      ago: i.startedAt ? timeAgo(i.startedAt) : "",
+      url: page(`incidents/${encodeURIComponent(String(i.id))}`),
+    })),
+    ...arr("integration_betterstack", "down")
+      .filter((m) => !named.has(String(m.name ?? "")))
+      .map((m) => ({
+        accent: "#F4505E",
+        name: String(m.name ?? ""),
+        detail: t("Down"),
+        ago: "",
+        url: page(`monitors/${encodeURIComponent(String(m.id))}`),
+      })),
+  ];
+
+  const rows = h("div", { class: "int-rows tight" });
+  if (items.length === 0) {
+    rows.append(h("div", { class: "int-row" }, dot("#22C55E", 5), h("span", { class: "int-name", text: t("All monitors up") })));
+  }
+  for (const item of items.slice(0, 3)) {
+    rows.append(
+      h(
+        "button",
+        { class: "int-page", onclick: () => void Bridge.openUrl(item.url) },
+        dot(item.accent, 5),
+        h("span", { class: "int-name", text: item.name }),
+        h("span", { class: "int-sub", text: item.detail }),
+        h("span", { class: "int-ago", text: item.ago }),
+      ),
+    );
+  }
+  return h("div", { class: "int-card" }, header("#5B5FEF", "Better Stack", t("Incidents")), rows);
+}
+
 // ── n8n ───────────────────────────────────────────────────────────────────────
 
+function n8nRun(task: AgentTask): { workflow: string; detail: string | null; success: boolean } | null {
+  if (task.steps.length > 0 && (task.state === "finished" || task.state === "error")) {
+    return {
+      workflow: task.steps[0] ?? t("Workflow"),
+      detail: task.steps[1] ?? null,
+      success: task.state === "finished",
+    };
+  }
+  const info = State.integrations.integration_n8n;
+  if (!info || info.error) return null;
+  const d = get("integration_n8n");
+  if (typeof d.workflow === "string" && d.workflow.length > 0) {
+    return {
+      workflow: d.workflow,
+      detail: typeof d.detail === "string" && d.detail.length > 0 ? d.detail : null,
+      success: d.status === "success",
+    };
+  }
+  return null;
+}
+
 function n8nCard(task: AgentTask, onDetail: () => void, openSettings: () => void): HTMLElement {
-  const hasActivity = task.steps.length > 0 && (task.state === "finished" || task.state === "error");
-  if (!hasActivity) return idleCard(task, openSettings);
-  const success = task.state === "finished";
-  const accent = success ? "#22C55E" : "#F4505E";
+  const run = n8nRun(task);
+  if (!run) return idleCard(task, openSettings);
+  const accent = run.success ? "#22C55E" : "#F4505E";
   return h(
     "div",
     { class: "int-card" },
@@ -393,17 +673,16 @@ function n8nCard(task: AgentTask, onDetail: () => void, openSettings: () => void
           onclick: onDetail,
         },
         dot(accent, 5),
-        h("span", { class: "int-name", text: task.steps[0] ?? t("Workflow") }),
+        h("span", { class: "int-name", text: run.workflow }),
         svg(ICONS.ellipsis, 8),
       ),
     ),
   );
 }
 
-function n8nDetail(task: AgentTask, onBack: () => void): HTMLElement {
-  const success = task.state === "finished";
+function n8nDetail(run: { workflow: string; detail: string | null; success: boolean }, onBack: () => void): HTMLElement {
+  const { success, detail, workflow } = run;
   const accent = success ? "#22C55E" : "#F4505E";
-  const detail = task.steps[1];
   return h(
     "div",
     { class: "int-card detail" },
@@ -412,7 +691,7 @@ function n8nDetail(task: AgentTask, onBack: () => void): HTMLElement {
       { class: "int-detail-head" },
       h("button", { class: "int-back", onclick: onBack }, svg(ICONS.chevronLeft, 10, { stroke: 2.4 })),
       dot(accent, 6),
-      h("b", { text: task.steps[0] ?? t("Workflow") }),
+      h("b", { text: workflow }),
       h("span", {
         class: "int-badge",
         style: `color:${accent};background:${accent}24`,
@@ -442,6 +721,8 @@ export function hasIntegrationData(id: string): boolean {
   const info = State.integrations[id];
   if (!info || info.error) return false;
   switch (id) {
+    case "integration_n8n":
+      return typeof get(id).workflow === "string" && String(get(id).workflow).length > 0;
     case "integration_vercel":
       return arr(id, "deployments").length > 0;
     case "integration_resend":
@@ -456,17 +737,28 @@ export function hasIntegrationData(id: string): boolean {
     case "integration_notion":
       return arr(id, "pages").length > 0;
     case "integration_calcom":
+    case "integration_betterstack":
       return info.loaded;
+    case "integration_calendar":
+      return calendarAgenda() != null;
+    case "integration_linear":
+      return info.loaded;
+    case "integration_slack":
+      return info.loaded;
+    case "integration_timely":
+      return readTimelyDay(get(id), new Date()) != null;
     default:
       return false;
   }
 }
 
 export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHooks): HTMLElement {
+  // Its own card in every state (loading, no accounts, balances), as on the Mac.
+  if (task.id === PORTFOLIO_ID) return portfolioCard(task);
   if (task.id === "integration_n8n") {
-    const hasActivity = task.steps.length > 0 && (task.state === "finished" || task.state === "error");
-    return hooks.detailOpen && hasActivity
-      ? n8nDetail(task, hooks.closeDetail)
+    const run = n8nRun(task);
+    return hooks.detailOpen && run
+      ? n8nDetail(run, hooks.closeDetail)
       : n8nCard(task, hooks.openDetail, hooks.openSettings);
   }
   if (task.id === "integration_vercel" && hasIntegrationData(task.id)) {
@@ -511,6 +803,16 @@ export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHoo
       return notionCard();
     case "integration_calcom":
       return hooks.detailOpen ? calendarDetail(get(task.id), hooks.closeDetail, () => void Bridge.openUrl(OPEN_URLS[task.id])) : calcomCard(hooks.openDetail);
+    case "integration_calendar":
+      return calendarCard();
+    case "integration_timely":
+      return timelyCard(task.color);
+    case "integration_slack":
+      return slackCard();
+    case "integration_betterstack":
+      return betterstackCard();
+    case "integration_linear":
+      return linearCard();
     default:
       return idleCard(task, hooks.openSettings);
   }

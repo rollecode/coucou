@@ -26,7 +26,7 @@ SOCKETS = {
 
 
 def swift_literal(source, name):
-    match = re.search(rf'^private let {name} = """\n(.*?)^"""$', source, re.S | re.M)
+    match = re.search(rf'^(?:private )?let {name} = """\n(.*?)^"""$', source, re.S | re.M)
     if not match:
         sys.exit(f"{name} not found in {SOURCE.name}")
     return match.group(1).replace("\\\\", "\\")

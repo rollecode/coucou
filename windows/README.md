@@ -63,6 +63,7 @@ You can also [build it yourself](#build-it-yourself).
 | Drag a file onto the island and let go on one of the sessions listed on the right ("Or into a session") | That session's terminal or editor comes forward and the file's path is pasted into Claude Code's prompt, as a drag onto the terminal would write it. When its window can't be found, the path is copied instead |
 | The terminal tab in the island's header | **New Claude Code session**: pick a project (the folders your sessions ran in, or **Choose a folder…**), type what Claude should do, and your terminal opens there running `claude` with it |
 | Click a file in the session ticker | Its diff opens in the island; ↗ opens the file in VS Code, ‹ or `Esc` goes back |
+| Click a Claude Code session's card (once it has edited a file or run a command) | The code view: the turn's phases, the last edit in place with a few lines of the file around it, the last command and its last lines of output; ‹ goes back |
 | `Esc` | Closes the island |
 | Put a file named like one of Mochi's sounds (`finish.wav`, `approval.mp3`, `greet.m4a`…) in the sounds folder | It replaces that sound after **Settings → General → Reload sounds**. **Open sounds folder** shows the folder: `~/.config/coucou/sounds` on Linux, `%APPDATA%\Coucou\sounds` on Windows |
 | Tray icon | Open, Weekly recap, Wardrobe…, Settings…, Pause, Quit — and **Update Coucou to X…** while a new version is out |
@@ -130,6 +131,11 @@ Mac: past 200 KB or 4 000 lines only the counts are kept, at most 50 diffs per
 session, and they are forgotten an hour after the last edit or when the session
 ends. When Claude finishes, the card keeps the first paragraph of its final
 answer on one line, still, until the next prompt.
+
+**Code view.** The lines around an edit are read from the file itself, and only
+from a regular file inside the session's folder, up to 2 MB; a session on another
+machine shows the edit alone. Of what a command printed, the relay forwards its
+last three lines and nothing else. Nothing opens by itself.
 
 ## Flow, the Notetaker and « OK Coucou »
 
@@ -323,6 +329,17 @@ someone requests your review. Pull requests are checked every 5 minutes, every
 minute while a CI is running, and as soon as you open the card on data older
 than a minute; contributions every 30 minutes. Nothing is fetched while the pill
 is off or Coucou is paused.
+
+## Portfolio
+
+**Settings… → Integrations → Portfolio** connects exchange accounts (Binance,
+OKX, Bybit, Kraken, Coinbase) with a read-only key, and self-custody wallets
+by their public address on 16 networks. **Test & Save** keeps a key only once
+a real request went through with it; the keys stay in the credential store and
+never reach the interface. The card shows each account's holdings in USD, with
+the 24 h change and a 7-day curve from Coinbase's public prices. Balances are
+read every 2 minutes, and as soon as you open the card on data older than 30
+seconds; nothing is fetched while the pill is off or Coucou is paused.
 
 ## Mail (classic Outlook, Windows)
 
@@ -651,6 +668,10 @@ on; other agents and Claude Desktop ask in their own window.
   its `spotify:` link, and without Spotify **Get Spotify** opens its download
   page. Windows gives no Spotify link for the track, so an ad is told apart by
   having a title and no artist or album.
+- Settings → General → Calls reads PipeWire on Linux (`pw-dump --monitor`):
+  another app's stream on a microphone, on a PipeWire camera, or on a shared
+  screen. A camera opened directly as `/dev/video*`, outside PipeWire, is not
+  seen. Windows has nothing behind it yet, so no call is ever detected there.
 - Not in this version: sending a dropped file by email and dragging Mochi onto
   a window to attach it as context. On the Mac, email goes through Resend or
   Apple Mail's scripting; neither has a safe equivalent that attaches a file
@@ -660,6 +681,12 @@ on; other agents and Claude Desktop ask in their own window.
   against the SHA-256 GitHub publishes for it, and the installer (not Coucou)
   replaces the app and starts it again.
 - Cal.com shows the next bookings as a list rather than the Mac's calendar.
+- The Calendar pill reads a secret iCal address (Google Calendar → Settings →
+  your calendar → Integrate calendar, or any iCal link) instead of the Mac's
+  Calendar app. The address is kept in the Credential Manager or Secret
+  Service; the island only ever gets the feed.
+- Timely's running timer moves on with each poll, once a minute, rather than
+  every 30 seconds on screen.
 - The Cursor pill carries both Cursor Agent's own hooks and Claude Code running
   in Cursor's terminal.
 - Hermes: Coucou writes the plugin but does not run the `hermes` CLI, so it is
@@ -765,8 +792,13 @@ What changes on Linux:
   `COUCOU_X11=0` keeps the native Wayland window, `COUCOU_DOCK=0` makes it a
   utility window instead of a dock. `COUCOU_LAYER_SHELL=0` forces the regular
   window anywhere.
+- **Mochi's eyes** follow the pointer anywhere on screen on Hyprland and on
+  driftwm (with its `cursor` IPC command); elsewhere only while it is over him.
 - **Click-through** is the window's input region, kept equal to the island
   shape, so the compositor sends every other click to what is underneath.
+- **NVIDIA**: with the proprietary driver, WebKitGTK's DMABUF renderer makes the
+  compositor kill the app on its first frame, so Coucou switches it off
+  (`WEBKIT_DISABLE_DMABUF_RENDERER=1`) unless you set that variable yourself.
 - **Mochi's eyes** follow the pointer only while it is over the island: Wayland
   gives no app the cursor position anywhere else. On the desktop, likewise,
   they follow it only while it is over him, and "the cursor is far away" (so
@@ -862,5 +894,26 @@ What changes on Linux:
     app's native window forward (an XWayland one, such as VS Code's by default,
     still can be). There, and for a session under tmux, screen or ssh, whose
     terminal is no ancestor, the folder opens in VS Code as before.
+- **Remote hosts**: Claude Code sessions on other machines show in the island
+  too. Add a host under **Settings → Remote hosts** as you would type it after
+  `ssh` (an alias from `~/.ssh/config`, `user@host` or `ssh://user@host:port`),
+  then **Install hooks…** copies the relay to `~/.local/share/coucou/bin` there
+  and merges the hooks into its `~/.claude/settings.json`, with the same diff,
+  backup and click as here. Coucou keeps `ssh -R` open to the host, forwarding
+  the relay's socket to a private one on this machine: SSH is the only
+  authentication and nothing listens on the network. The relay is a static
+  binary: it runs on any Linux host with this machine's CPU architecture. A
+  macOS host gets a Python relay instead (`coucou-hook.py`, needs `python3`).
+  Any number of computers can share a host, and the host's own Coucou keeps
+  working: each install has its own socket there, `~/.coucou/<id>.sock`, and
+  its own hook entries, which name that socket; installing or uninstalling
+  touches only those. Every Coucou attached shows the request; the first
+  answer counts, and the others' cards go once the tool has run. Approvals work as for local sessions. Open terminal brings
+  forward the session's own terminal when the host is this same machine (another
+  user through `sudo su`), else a terminal already ssh'd into the host, else a
+  new one attached to it over ssh. Connect to a host once in a
+  terminal first, so its key is known: Coucou never answers ssh's questions.
+  The Mac app has the same section (Settings → Agents → Remote hosts, not in
+  the App Store build); it copies its Python relay (`nb-hook.py`) instead.
 - The **Claude Desktop** pill opens Anthropic's Linux app (its `.deb`): through
   its `claude-desktop.desktop` entry, else its binary, else the `claude://` link.
