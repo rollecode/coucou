@@ -75,6 +75,7 @@ pub struct HookStatus {
     pub settings_path: String,
     pub hook_path: String,
     pub hook_ready: bool,
+    pub relay_error: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -254,6 +255,7 @@ pub fn status() -> HookStatus {
         settings_path: settings_path().to_string_lossy().to_string(),
         hook_ready: hook_path.exists(),
         hook_path: hook_path.to_string_lossy().to_string(),
+        relay_error: crate::pipe::relay_error(),
     }
 }
 
@@ -421,7 +423,7 @@ pub fn ensure_hook_exe(app: &AppHandle) {
     let Some(dir) = dest.parent() else { return };
     // Nobody else may swap the relay Claude Code runs: its folder is ours only.
     if platform::ensure_private_dir(&settings::local_dir()).is_err()
-        || std::fs::create_dir_all(dir).is_err()
+        || platform::ensure_private_dir(dir).is_err()
     {
         return;
     }
@@ -455,12 +457,26 @@ pub fn ensure_hook_exe(app: &AppHandle) {
 }
 
 #[cfg(windows)]
+fn file_sha256(path: &Path) -> Option<[u8; 32]> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
+    let mut buf = [0u8; 8192];
+    loop {
+        let n = file.read(&mut buf).ok()?;
+        if n == 0 {
+            break;
+        }
+        ctx.update(&buf[..n]);
+    }
+    let mut out = [0u8; 32];
+    out.copy_from_slice(ctx.finish().as_ref());
+    Some(out)
+}
+
+#[cfg(windows)]
 fn install_relay(src: &Path, dest: &Path) {
-    let same = match (std::fs::metadata(src), std::fs::metadata(dest)) {
-        (Ok(a), Ok(b)) => a.len() == b.len() && a.modified().ok() == b.modified().ok(),
-        _ => false,
-    };
-    if same {
+    if matches!((file_sha256(src), file_sha256(dest)), (Some(a), Some(b)) if a == b) {
         return;
     }
     // A hook may be running right now and hold the file open; keeping the old
@@ -738,5 +754,23 @@ mod tests {
         // An id that only ends like another client's is not that client's.
         assert!(!owns(Owner::Remote("1111111"), "COUCOU_SOCKET='/home/u/.coucou/11111111.sock' x"));
         assert!(owns(Owner::Remote("11111111"), "COUCOU_SOCKET=/home/u/.coucou/11111111.sock x"));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn install_relay_replaces_same_size_and_mtime_file_with_different_hash() {
+        let dir = std::env::temp_dir().join(format!("coucou-relay-hash-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("src.exe");
+        let dest = dir.join("dest.exe");
+        std::fs::write(&src, b"coucou-relay-v2!").unwrap();
+        std::fs::write(&dest, b"tampered-payload").unwrap(); // exact same length (16 bytes)
+        let src_mtime = std::fs::metadata(&src).unwrap().modified().unwrap();
+        std::fs::File::options().write(true).open(&dest).unwrap().set_modified(src_mtime).unwrap();
+
+        install_relay(&src, &dest);
+        assert_eq!(std::fs::read(&dest).unwrap(), b"coucou-relay-v2!");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

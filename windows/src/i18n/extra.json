@@ -7218,6 +7218,21 @@
    "tr": "Yalnızca dikte ederken, bir görüşmeyi kaydederken veya mesaj gelince görünür. Dikte tuşu yine çalışır.",
    "ko": "받아쓰기하거나 통화를 녹음하거나 메시지가 올 때만 표시됩니다. 받아쓰기 키는 그대로 작동합니다.",
    "ja": "音声入力中、通話の録音中、メッセージが届いたときだけ表示されます。音声入力キーはそのまま使えます。"
+  },
+  "The hook relay could not start ({error}). Hooks will not reach Coucou.": {
+   "zh-Hans": "Hook 中继无法启动（{error}）。Hooks 将无法连接到 Coucou。",
+   "hi": "हुक रिले शुरू नहीं हो सका ({error})। हुक Coucou तक नहीं पहुँच पाएँगे।",
+   "es": "No se pudo iniciar el relay de hooks ({error}). Los hooks no llegarán a Coucou.",
+   "ar": "تعذّر بدء مرحّل الـ hooks ({error}). لن تصل الـ hooks إلى Coucou.",
+   "fr": "Le relais des hooks n'a pas pu démarrer ({error}). Les hooks n'atteindront pas Coucou.",
+   "bn": "হুক রিলে চালু করা যায়নি ({error})। হুকগুলো Coucou-এ পৌঁছাবে না।",
+   "pt-BR": "Não foi possível iniciar o relay dos hooks ({error}). Os hooks não chegarão ao Coucou.",
+   "ru": "Не удалось запустить ретранслятор хуков ({error}). Хуки не будут доходить до Coucou.",
+   "id": "Relay hook tidak dapat dimulai ({error}). Hook tidak akan sampai ke Coucou.",
+   "de": "Der Hook-Relay konnte nicht gestartet werden ({error}). Hooks erreichen Coucou nicht.",
+   "tr": "Hook aracısı başlatılamadı ({error}). Hook'lar Coucou'ya ulaşmayacak.",
+   "ko": "훅 릴레이를 시작할 수 없습니다 ({error}). 훅이 Coucou에 전달되지 않습니다.",
+   "ja": "フックリレーを起動できませんでした（{error}）。フックは Coucou に届きません。"
   }
  }
 }

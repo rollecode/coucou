@@ -335,9 +335,13 @@ struct OverviewView: View {
         case "integration_claude":
             if ClaudeHost.activate(task.hostApp, tty: task.sessionTTY) { return }
             // openApplication also brings a running VS Code forward; activate() is ignored on macOS 14+.
-            let vscode = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode")
-                ?? URL(fileURLWithPath: "/Applications/Visual Studio Code.app")
-            NSWorkspace.shared.openApplication(at: vscode, configuration: .init(), completionHandler: nil)
+            // hostApp is nil right after a relaunch: without VS Code the hardcoded path opened
+            // nothing at all (#679), so fall back to the session's terminal like openSessionApp.
+            if let vscode = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") {
+                NSWorkspace.shared.openApplication(at: vscode, configuration: .init(), completionHandler: nil)
+            } else if !TerminalTarget.activate(sessionBundleId: task.sessionBundleId) {
+                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+            }
         case "workspace_claude":
             // The terminal tool: its terminal, never VS Code.
             #if !APPSTORE
@@ -4930,8 +4934,9 @@ struct TickerShimmerText: View {
     @Environment(\.islandViewActive) private var viewActive
 
     var body: some View {
-        // A 2.2 s sweep at display refresh rate. Paused when hidden.
-        TimelineView(.animation(paused: paused || !viewActive)) { tl in
+        // A 2.2 s sweep at 30 fps (#1116). Paused when hidden.
+        TimelineView(.animation(minimumInterval: MochiFrameClock.interval(fps: 30),
+                                paused: paused || !viewActive)) { tl in
             let t = tl.date.timeIntervalSinceReferenceDate
             let p = CGFloat(t.truncatingRemainder(dividingBy: 2.2) / 2.2)
             // phase sweeps -0.1 → 1.1 so white peak enters from left and exits right
